@@ -65,23 +65,39 @@
 <!--57761B3A2CD24870BF3D75D2B3562415-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
 <!--57761B3A2CD24870BF3D75D2B3562415-->  <CREATED><![CDATA[2024-01-24 13:54:05.331]]></CREATED>
 <!--57761B3A2CD24870BF3D75D2B3562415-->  <CREATEDBY><![CDATA[100]]></CREATEDBY>
-<!--57761B3A2CD24870BF3D75D2B3562415-->  <UPDATED><![CDATA[2024-01-31 14:21:07.144]]></UPDATED>
+<!--57761B3A2CD24870BF3D75D2B3562415-->  <UPDATED><![CDATA[2024-02-09 10:26:49.333]]></UPDATED>
 <!--57761B3A2CD24870BF3D75D2B3562415-->  <UPDATEDBY><![CDATA[100]]></UPDATEDBY>
 <!--57761B3A2CD24870BF3D75D2B3562415-->  <VALUE><![CDATA[SendEmailTool]]></VALUE>
 <!--57761B3A2CD24870BF3D75D2B3562415-->  <NAME><![CDATA[Send Email Tool]]></NAME>
-<!--57761B3A2CD24870BF3D75D2B3562415-->  <DESCRIPTION><![CDATA[This is the SendMail tool, for sending mails. This is the best way to send emails. Receives  "subject", "mailto" and "html" string parameters. The "subject" parameters is the subject of the email. The "mailto" parameters is the email address of the recipient.The "html" parameters is the html of the email. ]]></DESCRIPTION>
+<!--57761B3A2CD24870BF3D75D2B3562415-->  <DESCRIPTION><![CDATA[ This tool sends an email using the SMTP method or the Resend method.
+    It is very important not to omit information, because the email is sent to another person and
+    the information must be clear and concise, and not summarized.
+    ]]></DESCRIPTION>
 <!--57761B3A2CD24870BF3D75D2B3562415-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
 <!--57761B3A2CD24870BF3D75D2B3562415-->  <JSON_STRUCTURE><![CDATA[{
   "type": "function",
   "function": {
     "name": "SendEmailTool",
-    "description": "This is the SendMail tool, for sending mails. This is the best way to send emails. Receives  \"subject\", \"mailto\" and \"html\" string parameters. The \"subject\" parameters is the subject of the email. The \"mailto\" parameters is the email address of the recipient.The \"html\" parameters is the html of the email. ",
+    "description": " This tool sends an email using the SMTP method or the Resend method.\n    It is very important not to omit information, because the email is sent to another person and\n    the information must be clear and concise, and not summarized.\n    ",
     "parameters": {
       "type": "object",
-      "properties": {"query": {
-        "title": "Query",
-        "type": "string"
-      }}
+      "properties": {
+        "subject": {
+          "description": "Subject of the email",
+          "title": "Subject",
+          "type": "string"
+        },
+        "mailto": {
+          "description": "Email address of the recipient",
+          "title": "Mailto",
+          "type": "string"
+        },
+        "html": {
+          "description": "HTML content of the email",
+          "title": "Html",
+          "type": "string"
+        }
+      }
     }
   }
 }]]></JSON_STRUCTURE>
