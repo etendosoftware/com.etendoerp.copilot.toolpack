@@ -1,3 +1,5 @@
 [SendEmailTool]
 resend = "*"
 
+[CodeRunTool]
+langchain_experimental = "*"
