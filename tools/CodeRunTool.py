@@ -23,10 +23,15 @@ class CodeRunTool(ToolWrapper):
     def run(self, input_params: Dict, *args, **kwargs):
         command = input_params.get('command')
 
-        try:
-            # Execute the command using PythonREPL
-            repl = PythonREPL()
-            result = repl.run(command)
-            return {"output": result}
-        except Exception as e:
-            return {"error": str(e)}
+        if not command:
+            return {"error": "No command provided"}
+
+        # Execute the command using PythonREPL
+        repl = PythonREPL()
+        result = repl.run(command)
+        if result is None:
+            return {"error": "No output"}
+        # if result starts with SyntaxError, ZeroDivisionError, or Exception, return error
+        if result.startswith("SyntaxError") or result.startswith("ZeroDivisionError") or result.startswith("Exception"):
+            return {"error": result}
+        return {"output": result}
