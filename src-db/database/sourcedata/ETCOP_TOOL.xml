@@ -7,7 +7,7 @@
 <!--206B71E96BF145D480FE535BF7607CD4-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
 <!--206B71E96BF145D480FE535BF7607CD4-->  <CREATED><![CDATA[2024-01-24 13:53:26.593]]></CREATED>
 <!--206B71E96BF145D480FE535BF7607CD4-->  <CREATEDBY><![CDATA[100]]></CREATEDBY>
-<!--206B71E96BF145D480FE535BF7607CD4-->  <UPDATED><![CDATA[2024-01-31 14:21:07.143]]></UPDATED>
+<!--206B71E96BF145D480FE535BF7607CD4-->  <UPDATED><![CDATA[2024-05-16 11:52:23.392]]></UPDATED>
 <!--206B71E96BF145D480FE535BF7607CD4-->  <UPDATEDBY><![CDATA[100]]></UPDATEDBY>
 <!--206B71E96BF145D480FE535BF7607CD4-->  <VALUE><![CDATA[FileDownloaderTool]]></VALUE>
 <!--206B71E96BF145D480FE535BF7607CD4-->  <NAME><![CDATA[File Downloader Tool]]></NAME>
@@ -20,8 +20,9 @@
     "description": "This tool receives a URL , downloads the file to a temporary directory if its a URL in a temp file. It returns the path to the temporary file.",
     "parameters": {
       "type": "object",
-      "properties": {"query": {
-        "title": "Query",
+      "properties": {"file_path_or_url": {
+        "description": "The file path or URL to download.",
+        "title": "File path or URL",
         "type": "string"
       }}
     }
@@ -36,7 +37,7 @@
 <!--438B5A5EB8B1405BABE39F9EEE34F44F-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
 <!--438B5A5EB8B1405BABE39F9EEE34F44F-->  <CREATED><![CDATA[2024-01-24 13:53:14.782]]></CREATED>
 <!--438B5A5EB8B1405BABE39F9EEE34F44F-->  <CREATEDBY><![CDATA[100]]></CREATEDBY>
-<!--438B5A5EB8B1405BABE39F9EEE34F44F-->  <UPDATED><![CDATA[2024-01-31 14:21:07.13]]></UPDATED>
+<!--438B5A5EB8B1405BABE39F9EEE34F44F-->  <UPDATED><![CDATA[2024-05-16 11:52:23.398]]></UPDATED>
 <!--438B5A5EB8B1405BABE39F9EEE34F44F-->  <UPDATEDBY><![CDATA[100]]></UPDATEDBY>
 <!--438B5A5EB8B1405BABE39F9EEE34F44F-->  <VALUE><![CDATA[FileCopyTool]]></VALUE>
 <!--438B5A5EB8B1405BABE39F9EEE34F44F-->  <NAME><![CDATA[File Copy Tool]]></NAME>
@@ -49,10 +50,18 @@
     "description": "This tool receives two paths, one of a file and another of a directory, copies the file to the directory. Returns the path of the copied file. Example of input: { \"source_path\": \"\/home\/user\/file.txt\", \"destination_directory\": \"\/home\/user\/destination_directory\" }",
     "parameters": {
       "type": "object",
-      "properties": {"query": {
-        "title": "Query",
-        "type": "string"
-      }}
+      "properties": {
+        "source_path": {
+          "description": "The path of the file to read.",
+          "title": "Source Path",
+          "type": "string"
+        },
+        "destination_directory": {
+          "description": "The path of the directory to copy the file.",
+          "title": "Destination Directory",
+          "type": "string"
+        }
+      }
     }
   }
 }]]></JSON_STRUCTURE>
@@ -65,23 +74,39 @@
 <!--57761B3A2CD24870BF3D75D2B3562415-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
 <!--57761B3A2CD24870BF3D75D2B3562415-->  <CREATED><![CDATA[2024-01-24 13:54:05.331]]></CREATED>
 <!--57761B3A2CD24870BF3D75D2B3562415-->  <CREATEDBY><![CDATA[100]]></CREATEDBY>
-<!--57761B3A2CD24870BF3D75D2B3562415-->  <UPDATED><![CDATA[2024-01-31 14:21:07.144]]></UPDATED>
+<!--57761B3A2CD24870BF3D75D2B3562415-->  <UPDATED><![CDATA[2024-02-09 10:26:49.333]]></UPDATED>
 <!--57761B3A2CD24870BF3D75D2B3562415-->  <UPDATEDBY><![CDATA[100]]></UPDATEDBY>
 <!--57761B3A2CD24870BF3D75D2B3562415-->  <VALUE><![CDATA[SendEmailTool]]></VALUE>
 <!--57761B3A2CD24870BF3D75D2B3562415-->  <NAME><![CDATA[Send Email Tool]]></NAME>
-<!--57761B3A2CD24870BF3D75D2B3562415-->  <DESCRIPTION><![CDATA[This is the SendMail tool, for sending mails. This is the best way to send emails. Receives  "subject", "mailto" and "html" string parameters. The "subject" parameters is the subject of the email. The "mailto" parameters is the email address of the recipient.The "html" parameters is the html of the email. ]]></DESCRIPTION>
+<!--57761B3A2CD24870BF3D75D2B3562415-->  <DESCRIPTION><![CDATA[ This tool sends an email using the SMTP method or the Resend method.
+    It is very important not to omit information, because the email is sent to another person and
+    the information must be clear and concise, and not summarized.
+    ]]></DESCRIPTION>
 <!--57761B3A2CD24870BF3D75D2B3562415-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
 <!--57761B3A2CD24870BF3D75D2B3562415-->  <JSON_STRUCTURE><![CDATA[{
   "type": "function",
   "function": {
     "name": "SendEmailTool",
-    "description": "This is the SendMail tool, for sending mails. This is the best way to send emails. Receives  \"subject\", \"mailto\" and \"html\" string parameters. The \"subject\" parameters is the subject of the email. The \"mailto\" parameters is the email address of the recipient.The \"html\" parameters is the html of the email. ",
+    "description": " This tool sends an email using the SMTP method or the Resend method.\n    It is very important not to omit information, because the email is sent to another person and\n    the information must be clear and concise, and not summarized.\n    ",
     "parameters": {
       "type": "object",
-      "properties": {"query": {
-        "title": "Query",
-        "type": "string"
-      }}
+      "properties": {
+        "subject": {
+          "description": "Subject of the email",
+          "title": "Subject",
+          "type": "string"
+        },
+        "mailto": {
+          "description": "Email address of the recipient",
+          "title": "Mailto",
+          "type": "string"
+        },
+        "html": {
+          "description": "HTML content of the email",
+          "title": "Html",
+          "type": "string"
+        }
+      }
     }
   }
 }]]></JSON_STRUCTURE>
@@ -94,27 +119,32 @@
 <!--9B93E3F0B846482A8640368F7C11E5A5-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
 <!--9B93E3F0B846482A8640368F7C11E5A5-->  <CREATED><![CDATA[2024-01-24 13:53:39.377]]></CREATED>
 <!--9B93E3F0B846482A8640368F7C11E5A5-->  <CREATEDBY><![CDATA[100]]></CREATEDBY>
-<!--9B93E3F0B846482A8640368F7C11E5A5-->  <UPDATED><![CDATA[2024-01-31 14:21:07.144]]></UPDATED>
+<!--9B93E3F0B846482A8640368F7C11E5A5-->  <UPDATED><![CDATA[2024-05-16 11:52:23.407]]></UPDATED>
 <!--9B93E3F0B846482A8640368F7C11E5A5-->  <UPDATEDBY><![CDATA[100]]></UPDATEDBY>
 <!--9B93E3F0B846482A8640368F7C11E5A5-->  <VALUE><![CDATA[PrintDirectoryTool]]></VALUE>
 <!--9B93E3F0B846482A8640368F7C11E5A5-->  <NAME><![CDATA[Print Directory Tool]]></NAME>
-<!--9B93E3F0B846482A8640368F7C11E5A5-->  <DESCRIPTION><![CDATA[ This tool prints the files and directories of in the current directory. Receives "recursive" boolean and "parent_doubledot_qty" integer parameters.
-    The 'recursive' parameter is a boolean that indicates if the tool needs to print the subdirectories recursively or not. 
-    And the 'parent_doubledot_qty' parameter where you can specify the number of parent directories to print. The tool will make a .. for each parent_doubledot_qty.
-    For example, { "recursive": true, "parent_doubledot_qty": 2 } will print the files and directories of the parent directory of the parent directory of the current directory recursively.
-    ]]></DESCRIPTION>
+<!--9B93E3F0B846482A8640368F7C11E5A5-->  <DESCRIPTION><![CDATA[ This tool prints the files and directories of the a directory.]]></DESCRIPTION>
 <!--9B93E3F0B846482A8640368F7C11E5A5-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
 <!--9B93E3F0B846482A8640368F7C11E5A5-->  <JSON_STRUCTURE><![CDATA[{
   "type": "function",
   "function": {
     "name": "PrintDirectoryTool",
-    "description": " This tool prints the files and directories of in the current directory. Receives \"recursive\" boolean and \"parent_doubledot_qty\" integer parameters.\n    The 'recursive' parameter is a boolean that indicates if the tool needs to print the subdirectories recursively or not. \n    And the 'parent_doubledot_qty' parameter where you can specify the number of parent directories to print. The tool will make a .. for each parent_doubledot_qty.\n    For example, { \"recursive\": true, \"parent_doubledot_qty\": 2 } will print the files and directories of the parent directory of the parent directory of the current directory recursively.\n    ",
+    "description": " This tool prints the files and directories of the a directory.",
     "parameters": {
       "type": "object",
-      "properties": {"query": {
-        "title": "Query",
-        "type": "string"
-      }}
+      "properties": {
+        "path": {
+          "description": "The path of the directory to print",
+          "title": "Path",
+          "type": "string"
+        },
+        "recursive": {
+          "default": false,
+          "description": "If true, the tool will print the files and directories recursively.",
+          "title": "Recursive",
+          "type": "boolean"
+        }
+      }
     }
   }
 }]]></JSON_STRUCTURE>
@@ -127,7 +157,7 @@
 <!--BEA2A2F367574FE38FAD68876094D19C-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
 <!--BEA2A2F367574FE38FAD68876094D19C-->  <CREATED><![CDATA[2024-01-24 13:54:23.564]]></CREATED>
 <!--BEA2A2F367574FE38FAD68876094D19C-->  <CREATEDBY><![CDATA[100]]></CREATEDBY>
-<!--BEA2A2F367574FE38FAD68876094D19C-->  <UPDATED><![CDATA[2024-01-31 14:21:07.144]]></UPDATED>
+<!--BEA2A2F367574FE38FAD68876094D19C-->  <UPDATED><![CDATA[2024-05-16 11:52:23.399]]></UPDATED>
 <!--BEA2A2F367574FE38FAD68876094D19C-->  <UPDATEDBY><![CDATA[100]]></UPDATEDBY>
 <!--BEA2A2F367574FE38FAD68876094D19C-->  <VALUE><![CDATA[WriteFileTool]]></VALUE>
 <!--BEA2A2F367574FE38FAD68876094D19C-->  <NAME><![CDATA[Write File Tool]]></NAME>
@@ -140,10 +170,30 @@
     "description": "This is a tool for writing files. Receives: \"filepath\": string, \"content\": string, \"lineno\": integer.The \"filepath\" parameter is the path of the file to write.The \"content\" parameter is the content of the file to write.The \"override\" parameter is a boolean that indicates if the tool needs to override the file or not. The \"lineno\" parameter is the line number where to write the content. If the line number is not specified, the content will be appended to the end of the file.The tool will return the content of the file. Example of input: { \"filepath\": \"\/tmp\/test.txt\", \"content\": \"Hello world\", \"override\": true, \"lineno\": 1 }",
     "parameters": {
       "type": "object",
-      "properties": {"query": {
-        "title": "Query",
-        "type": "string"
-      }}
+      "properties": {
+        "filepath": {
+          "description": "The path of the file to write.",
+          "title": "Filepath",
+          "type": "string"
+        },
+        "content": {
+          "description": "The content of the file to write.",
+          "title": "Content",
+          "type": "string"
+        },
+        "override": {
+          "default": false,
+          "description": "If true, the tool will override the file.",
+          "title": "Override",
+          "type": "boolean"
+        },
+        "lineno": {
+          "default": -1,
+          "description": "The line number where to write the content.",
+          "title": "Lineno",
+          "type": "integer"
+        }
+      }
     }
   }
 }]]></JSON_STRUCTURE>
@@ -156,21 +206,22 @@
 <!--BF6E78B5CAA74498AD755F1737DBCB69-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
 <!--BF6E78B5CAA74498AD755F1737DBCB69-->  <CREATED><![CDATA[2024-01-24 13:53:51.441]]></CREATED>
 <!--BF6E78B5CAA74498AD755F1737DBCB69-->  <CREATEDBY><![CDATA[100]]></CREATEDBY>
-<!--BF6E78B5CAA74498AD755F1737DBCB69-->  <UPDATED><![CDATA[2024-01-31 14:21:07.144]]></UPDATED>
+<!--BF6E78B5CAA74498AD755F1737DBCB69-->  <UPDATED><![CDATA[2024-05-16 11:52:23.405]]></UPDATED>
 <!--BF6E78B5CAA74498AD755F1737DBCB69-->  <UPDATEDBY><![CDATA[100]]></UPDATEDBY>
 <!--BF6E78B5CAA74498AD755F1737DBCB69-->  <VALUE><![CDATA[ReadFileTool]]></VALUE>
 <!--BF6E78B5CAA74498AD755F1737DBCB69-->  <NAME><![CDATA[Read File Tool]]></NAME>
-<!--BF6E78B5CAA74498AD755F1737DBCB69-->  <DESCRIPTION><![CDATA[This is a tool for reading files. Receives "filepath" string parameter. The "filepath" parameter is the path of the file to read. The tool will return the content of the file. Example of input: { "filepath": "/tmp/test.txt" }]]></DESCRIPTION>
+<!--BF6E78B5CAA74498AD755F1737DBCB69-->  <DESCRIPTION><![CDATA[This is a tool for reading files. Receives "filepath" string parameter. The "filepath" parameter is the path of the file to read. The tool will return the content of the file.Example of input: { "filepath": "/tmp/test.txt" }]]></DESCRIPTION>
 <!--BF6E78B5CAA74498AD755F1737DBCB69-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
 <!--BF6E78B5CAA74498AD755F1737DBCB69-->  <JSON_STRUCTURE><![CDATA[{
   "type": "function",
   "function": {
     "name": "ReadFileTool",
-    "description": "This is a tool for reading files. Receives \"filepath\" string parameter. The \"filepath\" parameter is the path of the file to read. The tool will return the content of the file. Example of input: { \"filepath\": \"\/tmp\/test.txt\" }",
+    "description": "This is a tool for reading files. Receives \"filepath\" string parameter. The \"filepath\" parameter is the path of the file to read. The tool will return the content of the file.Example of input: { \"filepath\": \"\/tmp\/test.txt\" }",
     "parameters": {
       "type": "object",
-      "properties": {"query": {
-        "title": "Query",
+      "properties": {"filepath": {
+        "description": "The path of the file to read.",
+        "title": "Filepath",
         "type": "string"
       }}
     }

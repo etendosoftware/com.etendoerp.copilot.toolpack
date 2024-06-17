@@ -6,7 +6,6 @@ from copilot.core.tool_wrapper import ToolWrapper
 class TemplateTool(ToolWrapper):
     name = 'TemplateTool'
     description = ('This is a file template for creating new tools.' )
-    inputs = ['input1', 'input2']
     outputs = ['message']
 
     def run(self, input, *args, **kwargs):
