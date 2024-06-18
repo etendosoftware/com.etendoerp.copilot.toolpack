@@ -1,6 +1,6 @@
 from copilot.core.tool_wrapper import ToolWrapper
 from pydantic import BaseModel, Field
-from typing import Type
+from typing import Type, Dict
 import os
 from langchain_community.tools.tavily_search import TavilySearchResults
 
@@ -22,7 +22,7 @@ class TavilySearchTool(ToolWrapper):
     def __init__(self):
         super().__init__()
 
-    def run(self, input_params, *args, **kwargs) -> dict:
+    def run(self, input_params: Dict, *args, **kwargs) -> dict:
         query = input_params.get("query")
         os.environ["TAVILY_API_KEY"] = os.getenv("TAVILY_API_KEY", "")
         tool = TavilySearchResults()
