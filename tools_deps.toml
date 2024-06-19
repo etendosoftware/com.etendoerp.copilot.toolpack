@@ -4,3 +4,11 @@ resend = "*"
 [CodeRunTool]
 langchain_experimental = "*"
 
+[UncompressTool]
+gzip = "*"
+shutil = "*"
+rarfile = "*"
+bz2v = "*"
+tarfile = "*"
+zipfile = "*"
+
