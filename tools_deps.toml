@@ -8,7 +8,8 @@ langchain_experimental = "*"
 gzip = "*"
 shutil = "*"
 rarfile = "*"
-bz2v = "*"
+bz2 = "*"
 tarfile = "*"
 zipfile = "*"
+
 
