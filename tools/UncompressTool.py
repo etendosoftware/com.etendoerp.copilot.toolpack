@@ -1,5 +1,4 @@
 import os
-import subprocess
 from typing import Type, Dict
 
 from pydantic import BaseModel, Field
@@ -107,6 +106,8 @@ class UncompressTool(ToolWrapper):
         compressed_file_path = '/app' + input_params.get("compressed_file_path")
         if not os.path.exists(compressed_file_path):
             compressed_file_path = '..' + input_params.get("compressed_file_path")
+        if not os.path.exists(compressed_file_path):
+            compressed_file_path = input_params.get("compressed_file_path")
         if not os.path.exists(compressed_file_path):
             return {"error": f"The mentioned path was not found {compressed_file_path}."}
         extension = check_extension(compressed_file_path)
