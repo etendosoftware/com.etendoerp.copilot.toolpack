@@ -1,11 +1,7 @@
 import os
 from typing import Type, Dict
-
 from pydantic import Field, BaseModel
-
 from copilot.core.tool_wrapper import ToolWrapper
-from langchain_experimental.utilities import PythonREPL
-
 
 class CodeRunToolInput(BaseModel):
     command: str = Field(
@@ -21,6 +17,7 @@ class CodeRunTool(ToolWrapper):
     args_schema: Type[BaseModel] = CodeRunToolInput
 
     def run(self, input_params: Dict, *args, **kwargs):
+        from langchain_experimental.utilities import PythonREPL
         command = input_params.get('command')
 
         if not command:

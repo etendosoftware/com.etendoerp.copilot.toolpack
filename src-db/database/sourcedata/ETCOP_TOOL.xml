@@ -320,4 +320,35 @@
 }]]></JSON_STRUCTURE>
 <!--C7DECA931AAE42B986106ACBF11C4651--></ETCOP_TOOL>
 
+<!--F368A87C4E844C8A89AC04D0DA54CC66--><ETCOP_TOOL>
+<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <ETCOP_TOOL_ID><![CDATA[F368A87C4E844C8A89AC04D0DA54CC66]]></ETCOP_TOOL_ID>
+<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
+<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <AD_ORG_ID><![CDATA[0]]></AD_ORG_ID>
+<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
+<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <CREATED><![CDATA[2024-06-17 08:48:30.675]]></CREATED>
+<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <CREATEDBY><![CDATA[100]]></CREATEDBY>
+<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <UPDATED><![CDATA[2024-06-17 09:30:23.342]]></UPDATED>
+<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <UPDATEDBY><![CDATA[100]]></UPDATEDBY>
+<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <VALUE><![CDATA[CodeRunTool]]></VALUE>
+<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <NAME><![CDATA[Code Run Tool]]></NAME>
+<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <DESCRIPTION><![CDATA[A Python shell tool. Example of input: { "command": "print('Hello, World!')" }]]></DESCRIPTION>
+<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
+<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <JSON_STRUCTURE><![CDATA[{
+  "type": "function",
+  "function": {
+    "name": "CodeRunTool",
+    "description": "A Python shell tool. Example of input: { \"command\": \"print('Hello, World!')\" }",
+    "parameters": {
+      "type": "object",
+      "properties": {"command": {
+        "description": "A Python shell. Use this to execute python commands. Input should be a valid python command. If you want to see the output of a value, you should print it out with `print(...)`. \n        If execution fails, install needed libraries with `!pip install <library>`.",
+        "title": "Python Command",
+        "type": "string"
+      }}
+    }
+  }
+}]]></JSON_STRUCTURE>
+<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--F368A87C4E844C8A89AC04D0DA54CC66--></ETCOP_TOOL>
+
 </data>
