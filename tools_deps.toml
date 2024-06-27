@@ -2,4 +2,5 @@
 resend = "*"
 
 [CodeRunTool]
-langchain_experimental = "*"
+"langchain-experimental|langchain_experimental" = "*"
+

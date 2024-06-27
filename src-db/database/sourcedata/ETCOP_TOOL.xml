@@ -61,6 +61,37 @@
 }]]></JSON_STRUCTURE>
 <!--206B71E96BF145D480FE535BF7607CD4--></ETCOP_TOOL>
 
+<!--3D54E50D0F8C4EA1B88B4A831811CF42--><ETCOP_TOOL>
+<!--3D54E50D0F8C4EA1B88B4A831811CF42-->  <ETCOP_TOOL_ID><![CDATA[3D54E50D0F8C4EA1B88B4A831811CF42]]></ETCOP_TOOL_ID>
+<!--3D54E50D0F8C4EA1B88B4A831811CF42-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
+<!--3D54E50D0F8C4EA1B88B4A831811CF42-->  <AD_ORG_ID><![CDATA[0]]></AD_ORG_ID>
+<!--3D54E50D0F8C4EA1B88B4A831811CF42-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
+<!--3D54E50D0F8C4EA1B88B4A831811CF42-->  <CREATED><![CDATA[2024-06-17 20:20:24.603]]></CREATED>
+<!--3D54E50D0F8C4EA1B88B4A831811CF42-->  <CREATEDBY><![CDATA[100]]></CREATEDBY>
+<!--3D54E50D0F8C4EA1B88B4A831811CF42-->  <UPDATED><![CDATA[2024-06-17 20:32:33.763]]></UPDATED>
+<!--3D54E50D0F8C4EA1B88B4A831811CF42-->  <UPDATEDBY><![CDATA[100]]></UPDATEDBY>
+<!--3D54E50D0F8C4EA1B88B4A831811CF42-->  <VALUE><![CDATA[TavilySearchTool]]></VALUE>
+<!--3D54E50D0F8C4EA1B88B4A831811CF42-->  <NAME><![CDATA[Tavily Search Tool]]></NAME>
+<!--3D54E50D0F8C4EA1B88B4A831811CF42-->  <DESCRIPTION><![CDATA[Tool to perform searches in Tavily. Tavily is a search engine that allows you to search the internet for information. This tool will return the search results for the given query]]></DESCRIPTION>
+<!--3D54E50D0F8C4EA1B88B4A831811CF42-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
+<!--3D54E50D0F8C4EA1B88B4A831811CF42-->  <JSON_STRUCTURE><![CDATA[{
+  "type": "function",
+  "function": {
+    "name": "TavilySearchTool",
+    "description": "Tool to perform searches in Tavily. Tavily is a search engine that allows you to search the internet for information. This tool will return the search results for the given query",
+    "parameters": {
+      "type": "object",
+      "properties": {"query": {
+        "description": "Query to search in internet for.",
+        "title": "Query",
+        "type": "string"
+      }}
+    }
+  }
+}]]></JSON_STRUCTURE>
+<!--3D54E50D0F8C4EA1B88B4A831811CF42-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--3D54E50D0F8C4EA1B88B4A831811CF42--></ETCOP_TOOL>
+
 <!--438B5A5EB8B1405BABE39F9EEE34F44F--><ETCOP_TOOL>
 <!--438B5A5EB8B1405BABE39F9EEE34F44F-->  <ETCOP_TOOL_ID><![CDATA[438B5A5EB8B1405BABE39F9EEE34F44F]]></ETCOP_TOOL_ID>
 <!--438B5A5EB8B1405BABE39F9EEE34F44F-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
@@ -288,5 +319,36 @@
   }
 }]]></JSON_STRUCTURE>
 <!--C7DECA931AAE42B986106ACBF11C4651--></ETCOP_TOOL>
+
+<!--F368A87C4E844C8A89AC04D0DA54CC66--><ETCOP_TOOL>
+<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <ETCOP_TOOL_ID><![CDATA[F368A87C4E844C8A89AC04D0DA54CC66]]></ETCOP_TOOL_ID>
+<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
+<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <AD_ORG_ID><![CDATA[0]]></AD_ORG_ID>
+<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
+<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <CREATED><![CDATA[2024-06-17 08:48:30.675]]></CREATED>
+<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <CREATEDBY><![CDATA[100]]></CREATEDBY>
+<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <UPDATED><![CDATA[2024-06-17 09:30:23.342]]></UPDATED>
+<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <UPDATEDBY><![CDATA[100]]></UPDATEDBY>
+<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <VALUE><![CDATA[CodeRunTool]]></VALUE>
+<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <NAME><![CDATA[Code Run Tool]]></NAME>
+<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <DESCRIPTION><![CDATA[A Python shell tool. Example of input: { "command": "print('Hello, World!')" }]]></DESCRIPTION>
+<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
+<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <JSON_STRUCTURE><![CDATA[{
+  "type": "function",
+  "function": {
+    "name": "CodeRunTool",
+    "description": "A Python shell tool. Example of input: { \"command\": \"print('Hello, World!')\" }",
+    "parameters": {
+      "type": "object",
+      "properties": {"command": {
+        "description": "A Python shell. Use this to execute python commands. Input should be a valid python command. If you want to see the output of a value, you should print it out with `print(...)`. \n        If execution fails, install needed libraries with `!pip install <library>`.",
+        "title": "Python Command",
+        "type": "string"
+      }}
+    }
+  }
+}]]></JSON_STRUCTURE>
+<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--F368A87C4E844C8A89AC04D0DA54CC66--></ETCOP_TOOL>
 
 </data>
