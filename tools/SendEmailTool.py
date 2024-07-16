@@ -1,4 +1,5 @@
 import os
+from langsmith import traceable
 
 from copilot.core.tool_wrapper import ToolWrapper
 
@@ -14,6 +15,7 @@ class SendEmailTool(ToolWrapper):
     inputs = ['subject', 'mailto', 'html']
     outputs = ['message']
 
+    @traceable
     def run(self, input, *args, **kwargs):
         import json
 

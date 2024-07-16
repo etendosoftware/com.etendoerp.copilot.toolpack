@@ -1,4 +1,5 @@
 import os
+from langsmith import traceable
 
 from copilot.core.tool_wrapper import ToolWrapper
 
@@ -13,6 +14,7 @@ class PrintDirectoryTool(ToolWrapper):
     inputs = ['recursive', 'parent_doubledot_qty']
     outputs = ['message']
 
+    @traceable
     def run(self, inputs, *args, **kwargs):
         import json
 

@@ -1,4 +1,4 @@
-
+from langsmith import traceable
 from copilot.core.tool_wrapper import ToolWrapper
 
 
@@ -8,6 +8,7 @@ class FileDownloaderTool(ToolWrapper):
     inputs = ['file_path_or_url']
     outputs = ['temp_file_path']
 
+    @traceable
     def run(self, input, *args, **kwargs):
         import requests
         import os

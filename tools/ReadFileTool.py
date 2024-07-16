@@ -1,4 +1,5 @@
 import os
+from langsmith import traceable
 
 from copilot.core.tool_wrapper import ToolWrapper
 
@@ -10,6 +11,7 @@ class ReadFileTool(ToolWrapper):
     inputs = ['filepath']
     outputs = ['message']
 
+    @traceable
     def run(self, input, *args, **kwargs):
         import json
 

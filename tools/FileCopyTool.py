@@ -1,5 +1,6 @@
 import os
 
+from langsmith import traceable
 from copilot.core.tool_wrapper import ToolWrapper
 
 
@@ -9,6 +10,7 @@ class FileCopyTool(ToolWrapper):
     inputs = ['source_path', 'destination_directory']
     outputs = ['file_path']
 
+    @traceable
     def run(self, input, *args, **kwargs):
         import shutil
         import json

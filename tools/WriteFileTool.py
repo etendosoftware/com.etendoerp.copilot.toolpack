@@ -1,4 +1,5 @@
 import os
+from langsmith import traceable
 
 from copilot.core.tool_wrapper import ToolWrapper
 
@@ -16,6 +17,7 @@ class WriteFileTool(ToolWrapper):
     inputs = ['filepath', 'content','override', 'lineno']
     outputs = ['message']
 
+    @traceable
     def run(self, input, *args, **kwargs):
         import json
 
