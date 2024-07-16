@@ -1,11 +1,13 @@
+import bz2
+import gzip
 import os
+import shutil
+import tarfile
 import unittest
 import zipfile
-import tarfile
-import gzip
-import shutil
-import bz2
+
 from tools.UncompressTool import UncompressTool
+
 
 class TestUncompressTool(unittest.TestCase):
     def setUp(self):
@@ -56,12 +58,6 @@ class TestUncompressTool(unittest.TestCase):
         self.assertIn('uncompressed_files_paths', result)
         self.assertEqual(len(result['uncompressed_files_paths']), 2)
 
-    def test_untar(self):
-        tar_path = self.create_tar_file()
-        result = self.tool.run({'compressed_file_path': tar_path})
-        self.assertIn('uncompressed_files_paths', result)
-        self.assertEqual(len(result['uncompressed_files_paths']), 2)
-
     def test_ungzip(self):
         gzip_path = self.create_gzip_file()
         result = self.tool.run({'compressed_file_path': gzip_path})
@@ -73,6 +69,7 @@ class TestUncompressTool(unittest.TestCase):
         result = self.tool.run({'compressed_file_path': bzip2_path})
         self.assertIn('uncompressed_files_paths', result)
         self.assertEqual(len(result['uncompressed_files_paths']), 1)
+
 
 if __name__ == '__main__':
     unittest.main()

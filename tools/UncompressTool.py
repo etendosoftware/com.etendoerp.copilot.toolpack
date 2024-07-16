@@ -54,15 +54,6 @@ def unbzip2(compressed_file_path, extension=None):
     return [os.path.join(output_dir, f) for f in os.listdir(output_dir)]
 
 
-# Function to uncompress tar files
-def untar(compressed_file_path, extension=None):
-    import tarfile
-    output_dir = create_output_dir(compressed_file_path, extension)
-    with tarfile.open(compressed_file_path, 'r') as tar_ref:
-        tar_ref.extractall(output_dir)
-    return [os.path.join(output_dir, f) for f in os.listdir(output_dir)]
-
-
 # Function to uncompress zip files
 def unzip(compressed_file_path, extension=None):
     import zipfile
@@ -76,9 +67,6 @@ def unzip(compressed_file_path, extension=None):
 def build_extension_function_map():
     uncompress_functions = {
         ".zip": unzip,
-        ".tar": untar,
-        ".tar.gz": untar,
-        ".tar.bz2": untar,
         ".gz": ungzip,
         ".bz2": unbzip2,
         ".rar": unrar,

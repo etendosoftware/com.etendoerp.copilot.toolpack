@@ -9,7 +9,6 @@ gzip = "*"
 shutil = "*"
 rarfile = "*"
 bz2 = "*"
-tarfile = "*"
 zipfile = "*"
 
 
