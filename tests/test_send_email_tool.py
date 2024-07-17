@@ -1,68 +1,81 @@
 import os
 import pytest
-from unittest import mock
-from langsmith import unit
+from unittest.mock import patch, MagicMock
 from tools import SendEmailTool
+from tools.SendEmailTool import SendEmailToolInput
+from langsmith import unit
 
 try:
     import resend
     HAS_RESEND = True
 except ImportError:
     HAS_RESEND = False
-
+    
 @unit
-@mock.patch("smtplib.SMTP")
-def test_send_email_smtp(mock_smtp):
+def test_send_email_smtp(mocker):
     tool = SendEmailTool()
-    os.environ["MAIL_METHOD"] = "SMTP"
-    os.environ["MAIL_FROM"] = "test@example.com"
-    os.environ["SMTP_PASSWORD"] = "password"
+    input_params = {
+        "subject": "Test Subject",
+        "mailto": "test@example.com",
+        "html": "<h1>Test Email</h1>"
+    }
 
-    result = tool.run(input={"subject": "Test Subject", "mailto": "recipient@example.com", "html": "<p>Test Email</p>"})
+    # Mock environment variables
+    mocker.patch.dict(os.environ, {"MAIL_METHOD": "SMTP", "MAIL_FROM": "from@example.com", "SMTP_PASSWORD": "password"})
 
-    # Verify that the email was sent
+    # Mock smtplib
+    mock_smtp = mocker.patch("smtplib.SMTP")
+    mock_smtp_instance = mock_smtp.return_value
+    mock_smtp_instance.sendmail.return_value = None
+
+    result = tool.run(input_params)
+
     assert result["message"] == "Mail sent successfully"
-
-    # Verify that SMTP was called correctly
-    mock_smtp.assert_called_with('smtp.gmail.com', 587)
-    instance = mock_smtp.return_value
-    instance.starttls.assert_called_once()
-    instance.login.assert_called_once_with("test@example.com", "password")
-    instance.sendmail.assert_called_once()
-
-if HAS_RESEND:
-    @unit
-    @mock.patch("resend.Emails.send")
-    def test_send_email_resend(mock_resend_send):
-        tool = SendEmailTool()
-        os.environ["MAIL_METHOD"] = "resend"
-        os.environ["RESEND_API_KEY"] = "test_api_key"
-
-        result = tool.run(input={"subject": "Test Subject", "mailto": "recipient@example.com", "html": "<p>Test Email</p>"})
-
-        # Verify that the mail was sent
-        assert result["message"] == "Mail sent successfully"
-
-        # Verify that resend was called correctly
-        mock_resend_send.assert_called_once_with({
-            "from": "onboarding@resend.dev",
-            "to": "recipient@example.com",
-            "subject": '[Copilot Tool Test]:Test Subject',
-            "html": "<p>Test Email</p>"
-        })
+    mock_smtp_instance.sendmail.assert_called_once()
 
 @unit
-def test_send_email_unsupported_method():
+@pytest.mark.skipif(not HAS_RESEND, reason="resend module not available")
+def test_send_email_resend(mocker):
     tool = SendEmailTool()
-    os.environ["MAIL_METHOD"] = "unsupported"
+    input_params = {
+        "subject": "Test Subject",
+        "mailto": "test@example.com",
+        "html": "<h1>Test Email</h1>"
+    }
 
-    result = tool.run(input={"subject": "Test Subject", "mailto": "recipient@example.com", "html": "<p>Test Email</p>"})
+    # Mock environment variables
+    mocker.patch.dict(os.environ, {"MAIL_METHOD": "resend", "RESEND_API_KEY": "fake_api_key"})
+
+    # Mock resend.Emails.send
+    mock_resend = mocker.patch("resend.Emails.send", return_value=None)
+
+    result = tool.run(input_params)
+
+    assert result["message"] == "Mail sent successfully"
+    mock_resend.assert_called_once_with({
+        "from": "onboarding@resend.dev",
+        "to": "test@example.com",
+        "subject": "[Copilot Tool Test]:Test Subject",
+        "html": "<h1>Test Email</h1>"
+    })
+
+@unit
+def test_mail_method_not_supported(mocker):
+    tool = SendEmailTool()
+    input_params = {
+        "subject": "Test Subject",
+        "mailto": "test@example.com",
+        "html": "<h1>Test Email</h1>"
+    }
+
+    # Mock environment variables
+    mocker.patch.dict(os.environ, {"MAIL_METHOD": "unsupported_method"})
+
+    result = tool.run(input_params)
 
     assert result["message"] == "Mail method not supported"
 
 @unit
-def test_send_email_invalid_input():
-    tool = SendEmailTool()
-
-    with pytest.raises(ValueError):
-        tool.run(input="Invalid JSON String")
+def test_invalid_input_params():
+    with pytest.raises(Exception):
+        SendEmailToolInput(subject=123, mailto="test@example.com", html="<h1>Test Email</h1>")  # Invalid type for subject

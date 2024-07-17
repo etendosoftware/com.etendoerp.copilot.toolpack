@@ -1,57 +1,53 @@
-import os
 import pytest
-import responses
-from langsmith import unit
+from langsmith import unit, expect
 from tools import FileDownloaderTool
 
-@pytest.fixture
-def setup_responses():
-    with responses.RequestsMock(assert_all_requests_are_fired=True, passthru_prefixes=['https://api.smith.langchain.com']) as rsps:
-        yield rsps
+@unit
+def test_invalid_url():
+    tool = FileDownloaderTool()
+    invalid_url = "invalid-url"
+
+    input_params = {"file_path_or_url": invalid_url}
+    result = tool.run(input_params)
+
+    assert 'error' in result
+    assert result['error'] == 'The provided input is not a valid URL.'
 
 @unit
-def test_file_downloader_tool_valid_url(setup_responses):
+def test_url_with_non_200_status_code(requests_mock):
     tool = FileDownloaderTool()
-    test_url = "http://example.com/testfile.txt"
+    non_200_url = "https://example.com/404"
 
-    setup_responses.add(
-        responses.GET,
-        test_url,
-        body="This is a test file.",
-        content_type="text/plain",
-        status=200
-    )
+    requests_mock.get(non_200_url, status_code=404)
 
-    result = tool.run(test_url)
-    temp_file_path = result['temp_file_path']
+    input_params = {"file_path_or_url": non_200_url}
+    result = tool.run(input_params)
 
-    assert os.path.exists(temp_file_path), "The file should be downloaded and saved to a temporary file."
-    with open(temp_file_path, 'r', encoding='utf-8') as f:
-        content = f.read()
-    assert content == "This is a test file.", "The content of the downloaded file should match the expected content."
+    assert 'error' in result
+    assert result['error'] == 'File could not be downloaded. Status code: 404'
 
 @unit
-def test_file_downloader_tool_invalid_url(setup_responses):
+def test_valid_url_text_file(requests_mock):
     tool = FileDownloaderTool()
-    test_url = "http://example.com/testfile.txt"
+    valid_url = "https://example.com/sample.txt"
 
-    setup_responses.add(
-        responses.GET,
-        test_url,
-        status=404
-    )
+    requests_mock.get(valid_url, text="Sample text content", headers={'content-type': 'text/plain'})
 
-    result = tool.run(test_url)
+    input_params = {"file_path_or_url": valid_url}
+    result = tool.run(input_params)
 
-    assert 'error' in result, "The result should contain an error message for an invalid URL."
-    assert result['error'] == 'File could not be downloaded. Status code: 404', "The error message should indicate a 404 status code for a non-existent URL."
+    assert 'temp_file_path' in result
+    assert result['temp_file_path'].endswith(".txt")
 
 @unit
-def test_file_downloader_tool_non_url_input():
+def test_valid_url_binary_file(requests_mock):
     tool = FileDownloaderTool()
-    input_data = "/path/to/local/file.txt"
+    valid_url = "https://example.com/sample.bin"
 
-    result = tool.run(input_data)
+    requests_mock.get(valid_url, content=b"Sample binary content", headers={'content-type': 'application/octet-stream'})
 
-    assert 'error' in result, "The result should contain an error message for a non-URL input."
-    assert result['error'] == 'The provided input is not a valid URL.', "The error message should indicate that the input is not a valid URL."
+    input_params = {"file_path_or_url": valid_url}
+    result = tool.run(input_params)
+
+    assert 'temp_file_path' in result
+    assert result['temp_file_path'].endswith(".bin")

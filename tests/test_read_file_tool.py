@@ -1,38 +1,56 @@
-import os
 import pytest
-from langsmith import unit
+from unittest.mock import patch, mock_open
 from tools import ReadFileTool
-
-
-@pytest.fixture
-def setup_test_directory(tmp_path):
-    file_path = tmp_path / "test_file.txt"
-    file_path.write_text("This is a test file.")
-    return file_path
-
+from tools.ReadFileTool import ReadFileToolInput
+from langsmith import unit
 
 @unit
-def test_read_existing_file(setup_test_directory):
+def test_read_existing_file(mocker):
     tool = ReadFileTool()
-    file_path = str(setup_test_directory)
-    result = tool.run(input={"filepath": file_path})
+    valid_file_path = "/path/to/test.txt"
+    file_content = "This is a test file content."
 
-    assert result["message"] == "This is a test file."
+    # Mock open
+    mocker.patch("builtins.open", mock_open(read_data=file_content))
+    # Mock os.path.exists to return True
+    mocker.patch("os.path.exists", return_value=True)
 
+    input_params = {"filepath": valid_file_path}
+    result = tool.run(input_params)
+
+    assert result["message"] == file_content
 
 @unit
-def test_read_existing_file_from_string_path(setup_test_directory):
+def test_file_does_not_exist(mocker):
     tool = ReadFileTool()
-    file_path = str(setup_test_directory)
-    result = tool.run(input=file_path)
+    invalid_file_path = "/path/to/nonexistent.txt"
 
-    assert result["message"] == "This is a test file."
+    # Mock open to raise FileNotFoundError
+    mocker.patch("builtins.open", side_effect=FileNotFoundError)
+    # Mock os.path.exists to return False
+    mocker.patch("os.path.exists", return_value=False)
 
-
-@unit
-def test_read_non_existing_file():
-    tool = ReadFileTool()
-    non_existing_file_path = "/non/existing/file/path.txt"
-
+    input_params = {"filepath": invalid_file_path}
     with pytest.raises(FileNotFoundError):
-        tool.run(input={"filepath": non_existing_file_path})
+        tool.run(input_params)
+
+@unit
+def test_read_empty_file(mocker):
+    tool = ReadFileTool()
+    empty_file_path = "/path/to/empty.txt"
+    file_content = ""
+
+    # Mock open
+    mocker.patch("builtins.open", mock_open(read_data=file_content))
+    # Mock os.path.exists to return True
+    mocker.patch("os.path.exists", return_value=True)
+
+    input_params = {"filepath": empty_file_path}
+    result = tool.run(input_params)
+
+    assert result["message"] == file_content
+
+@unit
+def test_invalid_input_params():
+    with pytest.raises(Exception):
+        ReadFileToolInput(filepath=123)  # Invalid type for filepath

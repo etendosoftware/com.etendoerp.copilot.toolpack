@@ -1,72 +1,51 @@
-import os
 import pytest
-from langsmith import unit
+from unittest.mock import patch, MagicMock
 from tools import PrintDirectoryTool
-
-@pytest.fixture
-def setup_test_directory(tmp_path):
-    d = tmp_path / "test_dir"
-    d.mkdir()
-
-    sub_dir = d / "sub_dir"
-    sub_dir.mkdir()
-
-    file1 = d / "file1.txt"
-    file1.write_text("content of file1")
-
-    file2 = sub_dir / "file2.txt"
-    file2.write_text("content of file2")
-
-    return d
+from tools.PrintDirectoryTool import PrintDirToolInput
+from langsmith import unit
 
 @unit
-def test_print_directory_non_recursive(setup_test_directory):
-    test_dir = setup_test_directory
-    os.chdir(test_dir)
-
+def test_directory_exists(mocker):
     tool = PrintDirectoryTool()
-    result = tool.run(inputs={"recursive": False, "parent_doubledot_qty": 0})
+    valid_dir_path = "/path/to/valid_dir"
 
-    # Ensure both files and directories from the specified directory are listed
-    assert len(result["message"]) == 2
-    assert any("file1.txt" in os.path.basename(entry) for entry in result["message"])
-    assert any("sub_dir" in os.path.basename(entry) for entry in result["message"])
+    # Mock os.path.exists and os.listdir
+    mocker.patch("os.path.exists", return_value=True)
+    mocker.patch("os.listdir", return_value=["file1.txt", "file2.txt", "subdir"])
+
+    input_params = {"path": valid_dir_path, "recursive": False}
+    result = tool.run(input_params)
+
+    expected_output = f"/path/to/valid_dir/file1.txt\n/path/to/valid_dir/file2.txt\n/path/to/valid_dir/subdir\n"
+    assert result["message"] == expected_output
 
 @unit
-def test_print_directory_recursive(setup_test_directory):
-    test_dir = setup_test_directory
-    os.chdir(test_dir)
-
+def test_directory_does_not_exist():
     tool = PrintDirectoryTool()
-    result = tool.run(inputs={"recursive": True, "parent_doubledot_qty": 0})
+    invalid_dir_path = "/path/to/nonexistent_dir"
 
-    # Ensure all files including subdirectories are listed
-    assert len(result["message"]) == 2
-    assert any("file1.txt" in path for path in result["message"])
-    assert any("file2.txt" in path for path in result["message"])
+    # Mock os.path.exists
+    with patch("os.path.exists", return_value=False):
+        input_params = {"path": invalid_dir_path, "recursive": False}
+        result = tool.run(input_params)
+        assert "error" in result
+        assert result["error"] == f"Path does not exist: {invalid_dir_path}"
 
 @unit
-def test_print_parent_directory(setup_test_directory):
-    parent_dir = setup_test_directory
-    os.chdir(parent_dir / "sub_dir")
-
+def test_empty_directory(mocker):
     tool = PrintDirectoryTool()
-    result = tool.run(inputs={"recursive": False, "parent_doubledot_qty": 1})
+    empty_dir_path = "/path/to/empty_dir"
 
-    # Ensure both files and directories from the parent directory are listed
-    assert len(result["message"]) == 2
-    assert any("file1.txt" in os.path.basename(entry) for entry in result["message"])
-    assert any("sub_dir" in os.path.basename(entry) for entry in result["message"])
+    # Mock os.path.exists and os.listdir
+    mocker.patch("os.path.exists", return_value=True)
+    mocker.patch("os.listdir", return_value=[])
+
+    input_params = {"path": empty_dir_path, "recursive": False}
+    result = tool.run(input_params)
+
+    assert result["message"] == ""
 
 @unit
-def test_print_parent_directory_recursive(setup_test_directory):
-    parent_dir = setup_test_directory
-    os.chdir(parent_dir / "sub_dir")
-
-    tool = PrintDirectoryTool()
-    result = tool.run(inputs={"recursive": True, "parent_doubledot_qty": 1})
-
-    # Ensure all files including subdirectories of the parent directory are listed
-    assert len(result["message"]) == 2
-    assert any("file1.txt" in path for path in result["message"])
-    assert any("file2.txt" in path for path in result["message"])
+def test_invalid_input_params():
+    with pytest.raises(Exception):
+        PrintDirToolInput(path=123, recursive="true")  # Invalid types
