@@ -1,6 +1,7 @@
 import os
 from typing import Type, Dict
 
+from langsmith import traceable
 from pydantic import Field, BaseModel
 
 from copilot.core.tool_wrapper import ToolWrapper
@@ -24,6 +25,7 @@ class FileCopyTool(ToolWrapper):
                    '"/home/user/file.txt", "destination_directory": "/home/user/destination_directory" }')
     args_schema: Type[BaseModel] = FileCopyToolInput
 
+    @traceable
     def run(self, input_params: Dict, *args, **kwargs):
         import shutil
 

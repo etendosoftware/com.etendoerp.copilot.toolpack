@@ -1,36 +1,69 @@
-import unittest
-from typing import Dict
-from unittest.mock import patch
 import pytest
+from langsmith import unit, expect
 
-from tools.TavilySearchTool import TavilySearchTool
+from tools import TavilySearchTool
 
-class TestTavilySearchTool(unittest.TestCase):
-    def setUp(self):
-        self.tool = TavilySearchTool()
-    @pytest.fixture(autouse=True)
-    def set_env(self, monkeypatch):
-        monkeypatch.setenv('TAVILY_API_KEY', 'test_key')
 
-    @patch('tools.TavilySearchTool.TavilySearchResults.invoke')
-    def test_search_success(self, mock_invoke):
-        mock_invoke.return_value = {"results": ["result1", "result2"]}
+@pytest.fixture
+def valid_query():
+    return {"query": "What is the capital of Spain?"}
 
-        query : Dict = {"query": "test query"}
-        expected_output = {"results": ["result1", "result2"]}
-        output = self.tool.run(query)
-        self.assertEqual(expected_output, output)
 
-    @patch('tools.TavilySearchTool.TavilySearchResults.invoke')
-    def test_search_failure(self, mock_invoke ):
+@pytest.fixture
+def invalid_query():
+    return {"query": ""}
 
-        mock_invoke.return_value = {"error": "Failed to fetch data from Tavily"}
 
-        query:Dict = {"query": "test query"}
-        expected_output = {"error": "Failed to fetch data from Tavily"}
+@pytest.fixture
+def setup_tool():
+    return TavilySearchTool()
 
-        output = self.tool.run(query)
-        self.assertEqual(expected_output, output)
 
-if __name__ == '__main__':
-    unittest.main()
+# Valid query test case
+@unit
+def test_valid_query(setup_tool, valid_query):
+    result = setup_tool.run(valid_query)
+    assert isinstance(result, list)  # Ajustado para lista
+    assert all(isinstance(item, dict) for item in result)  # Cada item debe ser un diccionario
+    expect.value(result[0]['content']).to_contain("Madrid")
+
+
+# Invalid query test case
+@unit
+def test_invalid_query(setup_tool, invalid_query):
+    try:
+        result = setup_tool.run(invalid_query)
+    except Exception as e:
+        result = str(e)
+    expect.value(result).to_contain("Bad Request")
+
+
+# Empty query test case
+@unit
+def test_empty_query(setup_tool):
+    query = {"query": ""}
+    try:
+        result = setup_tool.run(query)
+    except Exception as e:
+        result = str(e)
+    expect.value(result).to_contain("Bad Request")
+
+
+# Test for embedding distance
+@unit
+def test_partial_search_result(setup_tool, valid_query):
+    result = setup_tool.run(valid_query)
+    expect.embedding_distance(
+        prediction=str(result[0]['content']),
+        reference="capital of Spain"
+    ).to_be_less_than(0.5)
+
+
+# Test for edit distance
+@unit
+def test_edit_distance(setup_tool, valid_query):
+    result = setup_tool.run(valid_query)
+    expect.edit_distance(
+        prediction=str(result[0]['content']),
+        reference="Madrid"
+    ).to_be_less_than(5)

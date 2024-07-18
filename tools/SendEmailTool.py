@@ -1,3 +1,4 @@
+from langsmith import traceable
 import os
 from typing import Type, Dict
 
@@ -19,6 +20,7 @@ class SendEmailTool(ToolWrapper):
     ''')
     args_schema: Type[BaseModel] = SendEmailToolInput
 
+    @traceable
     def run(self, input_params: Dict, *args, **kwargs):
         try:
             import json

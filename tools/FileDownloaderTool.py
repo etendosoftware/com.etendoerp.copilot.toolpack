@@ -1,6 +1,7 @@
 from typing import Type, Dict
 
 from pydantic import BaseModel, Field
+from langsmith import traceable
 
 from copilot.core.tool_wrapper import ToolWrapper
 
@@ -18,6 +19,7 @@ class FileDownloaderTool(ToolWrapper):
         'This tool receives a URL , downloads the file to a temporary directory if its a URL in a temp file. It returns the path to the temporary file.')
     args_schema: Type[BaseModel] = FileDownloaderToolInput
 
+    @traceable
     def run(self, input_params: Dict, *args, **kwargs):
         import requests
         import os
