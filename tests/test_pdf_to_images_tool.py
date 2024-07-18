@@ -1,9 +1,12 @@
+from unittest.mock import patch, MagicMock
+
 import pytest
 from langsmith import unit
-from unittest.mock import patch, MagicMock
 from pydantic import ValidationError
+
 from tools import PdfToImagesTool
 from tools.PdfToImagesTool import PdfToImagesToolInput
+
 
 @unit
 def test_file_does_not_exist():
@@ -11,9 +14,10 @@ def test_file_does_not_exist():
     invalid_pdf_path = "/path/to/nonexistent.pdf"
 
     input_params = {"path": invalid_pdf_path}
-    
+
     with pytest.raises(Exception, match=r".*doesn't exist.*"):
         tool.run(input_params)
+
 
 @unit
 def test_not_a_pdf_file(requests_mock):
@@ -28,6 +32,7 @@ def test_not_a_pdf_file(requests_mock):
 
         with pytest.raises(Exception, match=r".*Invalid PDF.*"):
             tool.run(input_params)
+
 
 @unit
 def test_pdf_with_no_pages(requests_mock):
@@ -45,6 +50,7 @@ def test_pdf_with_no_pages(requests_mock):
         result = tool.run(input_params)
 
         assert result == []
+
 
 @unit
 def test_invalid_input_params():

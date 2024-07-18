@@ -1,8 +1,11 @@
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import patch, MagicMock
+from langsmith import unit
+
 from tools import PrintDirectoryTool
 from tools.PrintDirectoryTool import PrintDirToolInput
-from langsmith import unit
+
 
 @unit
 def test_directory_exists(mocker):
@@ -19,6 +22,7 @@ def test_directory_exists(mocker):
     expected_output = f"/path/to/valid_dir/file1.txt\n/path/to/valid_dir/file2.txt\n/path/to/valid_dir/subdir\n"
     assert result["message"] == expected_output
 
+
 @unit
 def test_directory_does_not_exist():
     tool = PrintDirectoryTool()
@@ -30,6 +34,7 @@ def test_directory_does_not_exist():
         result = tool.run(input_params)
         assert "error" in result
         assert result["error"] == f"Path does not exist: {invalid_dir_path}"
+
 
 @unit
 def test_empty_directory(mocker):
@@ -44,6 +49,7 @@ def test_empty_directory(mocker):
     result = tool.run(input_params)
 
     assert result["message"] == ""
+
 
 @unit
 def test_invalid_input_params():
