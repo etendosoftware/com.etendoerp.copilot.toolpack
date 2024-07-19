@@ -1,25 +1,41 @@
+from typing import Type, Dict
+
+from pydantic import BaseModel, Field
+from langsmith import traceable
 
 from copilot.core.tool_wrapper import ToolWrapper
 
 
+class FileDownloaderToolInput(BaseModel):
+    file_path_or_url: str = Field(
+        title="File path or URL",
+        description='''The file path or URL to download.'''
+    )
+
+
 class FileDownloaderTool(ToolWrapper):
     name = 'FileDownloaderTool'
-    description = ('This tool receives a URL , downloads the file to a temporary directory if its a URL in a temp file. It returns the path to the temporary file.')
-    inputs = ['file_path_or_url']
-    outputs = ['temp_file_path']
+    description = (
+        'This tool receives a URL , downloads the file to a temporary directory if its a URL in a temp file. It returns the path to the temporary file.')
+    args_schema: Type[BaseModel] = FileDownloaderToolInput
 
-    def run(self, input, *args, **kwargs):
+    @traceable
+    def run(self, input_params: Dict, *args, **kwargs):
         import requests
         import os
         import tempfile
         import shutil
         from urllib.parse import urlparse
 
-        file_path_or_url = input
+        file_path_or_url = input_params.get('file_path_or_url')
 
-        if file_path_or_url.startswith('http://') or file_path_or_url.startswith('https://'):
+        if not file_path_or_url.startswith('http://') and not file_path_or_url.startswith('https://'):
+            return {'error': 'The provided input is not a valid URL.'}
+        else:
             response = requests.get(file_path_or_url, stream=True)
-            if response.status_code == 200:
+            if response.status_code != 200:
+                return {'error': 'File could not be downloaded. Status code: {}'.format(response.status_code)}
+            else:
                 # Intentar extraer el nombre del archivo del URL
                 parsed_url = urlparse(file_path_or_url)
                 file_name = os.path.basename(parsed_url.path)
@@ -43,7 +59,3 @@ class FileDownloaderTool(ToolWrapper):
                     with temp_file as f:
                         shutil.copyfileobj(response.raw, f)
                 return {'temp_file_path': temp_file.name}
-            else:
-                return {'error': 'File could not be downloaded. Status code: {}'.format(response.status_code)}
-        else:
-            return {'error': 'The provided input is not a valid URL.'}

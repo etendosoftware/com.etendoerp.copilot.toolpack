@@ -1,6 +1,29 @@
+from langsmith import traceable
 import os
+from typing import Type, Dict
+
+from pydantic import Field, BaseModel
 
 from copilot.core.tool_wrapper import ToolWrapper
+
+
+class WriteFileToolInput(BaseModel):
+    filepath: str = Field(
+        title="Filepath",
+        description='''The path of the file to write.'''
+    )
+    content: str = Field(
+        title="Content",
+        description='''The content of the file to write.'''
+    )
+    override: bool = Field(
+        default=True,
+        description='''If true, the tool will override the file.'''
+    )
+    lineno: int = Field(
+        default=-1,
+        description='''The line number where to write the content.'''
+    )
 
 
 class WriteFileTool(ToolWrapper):
@@ -10,27 +33,19 @@ class WriteFileTool(ToolWrapper):
         'The "filepath" parameter is the path of the file to write.'
         'The "content" parameter is the content of the file to write.'
         'The "override" parameter is a boolean that indicates if the tool needs to override the file or not. '
-        'The "lineno" parameter is the line number where to write the content. If the line number is not specified, the content will be appended to the end of the file.'
+        'The "lineno" parameter is the line number where to write the content. If the line number is not specified, '
+        'the content will be appended to the end of the file.'
         'The tool will return the content of the file. '
         'Example of input: { "filepath": "/tmp/test.txt", "content": "Hello world", "override": true, "lineno": 1 }')
-    inputs = ['filepath', 'content','override', 'lineno']
-    outputs = ['message']
+    args_schema: Type[BaseModel] = WriteFileToolInput
 
-    def run(self, input, *args, **kwargs):
-        import json
-
+    @traceable
+    def run(self, input_params: Dict, *args, **kwargs):
         # if json is a string, convert it to json, else, use the json
-        if isinstance(input, str):
-            try:
-                json = json.loads(input)
-            except:
-                return {
-                    "message": "Invalid input. Example of input: { \"filepath\": \"/tmp/test.txt\", \"content\": \"Hello world\", \"lineno\": 1 }"}
-        else:
-            json = input
-        p_filepath = json.get('filepath')
-        p_content = json.get('content')
-        p_lineno = json.get('lineno', -1)
+
+        p_filepath = input_params.get('filepath')
+        p_content = input_params.get('content')
+        p_lineno = input_params.get('lineno', -1)
         backup = False
         # if the file doesn't exist, create it
         file_content = ''
@@ -44,7 +59,7 @@ class WriteFileTool(ToolWrapper):
             shutil.copyfile(p_filepath, p_filepath + '.bak' + str(time.time()))
             backup = True
             # write the content
-        if json.get('override', False):
+        if not input_params.get('override', True):
             if p_lineno == -1:
                 file_content += p_content
             else:
@@ -53,7 +68,10 @@ class WriteFileTool(ToolWrapper):
                 file_content = '\n'.join(lines)
             open(p_filepath, 'w').write(file_content)
         else:
-            # if overrides, clean the file and write the content
-            open(p_filepath, 'a').write(p_content)
+            #  delete the file
+            os.remove(p_filepath)
+            # write the content
+            open(p_filepath, 'w').write(p_content)
+
         msg = "File %s written successfully, backup: %s" % (p_filepath, backup)
         return {"message": msg}

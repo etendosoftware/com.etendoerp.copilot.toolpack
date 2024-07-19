@@ -1,4 +1,5 @@
 import os
+from langsmith import traceable
 
 from copilot.core.tool_wrapper import ToolWrapper
 
@@ -6,9 +7,9 @@ from copilot.core.tool_wrapper import ToolWrapper
 class TemplateTool(ToolWrapper):
     name = 'TemplateTool'
     description = ('This is a file template for creating new tools.' )
-    inputs = ['input1', 'input2']
     outputs = ['message']
 
+    @traceable
     def run(self, input, *args, **kwargs):
         import json
 

@@ -1,3 +1,21 @@
 [SendEmailTool]
 resend = "*"
 
+[CodeRunTool]
+"langchain-experimental|langchain_experimental" = "*"
+
+[UncompressTool]
+gzip = "*"
+shutil = "*"
+rarfile = "*"
+bz2 = "*"
+zipfile = "*"
+
+[TavilySearchTool]
+rapidfuzz = "*"
+requests-mock= "*"
+pytest-mock = "*"
+
+
+
+
