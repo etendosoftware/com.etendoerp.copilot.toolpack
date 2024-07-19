@@ -1,52 +1,56 @@
-import org.gradle.internal.resource.transport.http.HttpRequestException
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
-
 /**
- *   This file was generated automatically by the 'createModuleBuild' task.
- *   Created at: 2023-10-11T18:30:24.227165Z.
- *
- *   WARNING: Do not put your credentials directly in this file.
- *
- repositories {
- mavenCentral()
- maven {
- url "https://maven.pkg.github.com/etendosoftware/com.etendoerp.platform.extensions"
- }
- }
- */
+*   This file was generated automatically by the 'createModuleBuild' task.
+*   Created at: 2024-07-19T13:48:20.436367Z.
+*
+*   WARNING: Do not put your credentials directly in this file.
+*
+*/
 
 group          = "com.etendoerp"
-version        = "0.1.0"
-description    = "Etendo Copilot is a platform for developers that optimises development time with AI-enabled tools to reduce development time and improve development quality."
+version        = "1.0.0"
+description    = "Specialized tool set for Etendo Copilot"
 ext.artifact   = "copilot.toolpack"
-ext.repository = "https://maven.pkg.github.com/etendosoftware/com.etendoerp.platform.extensions"
+ext.repository = "https://maven.pkg.github.com/etendosoftware/com.etendoerp.copilot.extensions"
 
 configurations {
     moduleDependencyContainer
 }
 
-publishing {
-    publications {
-        "com.etendoerp.copilot"(MavenPublication) {
-            from components.java
-            groupId = group
-            artifactId = artifact
-            version = version
-        }
-    }
-    repositories {
-        maven {
-            url "https://maven.pkg.github.com/etendosoftware/com.etendoerp.platform.extensions"
+sourceSets {
+    main {
+        resources {
+            srcDirs("etendo-resources")
         }
     }
 }
 
+publishing {
+    publications {
+        "com.etendoerp.copilot.toolpack"(MavenPublication) {
+            from components.java
+            groupId    = group
+            artifactId = artifact
+            version    = version
+        }
+    }
+    repositories {
+        maven {
+            url "https://maven.pkg.github.com/etendosoftware/com.etendoerp.copilot.extensions"
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        url "https://maven.pkg.github.com/etendosoftware/com.etendoerp.copilot.extensions"
+    }
+}
 
 /**
- * Declare Java dependencies using 'implementation'
- * Ex: implementation "com.sun.mail:javax.mail:1.6.2"
- dependencies {
- }
- */
+* Declare Java dependencies using 'implementation'
+* Ex: implementation "com.sun.mail:javax.mail:1.6.2"
+*/
+dependencies {
+    implementation('com.etendoerp:copilot:1.4.3')
+}
