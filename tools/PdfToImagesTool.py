@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from pydantic import BaseModel, Field
+from langchain_core.pydantic_v1 import Field, BaseModel
 from typing import List, Type
 from copilot.core.tool_wrapper import ToolWrapper
 from copilot.core.utils import copilot_debug

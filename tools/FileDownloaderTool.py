@@ -1,6 +1,6 @@
 from typing import Type, Dict
 
-from pydantic import BaseModel, Field
+from langchain_core.pydantic_v1 import Field, BaseModel
 from langsmith import traceable
 
 from copilot.core.tool_wrapper import ToolWrapper
