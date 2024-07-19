@@ -1,3 +1,4 @@
+from langsmith import traceable
 import os
 from typing import Dict, Type
 
@@ -20,6 +21,7 @@ class ReadFileTool(ToolWrapper):
                    'Example of input: { "filepath": "/tmp/test.txt" }')
     args_schema: Type[BaseModel] = ReadFileToolInput
 
+    @traceable
     def run(self, input_params: Dict, *args, **kwargs):
         # if json is a string, convert it to json, else, use the json
         p_filepath = input_params.get('filepath')

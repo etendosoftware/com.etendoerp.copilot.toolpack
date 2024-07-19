@@ -1,35 +1,58 @@
-import unittest
-from pathlib import Path
-from tools.PdfToImagesTool import PdfToImagesTool
+from unittest.mock import patch, MagicMock
 
-class TestPdfToImagesTool(unittest.TestCase):
-    def setUp(self):
-        self.tool = PdfToImagesTool()
+import pytest
+from langsmith import unit
+from pydantic import ValidationError
 
-    def test_convert_pdf_to_images(self):
-        # Create a sample PDF file for testing
-        from fpdf import FPDF
-        pdf = FPDF()
-        pdf.add_page()
-        pdf.set_font("Arial", size=12)
-        pdf.cell(200, 10, txt="Sample PDF Page 1", ln=True, align='C')
-        pdf.add_page()
-        pdf.cell(200, 10, txt="Sample PDF Page 2", ln=True, align='C')
-        test_pdf_path = "/tmp/sample_test.pdf"
-        pdf.output(test_pdf_path)
+from tools import PdfToImagesTool
+from tools.PdfToImagesTool import PdfToImagesToolInput
 
-        # Run the tool
-        input_params = {"path": test_pdf_path}
-        images = self.tool.run(input_params)
 
-        # Check if the output is a list of images
-        self.assertIsInstance(images, list)
-        self.assertEqual(len(images), 2)
-        for img in images:
-            self.assertTrue(hasattr(img, 'save'))  # PIL Image objects have a 'save' method
+@unit
+def test_file_does_not_exist():
+    tool = PdfToImagesTool()
+    invalid_pdf_path = "/path/to/nonexistent.pdf"
 
-        # Clean up
-        Path(test_pdf_path).unlink()
+    input_params = {"path": invalid_pdf_path}
 
-if __name__ == '__main__':
-    unittest.main()
+    with pytest.raises(Exception, match=r".*doesn't exist.*"):
+        tool.run(input_params)
+
+
+@unit
+def test_not_a_pdf_file(requests_mock):
+    tool = PdfToImagesTool()
+    not_a_pdf_path = "/path/to/not_a_pdf.txt"
+
+    # Mock for Path().is_file()
+    with patch("pathlib.Path.is_file", return_value=True):
+        patch('pypdfium2.PdfDocument', side_effect=ValueError("Invalid PDF")).start()
+
+        input_params = {"path": not_a_pdf_path}
+
+        with pytest.raises(Exception, match=r".*Invalid PDF.*"):
+            tool.run(input_params)
+
+
+@unit
+def test_pdf_with_no_pages(requests_mock):
+    tool = PdfToImagesTool()
+    empty_pdf_path = "/path/to/empty.pdf"
+
+    mock_pdf = MagicMock()
+
+    # Mock for Path().is_file()
+    with patch("pathlib.Path.is_file", return_value=True):
+        patch('pypdfium2.PdfDocument', return_value=mock_pdf).start()
+        mock_pdf.__len__.return_value = 0
+
+        input_params = {"path": empty_pdf_path}
+        result = tool.run(input_params)
+
+        assert result == []
+
+
+@unit
+def test_invalid_input_params():
+    with pytest.raises(ValidationError):
+        PdfToImagesToolInput(path=123)  # Invalid type for path

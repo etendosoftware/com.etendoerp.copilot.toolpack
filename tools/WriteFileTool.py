@@ -1,3 +1,4 @@
+from langsmith import traceable
 import os
 from typing import Type, Dict
 
@@ -38,6 +39,7 @@ class WriteFileTool(ToolWrapper):
         'Example of input: { "filepath": "/tmp/test.txt", "content": "Hello world", "override": true, "lineno": 1 }')
     args_schema: Type[BaseModel] = WriteFileToolInput
 
+    @traceable
     def run(self, input_params: Dict, *args, **kwargs):
         # if json is a string, convert it to json, else, use the json
 

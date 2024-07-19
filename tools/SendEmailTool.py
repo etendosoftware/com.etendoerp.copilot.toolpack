@@ -1,8 +1,9 @@
+from langsmith import traceable
 import os
 from typing import Type, Dict
 
 from copilot.core.tool_wrapper import ToolWrapper
-from pydantic import BaseModel, Field
+from langchain_core.pydantic_v1 import Field, BaseModel
 
 
 class SendEmailToolInput(BaseModel):
@@ -19,6 +20,7 @@ class SendEmailTool(ToolWrapper):
     ''')
     args_schema: Type[BaseModel] = SendEmailToolInput
 
+    @traceable
     def run(self, input_params: Dict, *args, **kwargs):
         try:
             import json

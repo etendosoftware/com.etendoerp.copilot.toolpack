@@ -1,5 +1,5 @@
 from copilot.core.tool_wrapper import ToolWrapper
-from pydantic import BaseModel, Field
+from langchain_core.pydantic_v1 import Field, BaseModel
 from typing import Type, Dict
 import os
 from langchain_community.tools.tavily_search import TavilySearchResults

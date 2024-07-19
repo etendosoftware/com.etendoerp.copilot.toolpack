@@ -11,4 +11,11 @@ rarfile = "*"
 bz2 = "*"
 zipfile = "*"
 
+[TavilySearchTool]
+rapidfuzz = "*"
+requests-mock= "*"
+pytest-mock = "*"
+
+
+
 
