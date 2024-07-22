@@ -81,7 +81,7 @@
     "description": "Tool to perform searches in Tavily. Tavily is a search engine that allows you to search the internet for information. This tool will return the search results for the given query",
     "parameters": {
       "type": "object",
-      "properties": {"query": {
+      "properties": {"searchquery": {
         "description": "Query to search in internet for.",
         "title": "Query",
         "type": "string"

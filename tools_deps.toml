@@ -5,11 +5,8 @@ resend = "*"
 "langchain-experimental|langchain_experimental" = "*"
 
 [UncompressTool]
-gzip = "*"
-shutil = "*"
 rarfile = "*"
-bz2 = "*"
-zipfile = "*"
+bz2file = "*"
 
 [TavilySearchTool]
 rapidfuzz = "*"
