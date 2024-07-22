@@ -5,7 +5,7 @@ import os
 from langchain_community.tools.tavily_search import TavilySearchResults
 
 class TavilySearchInput(BaseModel):
-    query: str = Field(description="Query to search in internet for.")
+    searchquery: str = Field(description="Query to search in internet for.")
 
 class TavilySearchTool(ToolWrapper):
     """A tool to perform searches in Tavily.
@@ -23,7 +23,7 @@ class TavilySearchTool(ToolWrapper):
         super().__init__()
 
     def run(self, input_params: Dict, *args, **kwargs) -> dict:
-        query = input_params.get("query")
+        query = input_params.get("searchquery")
         os.environ["TAVILY_API_KEY"] = os.getenv("TAVILY_API_KEY", "")
         tool = TavilySearchResults()
         return tool.invoke({"query": query})
