@@ -1,13 +1,22 @@
-import os
+from typing import Type
+
 from langsmith import traceable
 
+from copilot.core.tool_input import ToolInput, ToolField
 from copilot.core.tool_wrapper import ToolWrapper
+
+
+class TemplateInput(ToolInput):
+    input1: str = ToolField(description="The first input")
+    input2: str = ToolField(description="The second input")
 
 
 class TemplateTool(ToolWrapper):
     name = 'TemplateTool'
-    description = ('This is a file template for creating new tools.' )
+    description = ('This is a file template for creating new tools.')
     outputs = ['message']
+
+    args_schema: Type[ToolInput] = TemplateInput
 
     @traceable
     def run(self, input, *args, **kwargs):
@@ -20,6 +29,7 @@ class TemplateTool(ToolWrapper):
             json = input
         p_input1 = json.get('input1')
         p_input2 = json.get('input2')
-        # code here
+        # code here, for example:
+        response = f"Input1: {p_input1}, Input2: {p_input2}"
 
-        return {"message": "Mail sent successfully" }
+        return {"message": response}
