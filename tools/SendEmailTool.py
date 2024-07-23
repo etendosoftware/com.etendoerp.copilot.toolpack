@@ -1,15 +1,16 @@
-from langsmith import traceable
 import os
 from typing import Type, Dict
 
+from langsmith import traceable
+
+from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import ToolWrapper
-from langchain_core.pydantic_v1 import Field, BaseModel
 
 
-class SendEmailToolInput(BaseModel):
-    subject: str = Field(description="Subject of the email")
-    mailto: str = Field(description="Email address of the recipient")
-    html: str = Field(description="HTML content of the email")
+class SendEmailToolInput(ToolInput):
+    subject: str = ToolField(description="Subject of the email")
+    mailto: str = ToolField(description="Email address of the recipient")
+    html: str = ToolField(description="HTML content of the email")
 
 
 class SendEmailTool(ToolWrapper):
@@ -18,7 +19,7 @@ class SendEmailTool(ToolWrapper):
     It is very important not to omit information, because the email is sent to another person and
     the information must be clear and concise, and not summarized.
     ''')
-    args_schema: Type[BaseModel] = SendEmailToolInput
+    args_schema: Type[ToolInput] = SendEmailToolInput
 
     @traceable
     def run(self, input_params: Dict, *args, **kwargs):

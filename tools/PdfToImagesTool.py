@@ -1,17 +1,19 @@
-import os
 from pathlib import Path
-from langchain_core.pydantic_v1 import Field, BaseModel
-from typing import List, Type
+from typing import Type
+
+from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import ToolWrapper
 from copilot.core.utils import copilot_debug
 
-class PdfToImagesToolInput(BaseModel):
-    path: str = Field(description="Path of the PDF to be converted")
+
+class PdfToImagesToolInput(ToolInput):
+    path: str = ToolField(description="Path of the PDF to be converted")
+
 
 class PdfToImagesTool(ToolWrapper):
     name = "PdfToImagesTool"
     description = "Converts a PDF file into an array of images, each representing a page of the PDF."
-    args_schema: Type[BaseModel] = PdfToImagesToolInput
+    args_schema: Type[ToolInput] = PdfToImagesToolInput
 
     @staticmethod
     def convert_to_pil_img(bitmap):

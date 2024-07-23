@@ -1,13 +1,13 @@
 from typing import Type, Dict
 
-from langchain_core.pydantic_v1 import Field, BaseModel
 from langsmith import traceable
 
+from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import ToolWrapper
 
 
-class FileDownloaderToolInput(BaseModel):
-    file_path_or_url: str = Field(
+class FileDownloaderToolInput(ToolInput):
+    file_path_or_url: str = ToolField(
         title="File path or URL",
         description='''The file path or URL to download.'''
     )
@@ -17,7 +17,7 @@ class FileDownloaderTool(ToolWrapper):
     name = 'FileDownloaderTool'
     description = (
         'This tool receives a URL , downloads the file to a temporary directory if its a URL in a temp file. It returns the path to the temporary file.')
-    args_schema: Type[BaseModel] = FileDownloaderToolInput
+    args_schema: Type[ToolInput] = FileDownloaderToolInput
 
     @traceable
     def run(self, input_params: Dict, *args, **kwargs):

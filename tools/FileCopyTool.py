@@ -2,17 +2,17 @@ import os
 from typing import Type, Dict
 
 from langsmith import traceable
-from pydantic import Field, BaseModel
 
+from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import ToolWrapper
 
 
-class FileCopyToolInput(BaseModel):
-    source_path: str = Field(
+class FileCopyToolInput(ToolInput):
+    source_path: str = ToolField(
         title="Source Path",
         description='''The path of the file to read.'''
     )
-    destination_directory: str = Field(
+    destination_directory: str = ToolField(
         title="Destination Directory",
         description='''The path of the directory to copy the file.'''
     )
@@ -23,7 +23,7 @@ class FileCopyTool(ToolWrapper):
     description = ('This tool receives two paths, one of a file and another of a directory, copies the file to the '
                    'directory. Returns the path of the copied file. Example of input: { "source_path": '
                    '"/home/user/file.txt", "destination_directory": "/home/user/destination_directory" }')
-    args_schema: Type[BaseModel] = FileCopyToolInput
+    args_schema: Type[ToolInput] = FileCopyToolInput
 
     @traceable
     def run(self, input_params: Dict, *args, **kwargs):

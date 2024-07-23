@@ -1,14 +1,13 @@
 import os
 from typing import Type, Dict
 
-from langchain_core.pydantic_v1 import Field, BaseModel
-
+from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import ToolWrapper
 
 
 # Input model for the UncompressTool
-class UncompressToolInput(BaseModel):
-    compressed_file_path: str = Field(description="Path to the compressed file")
+class UncompressToolInput(ToolInput):
+    compressed_file_path: str = ToolField(description="Path to the compressed file")
 
 
 # Example : Compressed file path: /app/data/test.zip -> files inside the zip file will be extracted to /app/data/test/
@@ -86,7 +85,7 @@ class UncompressTool(ToolWrapper):
     name = "UncompressTool"
     description = ("This tool uncompresses a file and returns the path list of the uncompressed files."
                    "It receives a path to a compressed file and uncompresses it. ")
-    args_schema: Type[BaseModel] = UncompressToolInput
+    args_schema: Type[ToolInput] = UncompressToolInput
 
     # Main function to run the tool
     def run(self, input_params: Dict, *args, **kwargs):

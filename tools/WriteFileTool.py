@@ -1,26 +1,26 @@
-from langsmith import traceable
 import os
 from typing import Type, Dict
 
-from pydantic import Field, BaseModel
+from langsmith import traceable
 
+from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import ToolWrapper
 
 
-class WriteFileToolInput(BaseModel):
-    filepath: str = Field(
+class WriteFileToolInput(ToolInput):
+    filepath: str = ToolField(
         title="Filepath",
         description='''The path of the file to write.'''
     )
-    content: str = Field(
+    content: str = ToolField(
         title="Content",
         description='''The content of the file to write.'''
     )
-    override: bool = Field(
+    override: bool = ToolField(
         default=True,
         description='''If true, the tool will override the file.'''
     )
-    lineno: int = Field(
+    lineno: int = ToolField(
         default=-1,
         description='''The line number where to write the content.'''
     )
@@ -37,7 +37,7 @@ class WriteFileTool(ToolWrapper):
         'the content will be appended to the end of the file.'
         'The tool will return the content of the file. '
         'Example of input: { "filepath": "/tmp/test.txt", "content": "Hello world", "override": true, "lineno": 1 }')
-    args_schema: Type[BaseModel] = WriteFileToolInput
+    args_schema: Type[ToolInput] = WriteFileToolInput
 
     @traceable
     def run(self, input_params: Dict, *args, **kwargs):

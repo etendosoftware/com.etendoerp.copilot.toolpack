@@ -1,18 +1,19 @@
-from langsmith import traceable
 import os
 from typing import Type, Dict
 
-from langchain_core.pydantic_v1 import Field, BaseModel
+from langsmith import traceable
 
+from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import ToolWrapper
 
 
-class PrintDirToolInput(BaseModel):
-    path: str = Field(description="The path of the directory to print")
-    recursive: bool = Field(
+class PrintDirToolInput(ToolInput):
+    path: str = ToolField(description="The path of the directory to print")
+    recursive: bool = ToolField(
         default=False,
         description="If true, the tool will print the files and directories recursively.",
     )
+
 
 @traceable
 def get_directory_contents(path, recursive=False):
@@ -36,11 +37,10 @@ def get_directory_contents(path, recursive=False):
 class PrintDirectoryTool(ToolWrapper):
     name = 'PrintDirectoryTool'
     description = ''' This tool prints the files and directories of the a directory.'''
-    args_schema: Type[BaseModel] = PrintDirToolInput
+    args_schema: Type[ToolInput] = PrintDirToolInput
 
     @traceable
     def run(self, input_params: Dict, *args, **kwargs):
-
         p_recursive = input_params.get('recursive')
         p_path = input_params.get('path')
 

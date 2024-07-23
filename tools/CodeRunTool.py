@@ -1,10 +1,11 @@
-import os
 from typing import Type, Dict
-from pydantic import Field, BaseModel
+
+from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import ToolWrapper
 
-class CodeRunToolInput(BaseModel):
-    command: str = Field(
+
+class CodeRunToolInput(ToolInput):
+    command: str = ToolField(
         title="Python Command",
         description='''A Python shell. Use this to execute python commands. Input should be a valid python command. If you want to see the output of a value, you should print it out with `print(...)`. 
         If execution fails, install needed libraries with `!pip install <library>`.'''
@@ -14,7 +15,7 @@ class CodeRunToolInput(BaseModel):
 class CodeRunTool(ToolWrapper):
     name = 'CodeRunTool'
     description = ('A Python shell tool. Example of input: { "command": "print(\'Hello, World!\')" }')
-    args_schema: Type[BaseModel] = CodeRunToolInput
+    args_schema: Type[ToolInput] = CodeRunToolInput
 
     def run(self, input_params: Dict, *args, **kwargs):
         from langchain_experimental.utilities import PythonREPL
