@@ -27,7 +27,7 @@ class TavilySearchTool(ToolWrapper):
         super().__init__()
 
     def run(self, input_params: Dict, *args, **kwargs) -> dict:
-        query = input_params.get("query")
+        query = input_params.get("searchquery")
         os.environ["TAVILY_API_KEY"] = os.getenv("TAVILY_API_KEY", "")
         tool = TavilySearchResults()
         return tool.invoke({"query": query})
