@@ -1,11 +1,15 @@
-from copilot.core.tool_wrapper import ToolWrapper
-from pydantic import BaseModel, Field
-from typing import Type, Dict
 import os
+from typing import Type, Dict
+
 from langchain_community.tools.tavily_search import TavilySearchResults
 
-class TavilySearchInput(BaseModel):
-    searchquery: str = Field(description="Query to search in internet for.")
+from copilot.core.tool_input import ToolField, ToolInput
+from copilot.core.tool_wrapper import ToolWrapper
+
+
+class TavilySearchInput(ToolInput):
+    query: str = ToolField(description="Query to search in internet for.")
+
 
 class TavilySearchTool(ToolWrapper):
     """A tool to perform searches in Tavily.
@@ -16,7 +20,7 @@ class TavilySearchTool(ToolWrapper):
 
     name = "TavilySearchTool"
     description = "Tool to perform searches in Tavily. Tavily is a search engine that allows you to search the internet for information. This tool will return the search results for the given query"
-    args_schema: Type[BaseModel] = TavilySearchInput
+    args_schema: Type[ToolInput] = TavilySearchInput
     return_direct: bool = False
 
     def __init__(self):
