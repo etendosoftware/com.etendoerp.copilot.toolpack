@@ -2,7 +2,7 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 from langsmith import unit
-from pydantic import ValidationError
+from langchain_core.pydantic_v1 import ValidationError
 
 from tools import PdfToImagesTool
 from tools.PdfToImagesTool import PdfToImagesToolInput
@@ -55,4 +55,4 @@ def test_pdf_with_no_pages(requests_mock):
 @unit
 def test_invalid_input_params():
     with pytest.raises(ValidationError):
-        PdfToImagesToolInput(path=123)  # Invalid type for path
+        PdfToImagesToolInput(fieldx=123)
