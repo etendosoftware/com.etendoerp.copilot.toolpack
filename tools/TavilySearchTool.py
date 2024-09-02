@@ -19,7 +19,8 @@ class TavilySearchTool(ToolWrapper):
     """
 
     name = "TavilySearchTool"
-    description = "Tool to perform searches in Tavily. Tavily is a search engine that allows you to search the internet for information. This tool will return the search results for the given query"
+    description = ("Tool to perform searches in Tavily. Tavily is a search engine that allows you to search the "
+                   "internet for information. This tool will return the search results for the given query")
     args_schema: Type[ToolInput] = TavilySearchInput
     return_direct: bool = False
 

@@ -13,6 +13,10 @@ rapidfuzz = "*"
 requests-mock= "*"
 pytest-mock = "*"
 
+[PdfToImagesTool]
+pypdfium2 = '*'
+
+
 
 
 

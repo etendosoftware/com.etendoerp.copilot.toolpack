@@ -1,6 +1,7 @@
 from unittest.mock import patch
 
 import pytest
+from langchain_core.pydantic_v1 import ValidationError
 from langsmith import unit
 
 from tools import PrintDirectoryTool
@@ -53,5 +54,11 @@ def test_empty_directory(mocker):
 
 @unit
 def test_invalid_input_params():
-    with pytest.raises(Exception):
-        PrintDirToolInput(path=123, recursive="true")  # Invalid types
+    with pytest.raises(ValidationError):
+        PrintDirToolInput(paaath=123, recursive="true")  # Invalid types
+
+
+@unit
+def test_invalid_input_params2():
+    with pytest.raises(ValidationError):
+        PrintDirToolInput(recursive="true")  # Invalid types

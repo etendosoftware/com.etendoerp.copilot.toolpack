@@ -1,15 +1,21 @@
 import pytest
 from langsmith import unit
+
 from tools import TemplateTool
+
+TWO_INPUT_RESPONSE = "Input1: value1, Input2: value2"
+
 
 @unit
 def test_template_tool_with_json_input():
     tool = TemplateTool()
     input_data = {"input1": "value1", "input2": "value2"}
-    
+
     result = tool.run(input=input_data)
 
-    assert result["message"] == "Mail sent successfully"
+    expected_message = TWO_INPUT_RESPONSE
+    assert result["message"] == expected_message
+
 
 @unit
 def test_template_tool_with_string_input():
@@ -18,7 +24,9 @@ def test_template_tool_with_string_input():
 
     result = tool.run(input=input_data)
 
-    assert result["message"] == "Mail sent successfully"
+    expected_message = TWO_INPUT_RESPONSE
+    assert result["message"] == expected_message
+
 
 @unit
 def test_template_tool_with_missing_input():
@@ -27,7 +35,9 @@ def test_template_tool_with_missing_input():
 
     result = tool.run(input=input_data)
 
-    assert result["message"] == "Mail sent successfully"
+    expected_message = "Input1: value1, Input2: None"
+    assert result["message"] == expected_message
+
 
 @unit
 def test_template_tool_with_extra_parameters():
@@ -36,7 +46,9 @@ def test_template_tool_with_extra_parameters():
 
     result = tool.run(input=input_data)
 
-    assert result["message"] == "Mail sent successfully"
+    expected_message = TWO_INPUT_RESPONSE
+    assert result["message"] == expected_message
+
 
 @unit
 def test_template_tool_with_invalid_json():
