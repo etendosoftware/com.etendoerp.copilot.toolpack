@@ -47,6 +47,10 @@ class WriteFileTool(ToolWrapper):
         p_content = input_params.get('content')
         p_lineno = input_params.get('lineno', -1)
         backup = False
+        # check that the folder exists
+        folder = os.path.dirname(p_filepath)
+        if not os.path.exists(folder):
+            os.makedirs(folder)
         # if the file doesn't exist, create it
         file_content = ''
         if not os.path.exists(p_filepath):
