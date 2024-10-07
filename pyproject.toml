@@ -1,9 +1,9 @@
 [tool.poetry]
-name = "com.etendoerp.copilot.toolpack"
+name = "etendo-copilot-core"
 version = "0.1.0"
 description = ""
 authors = ["sebastianbarrozo <sebastian.barrozo@etendo.software>"]
-packages = [{include = "toolpack"}]
+packages = [{include = "copilot"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -88,3 +88,4 @@ ignore = [
 
 [tool.ruff.isort]
 known-third-party = ["copilot"]
+
