@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "com.etendoerp.copilot.toolpack"
-version = "1.2.1"
+version = "0.1.0"
 description = ""
 authors = ["sebastianbarrozo <sebastian.barrozo@etendo.software>"]
 packages = [{include = "toolpack"}]
