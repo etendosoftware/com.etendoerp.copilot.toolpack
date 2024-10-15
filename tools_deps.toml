@@ -16,6 +16,8 @@ pytest-mock = "*"
 [PdfToImagesTool]
 pypdfium2 = '*'
 
+[OpenAPIPetStoreTool]
+requests = "*"
 
 
 
