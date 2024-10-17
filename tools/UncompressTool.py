@@ -20,6 +20,15 @@ def create_output_dir(compressed_file_path, extension=None):
     return output_dir
 
 
+# Function to list all files and subfiles recursively
+def get_all_files_recursive(directory):
+    file_paths = []
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            file_paths.append(os.path.join(root, file))
+    return file_paths
+
+
 # Function to uncompress gzip files
 def ungzip(compressed_file_path, extension=None):
     import gzip
@@ -29,7 +38,7 @@ def ungzip(compressed_file_path, extension=None):
     with gzip.open(compressed_file_path, 'rb') as f_in:
         with open(output_file_path, 'wb') as f_out:
             shutil.copyfileobj(f_in, f_out)
-    return [os.path.join(output_dir, f) for f in os.listdir(output_dir)]
+    return get_all_files_recursive(output_dir)
 
 
 # Function to uncompress rar files
@@ -38,7 +47,7 @@ def unrar(compressed_file_path, extension=None):
     output_dir = create_output_dir(compressed_file_path, extension)
     with rarfile.RarFile(compressed_file_path) as rf:
         rf.extractall(output_dir)
-    return [os.path.join(output_dir, f) for f in os.listdir(output_dir)]
+    return get_all_files_recursive(output_dir)
 
 
 # Function to uncompress bzip2 files
@@ -50,7 +59,7 @@ def unbzip2(compressed_file_path, extension=None):
     with bz2.open(compressed_file_path, 'rb') as f_in:
         with open(output_file_path, 'wb') as f_out:
             shutil.copyfileobj(f_in, f_out)
-    return [os.path.join(output_dir, f) for f in os.listdir(output_dir)]
+    return get_all_files_recursive(output_dir)
 
 
 # Function to uncompress zip files
@@ -59,7 +68,7 @@ def unzip(compressed_file_path, extension=None):
     output_dir = create_output_dir(compressed_file_path, extension)
     with zipfile.ZipFile(compressed_file_path, 'r') as zip_ref:
         zip_ref.extractall(output_dir)
-    return [os.path.join(output_dir, f) for f in os.listdir(output_dir)]
+    return get_all_files_recursive(output_dir)
 
 
 # Function to build a map of file extensions to their corresponding uncompress functions
