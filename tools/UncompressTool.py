@@ -20,12 +20,15 @@ def create_output_dir(compressed_file_path, extension=None):
     return output_dir
 
 
-# Function to list all files and subfiles recursively
+# Function to list all files and subfiles recursively, ignoring __MACOSX folder
 def get_all_files_recursive(directory):
     file_paths = []
     for root, dirs, files in os.walk(directory):
+        # Ignore "__MACOSX" folders
+        dirs[:] = [d for d in dirs if d != "__MACOSX"]
         for file in files:
-            file_paths.append(os.path.join(root, file))
+            if "__MACOSX" not in root:
+                file_paths.append(os.path.join(root, file))
     return file_paths
 
 
