@@ -18,11 +18,23 @@ import org.openbravo.erpCommon.utility.OBMessageUtils;
 
 import com.etendoerp.webhookevents.services.BaseWebhookService;
 
+/**
+ * The ExecSQL class handles the execution of SQL queries received through a webhook and returns the result in JSON format.
+ * It also provides optional security checks on the query before execution.
+ */
 public class ExecSQL extends BaseWebhookService {
 
   private static final Logger log = LogManager.getLogger();
   public static final String DO_SECURITY_CHECK = "doSecurityCheck";
 
+  /**
+   * Executes an SQL query received in the parameter map and stores the result in the response map.
+   * The result is returned in JSON format, including the executed query, columns, and data.
+   * If a security check is requested, it modifies the query to include security constraints.
+   *
+   * @param parameter    a map of parameters, including the SQL query and security flag
+   * @param responseVars a map to store the response, including query result and potential errors
+   */
   @Override
   public void get(Map<String, String> parameter, Map<String, String> responseVars) {
     logIfDebug("Executing process");
@@ -37,18 +49,13 @@ public class ExecSQL extends BaseWebhookService {
 
     logIfDebug(query);
     if (StringUtils.equalsIgnoreCase(security, "true")) {
-
       query = parseSecurity(query);
-      String format = String.format("Query after security check: %s", query);
-      logIfDebug(format);
+      logIfDebug(String.format("Query after security check: %s", query));
     }
     try (PreparedStatement statement = conn.prepareStatement(query)) {
-
-
       ResultSet result = statement.executeQuery();
-      //we will return the result as a JSON object
 
-      //get the columns names
+      // Prepare the response as a JSON object
       int columnCount = result.getMetaData().getColumnCount();
       JSONArray columns = new JSONArray();
       for (int i = 1; i <= columnCount; i++) {
@@ -70,15 +77,26 @@ public class ExecSQL extends BaseWebhookService {
     }
   }
 
+  /**
+   * Logs a message in debug mode if debug logging is enabled.
+   *
+   * @param s the message to be logged
+   */
   private void logIfDebug(String s) {
     if (log.isDebugEnabled()) {
       log.debug(s);
     }
   }
 
+  /**
+   * Adds security checks to the provided query by replacing any security check placeholders
+   * with the actual conditions to enforce user access control.
+   *
+   * @param query the SQL query to be checked and modified
+   * @return the query with the security check applied
+   * @throws OBException if no security check is found in the query
+   */
   private String parseSecurity(String query) {
-    // the query will have portions where said "doSecurityCheck(x)" and we will replace them with the actual security check,
-    //being x the alias of the table. this can be more than one time for different aliases
     if (StringUtils.containsIgnoreCase(query, "checkReadableEntities(t)")) {
       String tables = OBContext.getOBContext().getEntityAccessChecker().getWritableEntities().stream().map(
           e -> String.format("'%s'", e.getTableId())
@@ -98,22 +116,27 @@ public class ExecSQL extends BaseWebhookService {
     return query;
   }
 
+  /**
+   * Returns the security condition based on the user's readable clients and organizations.
+   *
+   * @param alias the alias of the table for which the security check applies
+   * @return the SQL condition to enforce security for the specified alias
+   */
   private String getSecurityCheck(String alias) {
-    //this is a dummy implementation, in a real implementation we would check the security of the user
     String[] cliList = OBContext.getOBContext().getReadableClients();
     String[] orgList = OBContext.getOBContext().getReadableOrganizations();
     String cliSet = getJoin(cliList);
     String orgSet = getJoin(orgList);
-    return String.format(" %s.ad_client_id IN (%s) AND %s.ad_org_id IN (%s) ", alias,
-        cliSet, alias, orgSet);
-
-
+    return String.format(" %s.ad_client_id IN (%s) AND %s.ad_org_id IN (%s) ", alias, cliSet, alias, orgSet);
   }
 
+  /**
+   * Joins an array of strings into a single string, with each element quoted and separated by commas.
+   *
+   * @param strList the array of strings to join
+   * @return a comma-separated string of quoted elements
+   */
   private String getJoin(String[] strList) {
     return Arrays.stream(strList).map(s -> String.format("'%s'", s)).collect(Collectors.joining(","));
   }
-
 }
-
-
