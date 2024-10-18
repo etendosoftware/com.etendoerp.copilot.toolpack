@@ -19,6 +19,7 @@ pypdfium2 = '*'
 [OpenAPIPetStoreTool]
 requests = "*"
 
-
+[DBQueryGenerator]
+"requests" = "*"
 
 

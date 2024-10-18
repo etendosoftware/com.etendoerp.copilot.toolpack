@@ -87,7 +87,7 @@ public class ExecSQL extends BaseWebhookService {
       return StringUtils.replace(query, "checkReadableEntities(t)", whereCheck);
     }
     if (!StringUtils.contains(query, DO_SECURITY_CHECK)) {
-      throw new OBException(OBMessageUtils.messageBD("ETCOPDB_NoSecurityCheck"));
+      throw new OBException(OBMessageUtils.messageBD("ETCOPTP_NoSecurityCheck"));
     }
     while (StringUtils.contains(query, DO_SECURITY_CHECK)) {
       int start = StringUtils.indexOf(query, DO_SECURITY_CHECK);
