@@ -1,3 +1,4 @@
+import os
 from typing import Dict, Type
 
 
@@ -12,6 +13,26 @@ class CodbarToolInput(ToolInput):
     )
 
 
+def decode(p_filepath):
+    from pyzbar.pyzbar import decode
+    from PIL import Image
+
+    if not os.path.exists(p_filepath):
+        print(f"File not found: {p_filepath}")
+        return None
+
+    img = Image.open(p_filepath)
+    try:
+        decoded_list = decode(img)
+        if len(decoded_list) == 0:
+            return None
+        print(type(decoded_list[0]))
+        return [d.data.decode('utf-8') for d in decoded_list]
+    except Exception as e:
+        print(f"The CodbarTool failed to decode the image. Check requirements in Etendo documentation. Error: {e}")
+        return None
+
+
 class CodbarTool(ToolWrapper):
     name = 'CodbarTool'
     description = (
@@ -23,26 +44,14 @@ class CodbarTool(ToolWrapper):
     def run(self, input_params: Dict, *args, **kwargs):
         p_filepath = input_params.get('filepath')
 
+        if not isinstance(p_filepath, list):
+            raise ValueError("Expected 'filepath' to be a list of strings.")
+
         barcodes = []
         for file in p_filepath:
-            barcode_number = self.decode(file)
+            barcode_number = decode(file)
             if barcode_number:
                 [barcodes.append(code) for code in barcode_number]
                 print(f"Barcode Number: {barcode_number}")
 
         return {"message": barcodes}
-
-    def decode(self, p_filepath):
-        from pyzbar.pyzbar import decode
-        from PIL import Image
-
-        img = Image.open(p_filepath)
-        try:
-            decoded_list = decode(img)
-            if len(decoded_list) == 0:
-                return None
-            print(type(decoded_list[0]))
-            return [d.data.decode('utf-8') for d in decoded_list]
-        except Exception as e:
-            print(f"The CodbarTool failed to decode the image. Check requirements in Etendo documentation. Error: {e}")
-            return None

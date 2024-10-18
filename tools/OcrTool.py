@@ -65,7 +65,7 @@ def get_image_payload_item(img_b64, mime):
 @traceable
 def checktype(ocr_image_url, mime):
     if mime not in SUPPORTED_MIME_FORMATS.values():
-        raise Exception(
+        raise ValueError(
             f"File {ocr_image_url} invalid file format with mime {mime}. Supported formats: {SUPPORTED_MIME_FORMATS}.")
 
 
@@ -91,7 +91,7 @@ def get_file_path(input_params):
     if not Path(ocr_image_url).exists():
         ocr_image_url = rel_path
     if not Path(ocr_image_url).is_file():
-        raise Exception(f"Filename {ocr_image_url} doesn't exist")
+        raise FileNotFoundError(f"Filename {ocr_image_url} doesn't exist")
     return ocr_image_url
 
 
