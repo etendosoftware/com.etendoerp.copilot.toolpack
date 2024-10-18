@@ -6,6 +6,8 @@ from langsmith import unit
 
 from tools.OcrTool import convert_to_pil_img, get_image_payload_item, checktype, read_mime, OcrTool
 
+IMAGE_JPEG = IMAGE_JPEG
+
 
 class TestOcrTool(unittest.TestCase):
     @unit
@@ -27,7 +29,7 @@ class TestOcrTool(unittest.TestCase):
     @unit
     def test_get_image_payload_item(self):
         img_b64 = 'sample_base64'
-        mime = 'image/jpeg'
+        mime = IMAGE_JPEG
         expected_output = {
             "type": "image_url",
             "image_url": {
@@ -39,7 +41,7 @@ class TestOcrTool(unittest.TestCase):
 
     @unit
     def test_checktype(self):
-        valid_mimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf']
+        valid_mimes = [IMAGE_JPEG, 'image/png', 'image/webp', 'image/gif', 'application/pdf']
         for mime in valid_mimes:
             try:
                 checktype('dummy_url', mime)
@@ -53,8 +55,8 @@ class TestOcrTool(unittest.TestCase):
     @patch('filetype.guess')
     @unit
     def test_read_mime(self, mock_guess):
-        mock_guess.return_value = MagicMock(mime='image/jpeg')
-        self.assertEqual(read_mime('dummy_path'), 'image/jpeg')
+        mock_guess.return_value = MagicMock(mime=IMAGE_JPEG)
+        self.assertEqual(read_mime('dummy_path'), IMAGE_JPEG)
         mock_guess.return_value = None
         self.assertIsNone(read_mime('dummy_path'))
 
@@ -67,12 +69,12 @@ class TestOcrTool(unittest.TestCase):
         input_params = {'path': '/tmp/img_ocr_test.png', 'question': 'Describe the image and its content in detail.'}
         result = ocr_tool.run(input_params)
 
-        self.assertTrue(result is not None)
+        self.assertIsNot(result, None)
         self.assertTrue(isinstance(result, str) or (isinstance(result, dict) and (
                 "message" in result or "content" in result)))
         result_str = str(result)
         for keyword in ['etendo', 'welcome', 'wiki']:
-            self.assertTrue(keyword in result_str.lower())
+            self.assertIn(keyword, result_str.lower())
 
 
 if __name__ == '__main__':
