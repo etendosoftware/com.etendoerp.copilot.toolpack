@@ -6,7 +6,7 @@ from langsmith import unit
 
 from tools.OcrTool import convert_to_pil_img, get_image_payload_item, checktype, read_mime, OcrTool
 
-IMAGE_JPEG = IMAGE_JPEG
+IMAGE_JPEG = 'image/jpeg'
 
 
 class TestOcrTool(unittest.TestCase):
