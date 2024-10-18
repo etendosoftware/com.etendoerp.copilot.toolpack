@@ -60,7 +60,7 @@ def exec_sql(query: str, security_check: bool = True):
                          " the Entity."
                 }
     access_token = extra_info.get('auth').get('ETENDO_TOKEN')
-    url = utils.read_optional_env_var("ETENDO_HOST", "http://host.docker.internal:8080/etendo")
+    url = utils.read_optional_env_var("ETENDO_HOST", "https://host.docker.internal:8080/etendo")
     headers = {}
     if access_token:
         headers["Authorization"] = f"Bearer {access_token}"

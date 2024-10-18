@@ -98,6 +98,26 @@ def get_first_param(endpoint):
     return first_query_param
 
 
+def endpoint_not_none(endpoint, method):
+    if endpoint is not None and endpoint.startswith('GET') or endpoint.startswith('POST'):
+        prefix = endpoint.split(' ')[0]
+        endpoint = endpoint.split(' ')[1]
+        # and if the method is not defined, set it to the method in the endpoint
+        copilot_debug(f"Method = '{method}'")
+        if method is None or method == '':
+            method = prefix
+            # uppercase the method
+            method = method.upper()
+    return endpoint, method
+
+
+def token_not_none(headers, token):
+    if token:
+        if token == 'ETENDO_TOKEN':
+            token = etendo_utils.get_etendo_token()
+        headers["Authorization"] = f"Bearer {token}"
+
+
 class APICallTool(ToolWrapper):
     name = "APICallTool"
     description = ''' This Tool, executes a call to an API, and returns the response. This tool requires the following parameters:
@@ -120,21 +140,10 @@ class APICallTool(ToolWrapper):
         query_params = input_params.get('query_params')
         token = input_params.get('token')
         headers = {}
-        if token:
-            if token == 'ETENDO_TOKEN':
-                token = etendo_utils.get_etendo_token()
-            headers["Authorization"] = f"Bearer {token}"
+        token_not_none(headers, token)
         try:
             # if url starts with the method, for example GET https://api.example.com/endpoint
-            if endpoint is not None and endpoint.startswith('GET') or endpoint.startswith('POST'):
-                prefix = endpoint.split(' ')[0]
-                endpoint = endpoint.split(' ')[1]
-                # and if the method is not defined, set it to the method in the endpoint
-                copilot_debug(f"Method = '{method}'")
-                if method is None or method == '':
-                    method = prefix
-                    # uppercase the method
-                    method = method.upper()
+            endpoint, method = endpoint_not_none(endpoint, method)
 
             # if query_params is not empty, add it to the endpoint
             if query_params:
