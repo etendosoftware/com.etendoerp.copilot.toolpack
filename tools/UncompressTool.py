@@ -27,8 +27,7 @@ def get_all_files_recursive(directory):
         # Ignore "__MACOSX" folders
         dirs[:] = [d for d in dirs if d != "__MACOSX"]
         for file in files:
-            if "__MACOSX" not in root:
-                file_paths.append(os.path.join(root, file))
+            file_paths.append(os.path.join(root, file))
     return file_paths
 
 
