@@ -16,6 +16,7 @@ configurations {
     moduleDependencyContainer
 }
 
+
 sourceSets {
     main {
         resources {
