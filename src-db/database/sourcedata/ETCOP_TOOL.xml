@@ -53,6 +53,52 @@
 }]]></JSON_STRUCTURE>
 <!--206B71E96BF145D480FE535BF7607CD4--></ETCOP_TOOL>
 
+<!--323699133032489B834B154DA66BCB29--><ETCOP_TOOL>
+<!--323699133032489B834B154DA66BCB29-->  <ETCOP_TOOL_ID><![CDATA[323699133032489B834B154DA66BCB29]]></ETCOP_TOOL_ID>
+<!--323699133032489B834B154DA66BCB29-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
+<!--323699133032489B834B154DA66BCB29-->  <AD_ORG_ID><![CDATA[0]]></AD_ORG_ID>
+<!--323699133032489B834B154DA66BCB29-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
+<!--323699133032489B834B154DA66BCB29-->  <VALUE><![CDATA[DBQueryGenerator]]></VALUE>
+<!--323699133032489B834B154DA66BCB29-->  <NAME><![CDATA[Database Query Generator tool]]></NAME>
+<!--323699133032489B834B154DA66BCB29-->  <DESCRIPTION><![CDATA[ 
+        This tool can connect to a database and read data from it.
+        This tool has three modes: SHOW_TABLES, SHOW_COLUMNS, EXECUTE_QUERY.
+        The mode SHOW_TABLES will return the tables of the database, with the table name, name and description.
+        The mode SHOW_COLUMNS will return the columns of a table, with the column name, name and description. This mode 
+        needs the parameter p_data with the table name.
+        The mode EXECUTE_QUERY will execute the query that the user wants. This mode needs the parameter p_data with 
+        the query.
+        ]]></DESCRIPTION>
+<!--323699133032489B834B154DA66BCB29-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
+<!--323699133032489B834B154DA66BCB29-->  <JSON_STRUCTURE><![CDATA[{
+  "type": "function",
+  "function": {
+    "name": "DBQueryGenerator",
+    "description": " \n        This tool can connect to a database and read data from it.\n        This tool has three modes: SHOW_TABLES, SHOW_COLUMNS, EXECUTE_QUERY.\n        The mode SHOW_TABLES will return the tables of the database, with the table name, name and description.\n        The mode SHOW_COLUMNS will return the columns of a table, with the column name, name and description. This mode \n        needs the parameter p_data with the table name.\n        The mode EXECUTE_QUERY will execute the query that the user wants. This mode needs the parameter p_data with \n        the query.\n        ",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "p_mode": {
+          "description": "This parameter indicates the mode of the tool. The mode can be SHOW_TABLES, SHOW_COLUMNS, EXECUTE_QUERY. SHOW_TABLES will return the tables of the database, with the table name, name and description. SHOW_COLUMNS will return the columns of a table, with the column name, name and description. EXECUTE_QUERY will execute the query that the user wants.",
+          "enum": [
+            "SHOW_TABLES",
+            "SHOW_COLUMNS",
+            "EXECUTE_QUERY"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "p_data": {
+          "description": "The data that the user wants to get from the database. The data is used in the mode SHOW_COLUMNS and EXECUTE_QUERY. In the mode SHOW_COLUMNS, the data is the table name. In the mode EXECUTE_QUERY, the data is the query that the user wants to execute.In other modes, this parameter is not used.",
+          "title": "Data",
+          "type": "string"
+        }
+      }
+    }
+  }
+}]]></JSON_STRUCTURE>
+<!--323699133032489B834B154DA66BCB29--></ETCOP_TOOL>
+
 <!--3D54E50D0F8C4EA1B88B4A831811CF42--><ETCOP_TOOL>
 <!--3D54E50D0F8C4EA1B88B4A831811CF42-->  <ETCOP_TOOL_ID><![CDATA[3D54E50D0F8C4EA1B88B4A831811CF42]]></ETCOP_TOOL_ID>
 <!--3D54E50D0F8C4EA1B88B4A831811CF42-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
@@ -401,6 +447,43 @@
 }]]></JSON_STRUCTURE>
 <!--EB58EEA0AA804C219C4D64260550745A--></ETCOP_TOOL>
 
+<!--E6050C9D77BD4CC4BBA7B79748C57770--><ETCOP_TOOL>
+<!--E6050C9D77BD4CC4BBA7B79748C57770-->  <ETCOP_TOOL_ID><![CDATA[E6050C9D77BD4CC4BBA7B79748C57770]]></ETCOP_TOOL_ID>
+<!--E6050C9D77BD4CC4BBA7B79748C57770-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
+<!--E6050C9D77BD4CC4BBA7B79748C57770-->  <AD_ORG_ID><![CDATA[0]]></AD_ORG_ID>
+<!--E6050C9D77BD4CC4BBA7B79748C57770-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
+<!--E6050C9D77BD4CC4BBA7B79748C57770-->  <VALUE><![CDATA[OpenAPIPetStoreTool]]></VALUE>
+<!--E6050C9D77BD4CC4BBA7B79748C57770-->  <NAME><![CDATA[OpenAPI Tool for PetStore API]]></NAME>
+<!--E6050C9D77BD4CC4BBA7B79748C57770-->  <DESCRIPTION><![CDATA[This tools interacts with a PetStore API answer/execute the question prompt.If a Bearer token is provided, it will be used as the authentication header. It may be necessary to run the tool once without a token to obtain it and then run it again with the token obtained.  ]]></DESCRIPTION>
+<!--E6050C9D77BD4CC4BBA7B79748C57770-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
+<!--E6050C9D77BD4CC4BBA7B79748C57770-->  <JSON_STRUCTURE><![CDATA[{
+  "type": "function",
+  "function": {
+    "name": "OpenAPIPetStoreTool",
+    "description": "This tools interacts with a PetStore API answer\/execute the question prompt.If a Bearer token is provided, it will be used as the authentication header. It may be necessary to run the tool once without a token to obtain it and then run it again with the token obtained.  ",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "question_prompt": {
+          "description": "The question\/request prompt to be asked to the OpenAPI specification",
+          "title": "Question Prompt",
+          "type": "string"
+        },
+        "access_token": {
+          "anyOf": [
+            {"type": "string"},
+            {"type": "null"}
+          ],
+          "description": "The access token to be used for authentication, for example, for a Bearer token",
+          "title": "Access Token"
+        }
+      }
+    }
+  }
+}]]></JSON_STRUCTURE>
+<!--E6050C9D77BD4CC4BBA7B79748C57770-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--E6050C9D77BD4CC4BBA7B79748C57770--></ETCOP_TOOL>
+
 <!--F368A87C4E844C8A89AC04D0DA54CC66--><ETCOP_TOOL>
 <!--F368A87C4E844C8A89AC04D0DA54CC66-->  <ETCOP_TOOL_ID><![CDATA[F368A87C4E844C8A89AC04D0DA54CC66]]></ETCOP_TOOL_ID>
 <!--F368A87C4E844C8A89AC04D0DA54CC66-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
@@ -427,5 +510,69 @@
 }]]></JSON_STRUCTURE>
 <!--F368A87C4E844C8A89AC04D0DA54CC66-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
 <!--F368A87C4E844C8A89AC04D0DA54CC66--></ETCOP_TOOL>
+
+<!--F531471DE4E04DA28EF6968EF4C5864B--><ETCOP_TOOL>
+<!--F531471DE4E04DA28EF6968EF4C5864B-->  <ETCOP_TOOL_ID><![CDATA[F531471DE4E04DA28EF6968EF4C5864B]]></ETCOP_TOOL_ID>
+<!--F531471DE4E04DA28EF6968EF4C5864B-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
+<!--F531471DE4E04DA28EF6968EF4C5864B-->  <AD_ORG_ID><![CDATA[0]]></AD_ORG_ID>
+<!--F531471DE4E04DA28EF6968EF4C5864B-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
+<!--F531471DE4E04DA28EF6968EF4C5864B-->  <VALUE><![CDATA[APICallTool]]></VALUE>
+<!--F531471DE4E04DA28EF6968EF4C5864B-->  <NAME><![CDATA[API Call tool]]></NAME>
+<!--F531471DE4E04DA28EF6968EF4C5864B-->  <DESCRIPTION><![CDATA[This Tool, executes a call to an API, and returns the response. This tool requires the following parameters:
+    - url: The url of the API (for example: https://api.example.com) (required)
+    - endpoint: The endpoint of the API (for example: /endpoint) (required)
+    - method: The method of the API (GET, POST only supported). If not defined, it will be inferred from the endpoint. (for example: GET) (required)
+    - body_params: The body of the API (only for POST method) 
+    - query_params: The query params of the API in json format
+    - token: The bearer token of the API (if required)]]></DESCRIPTION>
+<!--F531471DE4E04DA28EF6968EF4C5864B-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
+<!--F531471DE4E04DA28EF6968EF4C5864B-->  <JSON_STRUCTURE><![CDATA[{
+  "type": "function",
+  "function": {
+    "name": "APICallTool",
+    "description": "This Tool, executes a call to an API, and returns the response. This tool requires the following parameters:\n    - url: The url of the API (for example: https:\/\/api.example.com) (required)\n    - endpoint: The endpoint of the API (for example: \/endpoint) (required)\n    - method: The method of the API (GET, POST only supported). If not defined, it will be inferred from the endpoint. (for example: GET) (required)\n    - body_params: The body of the API (only for POST method) \n    - query_params: The query params of the API in json format\n    - token: The bearer token of the API (if required)",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "title": "URL",
+          "description": "The url of the API. Is mandatory.",
+          "type": "string"
+        },
+        "endpoint": {
+          "title": "Endpoint",
+          "description": "The endpoint of the API. Is mandatory.",
+          "type": "string"
+        },
+        "method": {
+          "title": "Method",
+          "description": "The method of the API (GET, POST only supported). if not defined, it will be inferred from the endpoint.  Is mandatory.",
+          "enum": [
+            "GET",
+            "POST"
+          ],
+          "type": "string"
+        },
+        "body_params": {
+          "title": "Body Params",
+          "description": "The body of the API (only for POST method). Is mandatory.",
+          "type": "string"
+        },
+        "query_params": {
+          "title": "Query Params",
+          "description": "The query params of the API in json format. Is mandatory.",
+          "type": "string"
+        },
+        "token": {
+          "title": "Token",
+          "description": "The bearer token of the API. Is mandatory. ",
+          "type": "string"
+        }
+      }
+    }
+  }
+}]]></JSON_STRUCTURE>
+<!--F531471DE4E04DA28EF6968EF4C5864B-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--F531471DE4E04DA28EF6968EF4C5864B--></ETCOP_TOOL>
 
 </data>

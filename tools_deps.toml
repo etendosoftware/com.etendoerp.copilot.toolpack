@@ -16,6 +16,12 @@ pytest-mock = "*"
 [PdfToImagesTool]
 pypdfium2 = '*'
 
+[OpenAPIPetStoreTool]
+requests = "*"
+
+[DBQueryGenerator]
+"requests" = "*"
+
 [OcrTool]
 filetype = "==1.2.0"
 pypdfium2 = '*'
