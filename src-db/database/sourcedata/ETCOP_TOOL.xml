@@ -266,6 +266,13 @@
           "description": "The code to execute.",
           "name": "Code",
           "type": "string"
+        },
+        "files_to_copy": {
+          "title": "Files To Copy",
+          "description": "List of file paths to copy to the container. There will be copied to the same path in the container. Example: [\"\/path\/to\/file1\", \"\/path\/to\/file2\"]",
+          "name": "Files to copy",
+          "type": "array",
+          "items": {"type": "string"}
         }
       }
     }
