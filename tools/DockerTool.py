@@ -96,7 +96,7 @@ def clean_old_containers(docker_client):
     # Iterates over the containers and creates a thread for each one that meets the inactivity criterion
     for container in temp_env_containers:
         if 'last_interaction' not in container.labels or datetime.datetime.fromisoformat(
-                container.labels['last_interaction']) < datetime.datetime.now() - datetime.timedelta(minutes=1):
+                container.labels['last_interaction']) < datetime.datetime.now() - datetime.timedelta(hours=1):
             # Create a thread to stop and remove the container
             import threading
             thread = threading.Thread(target=stop_and_remove_container, args=(container,))
