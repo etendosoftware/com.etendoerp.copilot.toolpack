@@ -2,7 +2,7 @@ import datetime
 import os
 from typing import Type, Dict, List
 
-import docker
+
 
 from copilot.core.threadcontext import ThreadContext
 from copilot.core.tool_input import ToolField, ToolInput
@@ -136,6 +136,7 @@ class DockerTool(ToolWrapper):
     args_schema: Type[ToolInput] = DockerToolInput
 
     def run(self, input_params: Dict, *args, **kwargs) -> ToolOutput:
+        import docker
         executor = input_params['executor']
         code = input_params['code']
         docker_client = docker.from_env()
