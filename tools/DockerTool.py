@@ -18,6 +18,7 @@ class DockerToolInput(ToolInput):
 
 
 def exec_code(docker_client, executor, code, file_to_copy=[]):
+    import docker
     name = get_container_name()
     try:
         container = docker_client.containers.get(name)
