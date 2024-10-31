@@ -284,6 +284,49 @@
 <!--7B591C3A095844919932177F794E4E79-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
 <!--7B591C3A095844919932177F794E4E79--></ETCOP_TOOL>
 
+<!--9154462E3B9F427496F00FA5C136F357--><ETCOP_TOOL>
+<!--9154462E3B9F427496F00FA5C136F357-->  <ETCOP_TOOL_ID><![CDATA[9154462E3B9F427496F00FA5C136F357]]></ETCOP_TOOL_ID>
+<!--9154462E3B9F427496F00FA5C136F357-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
+<!--9154462E3B9F427496F00FA5C136F357-->  <AD_ORG_ID><![CDATA[0]]></AD_ORG_ID>
+<!--9154462E3B9F427496F00FA5C136F357-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
+<!--9154462E3B9F427496F00FA5C136F357-->  <VALUE><![CDATA[DockerTool]]></VALUE>
+<!--9154462E3B9F427496F00FA5C136F357-->  <NAME><![CDATA[Docker Tool]]></NAME>
+<!--9154462E3B9F427496F00FA5C136F357-->  <DESCRIPTION><![CDATA[A tool that manages Docker containers to run Python or Bash code. Containers are deleted when specified after 1 hour of inactivity.]]></DESCRIPTION>
+<!--9154462E3B9F427496F00FA5C136F357-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
+<!--9154462E3B9F427496F00FA5C136F357-->  <JSON_STRUCTURE><![CDATA[{
+  "type": "function",
+  "function": {
+    "name": "DockerTool",
+    "description": "A tool that manages Docker containers to run Python or Bash code. Containers are deleted when specified after 1 hour of inactivity.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "executor": {
+          "title": "Executor",
+          "description": "The executor: python or bash.",
+          "name": "Executor",
+          "type": "string"
+        },
+        "code": {
+          "title": "Code",
+          "description": "The code to execute.",
+          "name": "Code",
+          "type": "string"
+        },
+        "files_to_copy": {
+          "title": "Files To Copy",
+          "description": "List of file paths to copy to the container. There will be copied to the same path in the container. Example: [\"\/path\/to\/file1\", \"\/path\/to\/file2\"]",
+          "name": "Files to copy",
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      }
+    }
+  }
+}]]></JSON_STRUCTURE>
+<!--9154462E3B9F427496F00FA5C136F357-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--9154462E3B9F427496F00FA5C136F357--></ETCOP_TOOL>
+
 <!--9B93E3F0B846482A8640368F7C11E5A5--><ETCOP_TOOL>
 <!--9B93E3F0B846482A8640368F7C11E5A5-->  <ETCOP_TOOL_ID><![CDATA[9B93E3F0B846482A8640368F7C11E5A5]]></ETCOP_TOOL_ID>
 <!--9B93E3F0B846482A8640368F7C11E5A5-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>

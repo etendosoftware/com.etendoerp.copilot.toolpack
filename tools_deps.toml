@@ -30,6 +30,10 @@ pypdfium2 = '*'
 [CodbarTool]
 pyzbar = '*'
 
+[DockerTool]
+docker = "*"
+
+
 
 
 
