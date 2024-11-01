@@ -8,15 +8,13 @@ from copilot.core.tool_wrapper import ToolWrapper
 
 class FileDownloaderToolInput(ToolInput):
     file_path_or_url: str = ToolField(
-        title="File path or URL",
-        description='''The file path or URL to download.'''
+        title="File path or URL", description="""The file path or URL to download."""
     )
 
 
 class FileDownloaderTool(ToolWrapper):
-    name = 'FileDownloaderTool'
-    description = (
-        'This tool receives a URL , downloads the file to a temporary directory if its a URL in a temp file. It returns the path to the temporary file.')
+    name: str = "FileDownloaderTool"
+    description: str = "This tool receives a URL , downloads the file to a temporary directory if its a URL in a temp file. It returns the path to the temporary file."
     args_schema: Type[ToolInput] = FileDownloaderToolInput
 
     @traceable
@@ -27,14 +25,20 @@ class FileDownloaderTool(ToolWrapper):
         import shutil
         from urllib.parse import urlparse
 
-        file_path_or_url = input_params.get('file_path_or_url')
+        file_path_or_url = input_params.get("file_path_or_url")
 
-        if not file_path_or_url.startswith('http://') and not file_path_or_url.startswith('https://'):
-            return {'error': 'The provided input is not a valid URL.'}
+        if not file_path_or_url.startswith(
+            "http://"
+        ) and not file_path_or_url.startswith("https://"):
+            return {"error": "The provided input is not a valid URL."}
         else:
             response = requests.get(file_path_or_url, stream=True)
             if response.status_code != 200:
-                return {'error': 'File could not be downloaded. Status code: {}'.format(response.status_code)}
+                return {
+                    "error": "File could not be downloaded. Status code: {}".format(
+                        response.status_code
+                    )
+                }
             else:
                 # Intentar extraer el nombre del archivo del URL
                 parsed_url = urlparse(file_path_or_url)
@@ -45,17 +49,20 @@ class FileDownloaderTool(ToolWrapper):
                     file_name = "downloaded_file"
 
                 # Determinar si el archivo es de texto o binario
-                content_type = response.headers['content-type']
-                if 'text' in content_type:
+                content_type = response.headers["content-type"]
+                if "text" in content_type:
                     # Añadir extensión .txt si el nombre no tiene una
                     if not os.path.splitext(file_name)[1]:
-                        file_name += '.txt'
-                    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='_' + file_name, mode='w',
-                                                            encoding='utf-8')
+                        file_name += ".txt"
+                    temp_file = tempfile.NamedTemporaryFile(
+                        delete=False, suffix="_" + file_name, mode="w", encoding="utf-8"
+                    )
                     with temp_file as f:
                         f.write(response.text)
                 else:
-                    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='_' + file_name)
+                    temp_file = tempfile.NamedTemporaryFile(
+                        delete=False, suffix="_" + file_name
+                    )
                     with temp_file as f:
                         shutil.copyfileobj(response.raw, f)
-                return {'temp_file_path': temp_file.name}
+                return {"temp_file_path": temp_file.name}

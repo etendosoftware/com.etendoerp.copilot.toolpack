@@ -1,15 +1,14 @@
 import os
-from typing import Dict, Type
-
+from typing import Type, Dict
 
 from copilot.core.tool_input import ToolInput, ToolField
-from copilot.core.tool_wrapper import ToolWrapper
+from copilot.core.tool_wrapper import ToolWrapper, ToolOutput
 
 
 class CodbarToolInput(ToolInput):
     filepath: list[str] = ToolField(
         title="Filepath",
-        description='''The paths of the images to read.''',
+        description="""The paths of the images to read.""",
     )
 
 
@@ -27,22 +26,25 @@ def decode(p_filepath):
         if len(decoded_list) == 0:
             return None
         print(type(decoded_list[0]))
-        return [d.data.decode('utf-8') for d in decoded_list]
+        return [d.data.decode("utf-8") for d in decoded_list]
     except Exception as e:
-        print(f"The CodbarTool failed to decode the image. Check requirements in Etendo documentation. Error: {e}")
+        print(
+            f"The CodbarTool failed to decode the image. Check requirements in Etendo documentation. Error: {e}"
+        )
         return None
 
 
 class CodbarTool(ToolWrapper):
-    name = 'CodbarTool'
-    description = (
+    name: str = "CodbarTool"
+    description: str = (
         'This tool reads a barcode from an image. Receives "filepath" as an array string parameter. The "filepath" '
-        ' parameter are the paths of the image files to read. The tool will return an array of founded barcodes if '
-        ' found. Example of input: { "filepath": ["/tmp/test.png", "/tmp/test1.png"] }')
+        " parameter are the paths of the image files to read. The tool will return an array of founded barcodes if "
+        ' found. Example of input: { "filepath": ["/tmp/test.png", "/tmp/test1.png"] }'
+    )
     args_schema: Type[ToolInput] = CodbarToolInput
 
-    def run(self, input_params: Dict, *args, **kwargs):
-        p_filepath = input_params.get('filepath')
+    def run(self, input_params: Dict, *args, **kwarg) -> ToolOutput:
+        p_filepath = input_params.get("filepath")
 
         if not isinstance(p_filepath, list):
             raise ValueError("Expected 'filepath' to be a list of strings.")
