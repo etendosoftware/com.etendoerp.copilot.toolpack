@@ -2,7 +2,7 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 from langsmith import unit
-from langchain_core.pydantic_v1 import ValidationError
+from pydantic import ValidationError
 
 from tools import PdfToImagesTool
 from tools.PdfToImagesTool import PdfToImagesToolInput
@@ -26,7 +26,7 @@ def test_not_a_pdf_file(requests_mock):
 
     # Mock for Path().is_file()
     with patch("pathlib.Path.is_file", return_value=True):
-        patch('pypdfium2.PdfDocument', side_effect=ValueError("Invalid PDF")).start()
+        patch("pypdfium2.PdfDocument", side_effect=ValueError("Invalid PDF")).start()
 
         input_params = {"path": not_a_pdf_path}
 
@@ -43,7 +43,7 @@ def test_pdf_with_no_pages(requests_mock):
 
     # Mock for Path().is_file()
     with patch("pathlib.Path.is_file", return_value=True):
-        patch('pypdfium2.PdfDocument', return_value=mock_pdf).start()
+        patch("pypdfium2.PdfDocument", return_value=mock_pdf).start()
         mock_pdf.__len__.return_value = 0
 
         input_params = {"path": empty_pdf_path}

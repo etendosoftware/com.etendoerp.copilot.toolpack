@@ -11,15 +11,17 @@ class PdfToImagesToolInput(ToolInput):
 
 
 class PdfToImagesTool(ToolWrapper):
-    name = "PdfToImagesTool"
-    description = "Converts a PDF file into an array of images, each representing a page of the PDF."
+    name: str = "PdfToImagesTool"
+    description: str = "Converts a PDF file into an array of images, each representing a page of the PDF."
     args_schema: Type[ToolInput] = PdfToImagesToolInput
 
     @staticmethod
     def convert_to_pil_img(bitmap):
         import pypdfium2.internal as pdfium_i
+
         dest_mode = pdfium_i.BitmapTypeToStrReverse[bitmap.format]
         import PIL.Image
+
         image = PIL.Image.frombuffer(
             dest_mode,  # target color format
             (bitmap.width, bitmap.height),  # size
@@ -36,7 +38,7 @@ class PdfToImagesTool(ToolWrapper):
         try:
             import pypdfium2 as pdfium
 
-            pdf_path = input_params.get('path')
+            pdf_path = input_params.get("path")
 
             if not Path(pdf_path).is_file():
                 raise Exception(f"Filename {pdf_path} doesn't exist")
@@ -50,9 +52,9 @@ class PdfToImagesTool(ToolWrapper):
                 bitmap = page.render(scale=2.0)
                 pil_image = self.convert_to_pil_img(bitmap)
                 # store the image to a temp path
-                pil_image.save(f'/tmp/page_{page_number}.png')
+                pil_image.save(f"/tmp/page_{page_number}.png")
                 # append temp file path to the images list
-                images.append(f'/tmp/page_{page_number}.png')
+                images.append(f"/tmp/page_{page_number}.png")
 
             return images
         except Exception as e:

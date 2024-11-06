@@ -12,14 +12,15 @@ from copilot.core.utils import copilot_debug
 class AudioToolInput(ToolInput):
     path: str = ToolField(description="Path of the audio to be processed.")
 
+
 @traceable
 def get_file_path(input_params):
-    rel_path = input_params.get('path')
-    audio_path = '/app' + rel_path
+    rel_path = input_params.get("path")
+    audio_path = "/app" + rel_path
     copilot_debug(f"Tool AudioTool input: {audio_path}")
     copilot_debug(f"Current directory: {os.getcwd()}")
     if not Path(audio_path).exists():
-        audio_path = '..' + rel_path
+        audio_path = ".." + rel_path
     if not Path(audio_path).exists():
         audio_path = rel_path
     if not Path(audio_path).is_file():
@@ -28,11 +29,12 @@ def get_file_path(input_params):
 
 
 class AudioTool(ToolWrapper):
-    """ Audio recognition tool.
-    """
-    name = "AudioTool"
-    description = (
-        "This is a tool that uses OpenAI's API to transcribe audio files.")
+    """Audio recognition tool."""
+
+    name: str = "AudioTool"
+    description: str = (
+        "This is a tool that uses OpenAI's API to transcribe audio files."
+    )
     args_schema: Type[ToolInput] = AudioToolInput
 
     @traceable
@@ -40,19 +42,17 @@ class AudioTool(ToolWrapper):
         try:
             file_path = get_file_path(input_params)
             from openai import OpenAI
+
             client = OpenAI()
 
             audio_file = open(file_path, "rb")
             transcription = client.audio.transcriptions.create(
-                model="whisper-1",
-                file=audio_file
+                model="whisper-1", file=audio_file
             )
             print(transcription.text)
         except Exception as e:
             errmsg = f"An error occurred: {e}"
             copilot_debug(errmsg)
-            return {
-                "error": errmsg
-            }
+            return {"error": errmsg}
         copilot_debug(f"Tool AudioTool output: {transcription}")
         return transcription

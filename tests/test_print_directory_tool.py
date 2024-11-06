@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
 import pytest
-from langchain_core.pydantic_v1 import ValidationError
+from pydantic import ValidationError
 from langsmith import unit
 
 from tools import PrintDirectoryTool
@@ -20,7 +20,7 @@ def test_directory_exists(mocker):
     input_params = {"path": valid_dir_path, "recursive": False}
     result = tool.run(input_params)
 
-    expected_output = f"/path/to/valid_dir/file1.txt\n/path/to/valid_dir/file2.txt\n/path/to/valid_dir/subdir\n"
+    expected_output = "/path/to/valid_dir/file1.txt\n/path/to/valid_dir/file2.txt\n/path/to/valid_dir/subdir\n"
     assert result["message"] == expected_output
 
 
