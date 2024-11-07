@@ -1,5 +1,5 @@
 import os
-from typing import Type, Dict
+from typing import Dict, Type
 
 from langsmith import traceable
 
@@ -21,15 +21,15 @@ def get_directory_contents(path, recursive=False):
         return {"error": f"Path does not exist: {path}"}
     # Inicializar una variable para almacenar los resultados
     result = ""
-
-    # Listar y acumular los nombres de archivos y directorios
-    for entry in os.listdir(path):
-        full_path = os.path.join(path, entry)
-        result += full_path + "\n"
-
-        # Si es un directorio y la recursividad está habilitada, acumular los resultados de forma recursiva
-        if recursive and os.path.isdir(full_path):
-            result += get_directory_contents(full_path, recursive)
+    if recursive:
+        for root, _, files in os.walk(path):
+            for file in files:
+                result += os.path.abspath(os.path.join(root, file)) + "\n"
+    else:
+        with os.scandir(path) as entries:
+            for entry in entries:
+                if entry.is_file():
+                    result += os.path.abspath(entry.path) + "\n"
 
     return {"message": result}
 
@@ -43,7 +43,12 @@ class PrintDirectoryTool(ToolWrapper):
 
     @traceable
     def run(self, input_params: Dict, *args, **kwargs):
-        p_recursive = input_params.get("recursive")
-        p_path = input_params.get("path")
+        try:
+            p_recursive = input_params.get("recursive")
+            p_path = input_params.get("path")
 
-        return get_directory_contents(p_path, p_recursive)
+            return get_directory_contents(p_path, p_recursive)
+        except Exception as e:
+            return {
+                "error": f"An error occurred while trying to print the directory: {str(e)}"
+            }
