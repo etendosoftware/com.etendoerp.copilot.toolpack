@@ -539,33 +539,6 @@
 }]]></JSON_STRUCTURE>
 <!--EB58EEA0AA804C219C4D64260550745A--></ETCOP_TOOL>
 
-<!--F368A87C4E844C8A89AC04D0DA54CC66--><ETCOP_TOOL>
-<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <ETCOP_TOOL_ID><![CDATA[F368A87C4E844C8A89AC04D0DA54CC66]]></ETCOP_TOOL_ID>
-<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
-<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <AD_ORG_ID><![CDATA[0]]></AD_ORG_ID>
-<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <ISACTIVE><![CDATA[N]]></ISACTIVE>
-<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <VALUE><![CDATA[CodeRunTool]]></VALUE>
-<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <NAME><![CDATA[Code Run Tool]]></NAME>
-<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <DESCRIPTION><![CDATA[A Python shell tool. Example of input: { "command": "print('Hello, World!')" }]]></DESCRIPTION>
-<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
-<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <JSON_STRUCTURE><![CDATA[{
-  "type": "function",
-  "function": {
-    "name": "CodeRunTool",
-    "description": "A Python shell tool. Example of input: { \"command\": \"print('Hello, World!')\" }",
-    "parameters": {
-      "type": "object",
-      "properties": {"command": {
-        "description": "A Python shell. Use this to execute python commands. Input should be a valid python command. If you want to see the output of a value, you should print it out with `print(...)`. \n        If execution fails, install needed libraries with `!pip install <library>`.",
-        "title": "Python Command",
-        "type": "string"
-      }}
-    }
-  }
-}]]></JSON_STRUCTURE>
-<!--F368A87C4E844C8A89AC04D0DA54CC66-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
-<!--F368A87C4E844C8A89AC04D0DA54CC66--></ETCOP_TOOL>
-
 <!--F531471DE4E04DA28EF6968EF4C5864B--><ETCOP_TOOL>
 <!--F531471DE4E04DA28EF6968EF4C5864B-->  <ETCOP_TOOL_ID><![CDATA[F531471DE4E04DA28EF6968EF4C5864B]]></ETCOP_TOOL_ID>
 <!--F531471DE4E04DA28EF6968EF4C5864B-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
