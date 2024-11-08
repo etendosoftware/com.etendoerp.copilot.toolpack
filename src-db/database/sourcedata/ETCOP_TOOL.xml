@@ -60,13 +60,13 @@
 <!--323699133032489B834B154DA66BCB29-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
 <!--323699133032489B834B154DA66BCB29-->  <VALUE><![CDATA[DBQueryGenerator]]></VALUE>
 <!--323699133032489B834B154DA66BCB29-->  <NAME><![CDATA[Database Query Generator tool]]></NAME>
-<!--323699133032489B834B154DA66BCB29-->  <DESCRIPTION><![CDATA[ 
+<!--323699133032489B834B154DA66BCB29-->  <DESCRIPTION><![CDATA[
         This tool can connect to a database and read data from it.
         This tool has three modes: SHOW_TABLES, SHOW_COLUMNS, EXECUTE_QUERY.
         The mode SHOW_TABLES will return the tables of the database, with the table name, name and description.
-        The mode SHOW_COLUMNS will return the columns of a table, with the column name, name and description. This mode 
+        The mode SHOW_COLUMNS will return the columns of a table, with the column name, name and description. This mode
         needs the parameter p_data with the table name.
-        The mode EXECUTE_QUERY will execute the query that the user wants. This mode needs the parameter p_data with 
+        The mode EXECUTE_QUERY will execute the query that the user wants. This mode needs the parameter p_data with
         the query.
         ]]></DESCRIPTION>
 <!--323699133032489B834B154DA66BCB29-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
@@ -334,13 +334,13 @@
 <!--9B93E3F0B846482A8640368F7C11E5A5-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
 <!--9B93E3F0B846482A8640368F7C11E5A5-->  <VALUE><![CDATA[PrintDirectoryTool]]></VALUE>
 <!--9B93E3F0B846482A8640368F7C11E5A5-->  <NAME><![CDATA[Print Directory Tool]]></NAME>
-<!--9B93E3F0B846482A8640368F7C11E5A5-->  <DESCRIPTION><![CDATA[ This tool prints the files and directories of the a directory.]]></DESCRIPTION>
+<!--9B93E3F0B846482A8640368F7C11E5A5-->  <DESCRIPTION><![CDATA[This tool prints the files and directories of the a directory.]]></DESCRIPTION>
 <!--9B93E3F0B846482A8640368F7C11E5A5-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
 <!--9B93E3F0B846482A8640368F7C11E5A5-->  <JSON_STRUCTURE><![CDATA[{
   "type": "function",
   "function": {
     "name": "PrintDirectoryTool",
-    "description": " This tool prints the files and directories of the a directory.",
+    "description": "This tool prints the files and directories of the a directory.",
     "parameters": {
       "type": "object",
       "properties": {
@@ -354,6 +354,18 @@
           "description": "If true, the tool will print the files and directories recursively.",
           "title": "Recursive",
           "type": "boolean"
+        },
+        "extensions": {
+          "default": null,
+          "description": "If provided, the tool will only print files with the specified extensions. It should be a comma-separated list of extensions.",
+          "title": "Extensions",
+          "type": "string"
+        },
+        "ignore_folder": {
+          "default": null,
+          "description": "If provided, the tool will ignore the specified folder.",
+          "title": "Ignore Folder",
+          "type": "string"
         }
       }
     }
@@ -457,39 +469,6 @@
 }]]></JSON_STRUCTURE>
 <!--C7DECA931AAE42B986106ACBF11C4651--></ETCOP_TOOL>
 
-<!--EB58EEA0AA804C219C4D64260550745A--><ETCOP_TOOL>
-<!--EB58EEA0AA804C219C4D64260550745A-->  <ETCOP_TOOL_ID><![CDATA[EB58EEA0AA804C219C4D64260550745A]]></ETCOP_TOOL_ID>
-<!--EB58EEA0AA804C219C4D64260550745A-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
-<!--EB58EEA0AA804C219C4D64260550745A-->  <AD_ORG_ID><![CDATA[0]]></AD_ORG_ID>
-<!--EB58EEA0AA804C219C4D64260550745A-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
-<!--EB58EEA0AA804C219C4D64260550745A-->  <VALUE><![CDATA[OcrTool]]></VALUE>
-<!--EB58EEA0AA804C219C4D64260550745A-->  <NAME><![CDATA[OCR Tool]]></NAME>
-<!--EB58EEA0AA804C219C4D64260550745A-->  <DESCRIPTION><![CDATA[This is a OCR tool implementation that returns an appropriate JSON object for the data in a local file (image or pdf). Its important to note that the file should be in the local file system. Is the best way to extract the data/information from a image or pdf file.]]></DESCRIPTION>
-<!--EB58EEA0AA804C219C4D64260550745A-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
-<!--EB58EEA0AA804C219C4D64260550745A-->  <JSON_STRUCTURE><![CDATA[{
-  "type": "function",
-  "function": {
-    "name": "OcrTool",
-    "description": "This is a OCR tool implementation that returns an appropriate JSON object for the data in a local file (image or pdf). Its important to note that the file should be in the local file system. Is the best way to extract the data\/information from a image or pdf file.",
-    "parameters": {
-      "type": "object",
-      "properties": {
-        "path": {
-          "description": "path of the image to be processed",
-          "title": "Path",
-          "type": "string"
-        },
-        "question": {
-          "description": "Contextual question to be asked to the model, where is specified the information to be extracted from the image",
-          "title": "Question",
-          "type": "string"
-        }
-      }
-    }
-  }
-}]]></JSON_STRUCTURE>
-<!--EB58EEA0AA804C219C4D64260550745A--></ETCOP_TOOL>
-
 <!--E6050C9D77BD4CC4BBA7B79748C57770--><ETCOP_TOOL>
 <!--E6050C9D77BD4CC4BBA7B79748C57770-->  <ETCOP_TOOL_ID><![CDATA[E6050C9D77BD4CC4BBA7B79748C57770]]></ETCOP_TOOL_ID>
 <!--E6050C9D77BD4CC4BBA7B79748C57770-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
@@ -526,6 +505,39 @@
 }]]></JSON_STRUCTURE>
 <!--E6050C9D77BD4CC4BBA7B79748C57770-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
 <!--E6050C9D77BD4CC4BBA7B79748C57770--></ETCOP_TOOL>
+
+<!--EB58EEA0AA804C219C4D64260550745A--><ETCOP_TOOL>
+<!--EB58EEA0AA804C219C4D64260550745A-->  <ETCOP_TOOL_ID><![CDATA[EB58EEA0AA804C219C4D64260550745A]]></ETCOP_TOOL_ID>
+<!--EB58EEA0AA804C219C4D64260550745A-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
+<!--EB58EEA0AA804C219C4D64260550745A-->  <AD_ORG_ID><![CDATA[0]]></AD_ORG_ID>
+<!--EB58EEA0AA804C219C4D64260550745A-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
+<!--EB58EEA0AA804C219C4D64260550745A-->  <VALUE><![CDATA[OcrTool]]></VALUE>
+<!--EB58EEA0AA804C219C4D64260550745A-->  <NAME><![CDATA[OCR Tool]]></NAME>
+<!--EB58EEA0AA804C219C4D64260550745A-->  <DESCRIPTION><![CDATA[This is a OCR tool implementation that returns an appropriate JSON object for the data in a local file (image or pdf). Its important to note that the file should be in the local file system. Is the best way to extract the data/information from a image or pdf file.]]></DESCRIPTION>
+<!--EB58EEA0AA804C219C4D64260550745A-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
+<!--EB58EEA0AA804C219C4D64260550745A-->  <JSON_STRUCTURE><![CDATA[{
+  "type": "function",
+  "function": {
+    "name": "OcrTool",
+    "description": "This is a OCR tool implementation that returns an appropriate JSON object for the data in a local file (image or pdf). Its important to note that the file should be in the local file system. Is the best way to extract the data\/information from a image or pdf file.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "description": "path of the image to be processed",
+          "title": "Path",
+          "type": "string"
+        },
+        "question": {
+          "description": "Contextual question to be asked to the model, where is specified the information to be extracted from the image",
+          "title": "Question",
+          "type": "string"
+        }
+      }
+    }
+  }
+}]]></JSON_STRUCTURE>
+<!--EB58EEA0AA804C219C4D64260550745A--></ETCOP_TOOL>
 
 <!--F368A87C4E844C8A89AC04D0DA54CC66--><ETCOP_TOOL>
 <!--F368A87C4E844C8A89AC04D0DA54CC66-->  <ETCOP_TOOL_ID><![CDATA[F368A87C4E844C8A89AC04D0DA54CC66]]></ETCOP_TOOL_ID>
@@ -565,7 +577,7 @@
     - url: The url of the API (for example: https://api.example.com) (required)
     - endpoint: The endpoint of the API (for example: /endpoint) (required)
     - method: The method of the API (GET, POST only supported). If not defined, it will be inferred from the endpoint. (for example: GET) (required)
-    - body_params: The body of the API (only for POST method) 
+    - body_params: The body of the API (only for POST method)
     - query_params: The query params of the API in json format
     - token: The bearer token of the API (if required)]]></DESCRIPTION>
 <!--F531471DE4E04DA28EF6968EF4C5864B-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
