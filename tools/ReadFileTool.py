@@ -3,7 +3,7 @@ from typing import Dict, Type
 from langsmith import traceable
 
 from copilot.core.tool_input import ToolField, ToolInput
-from copilot.core.tool_wrapper import ToolWrapper
+from copilot.core.tool_wrapper import ToolOutputError, ToolWrapper
 
 
 class ReadFileToolInput(ToolInput):
@@ -24,9 +24,12 @@ class ReadFileTool(ToolWrapper):
 
     @traceable
     def run(self, input_params: Dict, *args, **kwargs):
-        # if json is a string, convert it to json, else, use the json
-        p_filepath = input_params.get("filepath")
-        # read the file
-        file_content = open(p_filepath).read()
+        try:
+            # if json is a string, convert it to json, else, use the json
+            p_filepath = input_params.get("filepath")
+            # read the file
+            file_content = open(p_filepath).read()
 
-        return {"message": file_content}
+            return {"message": file_content}
+        except Exception as e:
+            return ToolOutputError(error=str(e))
