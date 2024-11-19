@@ -28,6 +28,7 @@ class PrintDirToolInput(ToolInput):
 def get_directory_contents(path, recursive=False, extensions=None, ignore_folder=None):
     if extensions is not None and extensions != "" and isinstance(extensions, str):
         extensions = extensions.split(",")
+        extensions = [ext.strip().lower() for ext in extensions]
     if not os.path.exists(path):
         return {"error": f"Path does not exist: {path}"}
     result = ""
@@ -46,7 +47,7 @@ def get_directory_contents(path, recursive=False, extensions=None, ignore_folder
                 if file.startswith(".") or (ignore_folder and file in ignore_folder):
                     continue
                 if extensions:
-                    if file.endswith(tuple(extensions)):
+                    if file.lower().endswith(tuple(extensions)):
                         result += os.path.abspath(os.path.join(root, file)) + "\n"
                 else:
                     result += os.path.abspath(os.path.join(root, file)) + "\n"
@@ -60,7 +61,7 @@ def get_directory_contents(path, recursive=False, extensions=None, ignore_folder
                     continue
                 if entry.is_file():
                     if extensions:
-                        if entry.name.endswith(tuple(extensions)):
+                        if entry.name.lower().endswith(tuple(extensions)):
                             result += os.path.abspath(entry.path) + "\n"
                     else:
                         result += os.path.abspath(entry.path) + "\n"
