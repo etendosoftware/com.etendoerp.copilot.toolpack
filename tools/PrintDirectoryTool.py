@@ -35,13 +35,15 @@ def get_directory_contents(path, recursive=False):
 
 
 class PrintDirectoryTool(ToolWrapper):
-    name = 'PrintDirectoryTool'
-    description = ''' This tool prints the files and directories of the a directory.'''
+    name: str = "PrintDirectoryTool"
+    description: str = (
+        """ This tool prints the files and directories of the a directory."""
+    )
     args_schema: Type[ToolInput] = PrintDirToolInput
 
     @traceable
     def run(self, input_params: Dict, *args, **kwargs):
-        p_recursive = input_params.get('recursive')
-        p_path = input_params.get('path')
+        p_recursive = input_params.get("recursive")
+        p_path = input_params.get("path")
 
         return get_directory_contents(p_path, p_recursive)

@@ -1,7 +1,7 @@
 from unittest.mock import mock_open
 
 import pytest
-from langchain_core.pydantic_v1 import ValidationError
+from pydantic import ValidationError
 from langsmith import unit
 
 from tools import ReadFileTool
@@ -64,6 +64,6 @@ def test_invalid_input_params():
 
 
 @unit
-def test_invalid_input_params():
+def test_invalid_input_params_empty():
     with pytest.raises(ValidationError):
         ReadFileToolInput()  # Invalid type for filepath

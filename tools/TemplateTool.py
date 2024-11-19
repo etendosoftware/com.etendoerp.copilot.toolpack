@@ -12,9 +12,8 @@ class TemplateInput(ToolInput):
 
 
 class TemplateTool(ToolWrapper):
-    name = 'TemplateTool'
-    description = ('This is a file template for creating new tools.')
-    outputs = ['message']
+    name: str = "TemplateTool"
+    description: str = "This is a file template for creating new tools."
 
     args_schema: Type[ToolInput] = TemplateInput
 
@@ -27,8 +26,8 @@ class TemplateTool(ToolWrapper):
             json = json.loads(input)
         else:
             json = input
-        p_input1 = json.get('input1')
-        p_input2 = json.get('input2')
+        p_input1 = json.get("input1")
+        p_input2 = json.get("input2")
         # code here, for example:
         response = f"Input1: {p_input1}, Input2: {p_input2}"
 
