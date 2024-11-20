@@ -30,14 +30,12 @@ def test_file_does_not_exist(mocker):
     tool = ReadFileTool()
     invalid_file_path = "/path/to/nonexistent.txt"
 
-    # Mock open to raise FileNotFoundError
-    mocker.patch("builtins.open", side_effect=FileNotFoundError)
     # Mock os.path.exists to return False
     mocker.patch("os.path.exists", return_value=False)
 
     input_params = {"filepath": invalid_file_path}
-    with pytest.raises(FileNotFoundError):
-        tool.run(input_params)
+    result = tool.run(input_params)
+    assert " No such file or directory" in result["error"]
 
 
 @unit
