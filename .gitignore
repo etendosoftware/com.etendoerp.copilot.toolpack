@@ -52,3 +52,4 @@ Thumbs.db
 build/
 !build/classes/
 etendo.artifact.properties
+.gradle/
