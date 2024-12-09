@@ -1,5 +1,5 @@
 import os
-from typing import Type, Dict
+from typing import Dict, Type
 
 from langsmith import traceable
 
@@ -46,7 +46,7 @@ class WriteFileTool(ToolWrapper):
         backup = False
         # check that the folder exists
         folder = os.path.dirname(p_filepath)
-        if not os.path.exists(folder):
+        if folder and (folder != "") and (not os.path.exists(folder)):
             os.makedirs(folder)
         # if the file doesn't exist, create it
         file_content = ""
