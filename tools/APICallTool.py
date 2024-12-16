@@ -1,8 +1,8 @@
-from typing import Type, Dict, Optional
+from typing import Dict, Optional, Type
 
 from copilot.core import etendo_utils
 from copilot.core.tool_input import ToolField, ToolInput
-from copilot.core.tool_wrapper import ToolWrapper, ToolOutput
+from copilot.core.tool_wrapper import ToolOutput, ToolWrapper
 from copilot.core.utils import copilot_debug
 
 
@@ -59,7 +59,7 @@ def do_request(body_params, endpoint, headers, method, url):
         copilot_debug("url: " + url + endpoint)
         copilot_debug("headers: " + str(headers))
         copilot_debug("response text: " + get_result.text)
-        api_response = get_result.text
+        api_response = get_result
     elif method == "POST":
         copilot_debug("POST method")
         copilot_debug("url: " + url + endpoint)
@@ -72,10 +72,10 @@ def do_request(body_params, endpoint, headers, method, url):
         )
         copilot_debug("response text: " + post_result.text)
         copilot_debug("response raw: " + str(post_result.raw))
-        api_response = post_result.text
+        api_response = post_result
 
     else:
-        api_response = "Method " + method + " not supported"
+        raise Exception(f"Method {method} not supported")
     return api_response
 
 
@@ -169,7 +169,12 @@ class APICallTool(ToolWrapper):
             copilot_debug(f"Method = '{method}'")
             api_response = do_request(body_params, endpoint, headers, method, url)
 
-            response = {"message": api_response}
+            status_code = api_response.status_code
+
+            response = {
+                "requestResponse": api_response.text,
+                "requestStatusCode": status_code,
+            }
             return response
         except Exception as e:
             response = {"error": str(e)}
