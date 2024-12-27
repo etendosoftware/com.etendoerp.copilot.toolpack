@@ -53,6 +53,44 @@
 }]]></JSON_STRUCTURE>
 <!--206B71E96BF145D480FE535BF7607CD4--></ETCOP_TOOL>
 
+<!--31C61BF695C84B79936D273318FA5AD3--><ETCOP_TOOL>
+<!--31C61BF695C84B79936D273318FA5AD3-->  <ETCOP_TOOL_ID><![CDATA[31C61BF695C84B79936D273318FA5AD3]]></ETCOP_TOOL_ID>
+<!--31C61BF695C84B79936D273318FA5AD3-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
+<!--31C61BF695C84B79936D273318FA5AD3-->  <AD_ORG_ID><![CDATA[0]]></AD_ORG_ID>
+<!--31C61BF695C84B79936D273318FA5AD3-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
+<!--31C61BF695C84B79936D273318FA5AD3-->  <VALUE><![CDATA[XLSTool]]></VALUE>
+<!--31C61BF695C84B79936D273318FA5AD3-->  <NAME><![CDATA[XLS/CSV Reader Tool]]></NAME>
+<!--31C61BF695C84B79936D273318FA5AD3-->  <DESCRIPTION><![CDATA[A tool to read an XLS/CSV file and retrieve its content.]]></DESCRIPTION>
+<!--31C61BF695C84B79936D273318FA5AD3-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
+<!--31C61BF695C84B79936D273318FA5AD3-->  <JSON_STRUCTURE><![CDATA[{
+  "type": "function",
+  "function": {
+    "name": "XLSTool",
+    "description": "A tool to read an XLS\/CSV file and retrieve its content.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "description": "XLS\/CSV file path",
+          "title": "Path",
+          "type": "string"
+        },
+        "only_headers": {
+          "anyOf": [
+            {"type": "boolean"},
+            {"type": "null"}
+          ],
+          "default": false,
+          "description": "Mode to only read the headers of the file",
+          "title": "Only Headers"
+        }
+      }
+    }
+  }
+}]]></JSON_STRUCTURE>
+<!--31C61BF695C84B79936D273318FA5AD3-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--31C61BF695C84B79936D273318FA5AD3--></ETCOP_TOOL>
+
 <!--323699133032489B834B154DA66BCB29--><ETCOP_TOOL>
 <!--323699133032489B834B154DA66BCB29-->  <ETCOP_TOOL_ID><![CDATA[323699133032489B834B154DA66BCB29]]></ETCOP_TOOL_ID>
 <!--323699133032489B834B154DA66BCB29-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
