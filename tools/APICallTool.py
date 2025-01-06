@@ -1,3 +1,4 @@
+import base64
 from typing import Dict, Optional, Type
 
 from copilot.core import etendo_utils
@@ -13,9 +14,9 @@ class APICallToolInput(ToolInput):
     )
     method: str = ToolField(
         title="Method",
-        description="The method of the API (GET, POST only supported). if not defined, "
-        "it will be inferred from the endpoint.  Is mandatory.",
-        enum=["GET", "POST"],
+        description="The method of the API (GET, POST or PUT only supported). if not "
+        "defined, it will be inferred from the endpoint.  Is mandatory.",
+        enum=["GET", "POST", "PUT"],
     )
     body_params: Optional[str] = ToolField(
         title="Body Params",
@@ -30,6 +31,20 @@ class APICallToolInput(ToolInput):
     )
 
 
+def replace_base64_filepaths(body_params):
+    if isinstance(body_params, str):
+        while "@BASE64_" in body_params:
+            start = body_params.find("@BASE64_")
+            end = body_params.find("@", start + 1)
+            filepath = body_params[start + 8 : end]
+            with open(filepath, "rb") as file:
+                file_content = file.read()
+                file_content = base64.b64encode(file_content).decode("utf-8")
+                body_params = body_params.replace(f"@BASE64_{filepath}@", file_content)
+
+    return body_params
+
+
 def do_request(body_params, endpoint, headers, method, url):
     """
     This function performs an HTTP request based on the provided parameters.
@@ -38,11 +53,11 @@ def do_request(body_params, endpoint, headers, method, url):
     body_params (str): The body parameters for the API request.
     endpoint (str): The API endpoint as a string.
     headers (dict): The headers to be included in the API request.
-    method (str): The HTTP method to be used (GET, POST).
+    method (str): The HTTP method to be used (GET, POST, PUT)
     url (str): The base URL of the API.
 
     Returns:
-    str: Returns the response text if the method is GET or POST.
+    str: Returns the response text if the method is GET, POST or PUT.
          If the method is not supported, it returns a string indicating that the method is not supported.
     """
     if url is None or url == "":
@@ -53,23 +68,32 @@ def do_request(body_params, endpoint, headers, method, url):
         return {"error": "method is required"}
     import requests
 
-    if method == "GET":
+    # if a value in the body_params, that is a dict, is string and has @BASE64_FILEPATH@,
+    # it will be replaced by the content of the file in base64
+    if body_params and "@BASE64" in str(body_params):
+        body_params = replace_base64_filepaths(body_params)
+    if method.upper() in ["GET"]:
         get_result = requests.get(url=(url + endpoint), headers=headers)
         copilot_debug("GET method")
         copilot_debug("url: " + url + endpoint)
         copilot_debug("headers: " + str(headers))
         copilot_debug("response text: " + get_result.text)
         api_response = get_result
-    elif method == "POST":
-        copilot_debug("POST method")
+    elif method.upper() in ["POST", "PUT"]:
+        copilot_debug("POST/PUT method")
         copilot_debug("url: " + url + endpoint)
         copilot_debug("body_params: " + body_params)
         headers["Content-Type"] = "application/json"
         headers["Accept"] = "application/json"
         copilot_debug("headers: " + str(headers))
-        post_result = requests.post(
-            url=(url + endpoint), data=body_params, headers=headers
-        )
+        if method.upper() == "PUT":
+            post_result = requests.put(
+                url=(url + endpoint), data=body_params, headers=headers
+            )
+        else:
+            post_result = requests.post(
+                url=(url + endpoint), data=body_params, headers=headers
+            )
         copilot_debug("response text: " + post_result.text)
         copilot_debug("response raw: " + str(post_result.raw))
         api_response = post_result
@@ -126,7 +150,7 @@ class APICallTool(ToolWrapper):
     description: str = """ This Tool, executes a call to an API, and returns the response. This tool requires the following parameters:
     - url: The url of the API (for example: https://api.example.com) (required)
     - endpoint: The endpoint of the API (for example: /endpoint) (required)
-    - method: The method of the API (GET, POST only supported). If not defined, it will be inferred from the endpoint. (for example: GET) (required)
+    - method: The method of the API (GET, POST and PUT only supported). If not defined, it will be inferred from the endpoint. (for example: GET) (required)
     - body_params: The body of the API (only for POST method)
     - query_params: The query params of the API in json format
     - token: The bearer token of the API (if required)
