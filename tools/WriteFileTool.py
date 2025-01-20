@@ -6,7 +6,6 @@ from langsmith import traceable
 from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import ToolWrapper
 
-
 class WriteFileToolInput(ToolInput):
     filepath: str = ToolField(
         title="Filepath", description="""The path of the file to write."""
@@ -20,7 +19,6 @@ class WriteFileToolInput(ToolInput):
     lineno: int = ToolField(
         default=-1, description="""The line number where to write the content."""
     )
-
 
 class WriteFileTool(ToolWrapper):
     name: str = "WriteFileTool"
@@ -38,29 +36,35 @@ class WriteFileTool(ToolWrapper):
 
     @traceable
     def run(self, input_params: Dict, *args, **kwargs):
-        # if json is a string, convert it to json, else, use the json
-
+        chmod_env_value = os.getenv("COPILOT_WRITE_RULE")
         p_filepath = input_params.get("filepath")
         p_content = input_params.get("content")
         p_lineno = input_params.get("lineno", -1)
         backup = False
-        # check that the folder exists
+
+        # Ensure the folder exists
         folder = os.path.dirname(p_filepath)
         if folder and (folder != "") and (not os.path.exists(folder)):
             os.makedirs(folder)
-        # if the file doesn't exist, create it
+            if chmod_env_value:
+                os.chmod(folder, int(chmod_env_value, 8))
+
+        # Create the file if it doesn't exist
         file_content = ""
         if not os.path.exists(p_filepath):
             open(p_filepath, "w").close()
-        else:  # if the files exists, read it, make a backup(adds .bak%timestamp%) and write the content
-            file_content = open(p_filepath).read()
-            # backup the file
+            if chmod_env_value:
+                os.chmod(p_filepath, int(chmod_env_value, 8))
+        else:
+            # Read existing file, make a backup, and write content
             import time
             import shutil
 
+            file_content = open(p_filepath).read()
             shutil.copyfile(p_filepath, p_filepath + ".bak" + str(time.time()))
             backup = True
-            # write the content
+
+        # Write or append content
         if not input_params.get("override", True):
             if p_lineno == -1:
                 file_content += p_content
@@ -70,10 +74,12 @@ class WriteFileTool(ToolWrapper):
                 file_content = "\n".join(lines)
             open(p_filepath, "w").write(file_content)
         else:
-            #  delete the file
             os.remove(p_filepath)
-            # write the content
             open(p_filepath, "w").write(p_content)
+
+        # Apply chmod if COPILOT_WRITE_RULE is set
+        if chmod_env_value:
+            os.chmod(p_filepath, int(chmod_env_value, 8))
 
         msg = "File %s written successfully, backup: %s" % (p_filepath, backup)
         return {"message": msg}
