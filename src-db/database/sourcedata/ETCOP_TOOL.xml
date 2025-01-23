@@ -53,6 +53,44 @@
 }]]></JSON_STRUCTURE>
 <!--206B71E96BF145D480FE535BF7607CD4--></ETCOP_TOOL>
 
+<!--31C61BF695C84B79936D273318FA5AD3--><ETCOP_TOOL>
+<!--31C61BF695C84B79936D273318FA5AD3-->  <ETCOP_TOOL_ID><![CDATA[31C61BF695C84B79936D273318FA5AD3]]></ETCOP_TOOL_ID>
+<!--31C61BF695C84B79936D273318FA5AD3-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
+<!--31C61BF695C84B79936D273318FA5AD3-->  <AD_ORG_ID><![CDATA[0]]></AD_ORG_ID>
+<!--31C61BF695C84B79936D273318FA5AD3-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
+<!--31C61BF695C84B79936D273318FA5AD3-->  <VALUE><![CDATA[XLSTool]]></VALUE>
+<!--31C61BF695C84B79936D273318FA5AD3-->  <NAME><![CDATA[XLS/CSV Reader Tool]]></NAME>
+<!--31C61BF695C84B79936D273318FA5AD3-->  <DESCRIPTION><![CDATA[A tool to read an XLS/CSV file and retrieve its content.]]></DESCRIPTION>
+<!--31C61BF695C84B79936D273318FA5AD3-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
+<!--31C61BF695C84B79936D273318FA5AD3-->  <JSON_STRUCTURE><![CDATA[{
+  "type": "function",
+  "function": {
+    "name": "XLSTool",
+    "description": "A tool to read an XLS\/CSV file and retrieve its content.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "description": "XLS\/CSV file path",
+          "title": "Path",
+          "type": "string"
+        },
+        "only_headers": {
+          "anyOf": [
+            {"type": "boolean"},
+            {"type": "null"}
+          ],
+          "default": false,
+          "description": "Mode to only read the headers of the file",
+          "title": "Only Headers"
+        }
+      }
+    }
+  }
+}]]></JSON_STRUCTURE>
+<!--31C61BF695C84B79936D273318FA5AD3-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--31C61BF695C84B79936D273318FA5AD3--></ETCOP_TOOL>
+
 <!--323699133032489B834B154DA66BCB29--><ETCOP_TOOL>
 <!--323699133032489B834B154DA66BCB29-->  <ETCOP_TOOL_ID><![CDATA[323699133032489B834B154DA66BCB29]]></ETCOP_TOOL_ID>
 <!--323699133032489B834B154DA66BCB29-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
@@ -549,7 +587,7 @@
 <!--F531471DE4E04DA28EF6968EF4C5864B-->  <DESCRIPTION><![CDATA[This Tool, executes a call to an API, and returns the response. This tool requires the following parameters:
     - url: The url of the API (for example: https://api.example.com) (required)
     - endpoint: The endpoint of the API (for example: /endpoint) (required)
-    - method: The method of the API (GET, POST only supported). If not defined, it will be inferred from the endpoint. (for example: GET) (required)
+    - method: The method of the API (GET, POST and PUT only supported). If not defined, it will be inferred from the endpoint. (for example: GET) (required)
     - body_params: The body of the API (only for POST method)
     - query_params: The query params of the API in json format
     - token: The bearer token of the API (if required)]]></DESCRIPTION>
@@ -558,43 +596,53 @@
   "type": "function",
   "function": {
     "name": "APICallTool",
-    "description": "This Tool, executes a call to an API, and returns the response. This tool requires the following parameters:\n    - url: The url of the API (for example: https:\/\/api.example.com) (required)\n    - endpoint: The endpoint of the API (for example: \/endpoint) (required)\n    - method: The method of the API (GET, POST only supported). If not defined, it will be inferred from the endpoint. (for example: GET) (required)\n    - body_params: The body of the API (only for POST method) \n    - query_params: The query params of the API in json format\n    - token: The bearer token of the API (if required)",
+    "description": "This Tool, executes a call to an API, and returns the response. This tool requires the following parameters:\n    - url: The url of the API (for example: https:\/\/api.example.com) (required)\n    - endpoint: The endpoint of the API (for example: \/endpoint) (required) \n    - method: The method of the API (GET, POST and PUT only supported). If not defined, it will be inferred from the endpoint. (for example: GET) (required)\n    - body_params: The body of the API (only for POST method)\n    - query_params: The query params of the API in json format\n    - token: The bearer token of the API (if required)",
     "parameters": {
       "type": "object",
       "properties": {
         "url": {
-          "title": "URL",
           "description": "The url of the API. Is mandatory.",
+          "title": "URL",
           "type": "string"
         },
         "endpoint": {
-          "title": "Endpoint",
           "description": "The endpoint of the API. Is mandatory.",
+          "title": "Endpoint",
           "type": "string"
         },
         "method": {
-          "title": "Method",
-          "description": "The method of the API (GET, POST only supported). if not defined, it will be inferred from the endpoint.  Is mandatory.",
+          "description": "The method of the API (GET, POST or PUT only supported). if not defined, it will be inferred from the endpoint.  Is mandatory.",
           "enum": [
             "GET",
-            "POST"
+            "POST",
+            "PUT"
           ],
+          "title": "Method",
           "type": "string"
         },
         "body_params": {
-          "title": "Body Params",
+          "anyOf": [
+            {"type": "string"},
+            {"type": "null"}
+          ],
           "description": "The body of the API (only for POST method). Is mandatory.",
-          "type": "string"
+          "title": "Body Params"
         },
         "query_params": {
-          "title": "Query Params",
+          "anyOf": [
+            {"type": "string"},
+            {"type": "null"}
+          ],
           "description": "The query params of the API in json format. Is mandatory.",
-          "type": "string"
+          "title": "Query Params"
         },
         "token": {
-          "title": "Token",
+          "anyOf": [
+            {"type": "string"},
+            {"type": "null"}
+          ],
           "description": "The bearer token of the API. Is mandatory. ",
-          "type": "string"
+          "title": "Token"
         }
       }
     }
