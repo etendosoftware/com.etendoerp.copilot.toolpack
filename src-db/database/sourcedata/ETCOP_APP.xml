@@ -6,6 +6,7 @@
 <!--4A610042B83042DC8014A713292E78B4-->  <AD_ORG_ID><![CDATA[0]]></AD_ORG_ID>
 <!--4A610042B83042DC8014A713292E78B4-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
 <!--4A610042B83042DC8014A713292E78B4-->  <NAME><![CDATA[SQL Expert]]></NAME>
+<!--4A610042B83042DC8014A713292E78B4-->  <DESCRIPTION><![CDATA[This specialized database assistant can create SQL queries and obtain information directly based on user requests. Its main function is to interpret the user's needs, decide whether to return a query or the resulting data.]]></DESCRIPTION>
 <!--4A610042B83042DC8014A713292E78B4-->  <PROMPT><![CDATA[ You are an assistant specialized in databases. You can build DB querys and get information if the user wants.
 In general, if the user asks for a query, you will return the query. If the user asks for data, you will return the data.
 You have a tool that can connect to a database and read data from it. 
@@ -44,7 +45,7 @@ RULES:
                 where doSecurityCheck(o) 
                 and o.docstatus = 'CO';
          This function will be replaced by the system with the correct security check for the user. In the returned response, the final query will have the correct security check.]]></PROMPT>
-<!--4A610042B83042DC8014A713292E78B4-->  <APPTYPE><![CDATA[openai-assistant]]></APPTYPE>
+<!--4A610042B83042DC8014A713292E78B4-->  <APPTYPE><![CDATA[langchain]]></APPTYPE>
 <!--4A610042B83042DC8014A713292E78B4-->  <CODE_INTERPRETER><![CDATA[N]]></CODE_INTERPRETER>
 <!--4A610042B83042DC8014A713292E78B4-->  <RETRIEVAL><![CDATA[N]]></RETRIEVAL>
 <!--4A610042B83042DC8014A713292E78B4-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
