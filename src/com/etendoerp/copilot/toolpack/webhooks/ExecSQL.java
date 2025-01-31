@@ -47,7 +47,7 @@ import net.sf.jsqlparser.statement.select.SelectVisitorAdapter;
 public class ExecSQL extends BaseWebhookService {
 
   private static final Logger log = LogManager.getLogger();
-  public static final String DO_SECURITY_CHECK = "doSecurityCheck";
+  public static final String ERROR = "error";
 
   /**
    * Executes an SQL query received in the parameter map and stores the result in the response map.
@@ -78,13 +78,13 @@ public class ExecSQL extends BaseWebhookService {
         handleShowTable(responseVars);
       } else if (StringUtils.equalsIgnoreCase(mode, "SHOW_COLUMNS")) {
         if (StringUtils.isEmpty(table)) {
-          responseVars.put("error", OBMessageUtils.messageBD("ETCOPTP_NoTable")); //Ver message
+          responseVars.put(ERROR, OBMessageUtils.messageBD("ETCOPTP_NoTable"));
           return;
         }
         handleShowColumns(responseVars, table, conn);
       } else {
         if (StringUtils.isEmpty(query)) {
-          responseVars.put("error", OBMessageUtils.messageBD("ETCOPTP_NoQuery"));
+          responseVars.put(ERROR, OBMessageUtils.messageBD("ETCOPTP_NoQuery"));
           return;
         }
         handleExecuteQuery(responseVars, query, conn);
@@ -92,8 +92,7 @@ public class ExecSQL extends BaseWebhookService {
 
 
     } catch (JSQLParserException e) {
-      responseVars.put("error", e.getMessage());
-      return;
+      responseVars.put(ERROR, e.getMessage());
     }
   }
 
@@ -146,7 +145,7 @@ public class ExecSQL extends BaseWebhookService {
       responseVars.put("columns", columns.toString());
       responseVars.put("data", data.toString());
     } catch (SQLException e) {
-      throw new OBException(" ERROR"); //TODO
+      throw new OBException(e);
     }
 
   }
@@ -209,7 +208,7 @@ public class ExecSQL extends BaseWebhookService {
     for (String s : clientreadableSet) {
       values.add(new StringValue(s));
     }
-    return new ParenthesedExpressionList<StringValue>(values);
+    return new ParenthesedExpressionList<>(values);
   }
 
   /**
@@ -225,7 +224,7 @@ public class ExecSQL extends BaseWebhookService {
    */
   public void validateIsSelect(Statement statement) {
     if (!(statement instanceof Select)) {
-      throw new OBException(OBMessageUtils.messageBD("ETCOPTP_OnlySelect")); //TODO: Ver mensaje
+      throw new OBException(OBMessageUtils.messageBD("ETCOPTP_OnlySelect"));
     }
   }
 
@@ -251,7 +250,7 @@ public class ExecSQL extends BaseWebhookService {
       String tableName = table.getName();
       if (tablesAccesable.stream().noneMatch(t -> StringUtils.equalsIgnoreCase(t, tableName))) {
         throw new OBException(
-            String.format(OBMessageUtils.messageBD("ETCOPTP_TableNotAccessible"), tableName)); //TODO: Ver mensaje
+            String.format(OBMessageUtils.messageBD("ETCOPTP_TableNotAccessible"), tableName));
       }
     }
   }
@@ -312,7 +311,7 @@ public class ExecSQL extends BaseWebhookService {
     for (net.sf.jsqlparser.schema.Table table : tables) {
       if (table.getAlias() == null || StringUtils.isEmpty(table.getAlias().getName())) {
         throw new OBException(
-            String.format(OBMessageUtils.messageBD("ETCOPTP_TableWithoutAlias"), table.getName())); //TODO: Ver mensaje
+            String.format(OBMessageUtils.messageBD("ETCOPTP_TableWithoutAlias"), table.getName()));
       }
     }
   }
@@ -337,7 +336,7 @@ public class ExecSQL extends BaseWebhookService {
     criteria.setMaxResults(1);
     Table tableObj = (Table) criteria.uniqueResult();
     if (tableObj == null) {
-      responseVars.put("error", OBMessageUtils.messageBD("ETCOPTP_NoTable"));
+      responseVars.put(ERROR, OBMessageUtils.messageBD("ETCOPTP_NoTable"));
       return;
     }
     List<Column> colADColumn = tableObj.getADColumnList();
@@ -368,7 +367,7 @@ public class ExecSQL extends BaseWebhookService {
       }
       responseVars.put("data", data.toString());
     } catch (Exception e) {
-      responseVars.put("error", e.getMessage());
+      responseVars.put(ERROR, e.getMessage());
     }
   }
 
@@ -407,8 +406,7 @@ public class ExecSQL extends BaseWebhookService {
     OBCriteria<Table> criteria = OBDal.getInstance().createCriteria(Table.class);
     List<String> accesableTablesID = getAccesableTablesID();
     criteria.add(Restrictions.in(Table.PROPERTY_ID, accesableTablesID));
-    List<Table> tableList = criteria.list();
-    return tableList;
+    return criteria.list();
   }
 
   /**
