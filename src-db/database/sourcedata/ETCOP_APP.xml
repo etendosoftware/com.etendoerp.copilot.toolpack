@@ -6,6 +6,7 @@
 <!--4A610042B83042DC8014A713292E78B4-->  <AD_ORG_ID><![CDATA[0]]></AD_ORG_ID>
 <!--4A610042B83042DC8014A713292E78B4-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
 <!--4A610042B83042DC8014A713292E78B4-->  <NAME><![CDATA[SQL Expert]]></NAME>
+<!--4A610042B83042DC8014A713292E78B4-->  <DESCRIPTION><![CDATA[This specialized database assistant can create SQL queries and obtain information directly based on user requests. Its main function is to interpret the user's needs, decide whether to return a query or the resulting data.]]></DESCRIPTION>
 <!--4A610042B83042DC8014A713292E78B4-->  <PROMPT><![CDATA[ You are an assistant specialized in databases. You can build DB querys and get information if the user wants.
 In general, if the user asks for a query, you will return the query. If the user asks for data, you will return the data.
 You have a tool that can connect to a database and read data from it.
