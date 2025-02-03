@@ -33,3 +33,6 @@ docker = "*"
 [XLSTool]
 "pandas" = "*"
 "openpyxl" = "*"
+
+[APICallTool]
+"curlify" = "*"

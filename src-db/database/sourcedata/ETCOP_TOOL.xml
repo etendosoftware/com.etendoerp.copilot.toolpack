@@ -91,52 +91,6 @@
 <!--31C61BF695C84B79936D273318FA5AD3-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
 <!--31C61BF695C84B79936D273318FA5AD3--></ETCOP_TOOL>
 
-<!--323699133032489B834B154DA66BCB29--><ETCOP_TOOL>
-<!--323699133032489B834B154DA66BCB29-->  <ETCOP_TOOL_ID><![CDATA[323699133032489B834B154DA66BCB29]]></ETCOP_TOOL_ID>
-<!--323699133032489B834B154DA66BCB29-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
-<!--323699133032489B834B154DA66BCB29-->  <AD_ORG_ID><![CDATA[0]]></AD_ORG_ID>
-<!--323699133032489B834B154DA66BCB29-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
-<!--323699133032489B834B154DA66BCB29-->  <VALUE><![CDATA[DBQueryGenerator]]></VALUE>
-<!--323699133032489B834B154DA66BCB29-->  <NAME><![CDATA[Database Query Generator tool]]></NAME>
-<!--323699133032489B834B154DA66BCB29-->  <DESCRIPTION><![CDATA[
-        This tool can connect to a database and read data from it.
-        This tool has three modes: SHOW_TABLES, SHOW_COLUMNS, EXECUTE_QUERY.
-        The mode SHOW_TABLES will return the tables of the database, with the table name, name and description.
-        The mode SHOW_COLUMNS will return the columns of a table, with the column name, name and description. This mode
-        needs the parameter p_data with the table name.
-        The mode EXECUTE_QUERY will execute the query that the user wants. This mode needs the parameter p_data with
-        the query.
-        ]]></DESCRIPTION>
-<!--323699133032489B834B154DA66BCB29-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
-<!--323699133032489B834B154DA66BCB29-->  <JSON_STRUCTURE><![CDATA[{
-  "type": "function",
-  "function": {
-    "name": "DBQueryGenerator",
-    "description": " \n        This tool can connect to a database and read data from it.\n        This tool has three modes: SHOW_TABLES, SHOW_COLUMNS, EXECUTE_QUERY.\n        The mode SHOW_TABLES will return the tables of the database, with the table name, name and description.\n        The mode SHOW_COLUMNS will return the columns of a table, with the column name, name and description. This mode \n        needs the parameter p_data with the table name.\n        The mode EXECUTE_QUERY will execute the query that the user wants. This mode needs the parameter p_data with \n        the query.\n        ",
-    "parameters": {
-      "type": "object",
-      "properties": {
-        "p_mode": {
-          "description": "This parameter indicates the mode of the tool. The mode can be SHOW_TABLES, SHOW_COLUMNS, EXECUTE_QUERY. SHOW_TABLES will return the tables of the database, with the table name, name and description. SHOW_COLUMNS will return the columns of a table, with the column name, name and description. EXECUTE_QUERY will execute the query that the user wants.",
-          "enum": [
-            "SHOW_TABLES",
-            "SHOW_COLUMNS",
-            "EXECUTE_QUERY"
-          ],
-          "title": "Mode",
-          "type": "string"
-        },
-        "p_data": {
-          "description": "The data that the user wants to get from the database. The data is used in the mode SHOW_COLUMNS and EXECUTE_QUERY. In the mode SHOW_COLUMNS, the data is the table name. In the mode EXECUTE_QUERY, the data is the query that the user wants to execute.In other modes, this parameter is not used.",
-          "title": "Data",
-          "type": "string"
-        }
-      }
-    }
-  }
-}]]></JSON_STRUCTURE>
-<!--323699133032489B834B154DA66BCB29--></ETCOP_TOOL>
-
 <!--3D54E50D0F8C4EA1B88B4A831811CF42--><ETCOP_TOOL>
 <!--3D54E50D0F8C4EA1B88B4A831811CF42-->  <ETCOP_TOOL_ID><![CDATA[3D54E50D0F8C4EA1B88B4A831811CF42]]></ETCOP_TOOL_ID>
 <!--3D54E50D0F8C4EA1B88B4A831811CF42-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>

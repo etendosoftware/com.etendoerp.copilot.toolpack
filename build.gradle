@@ -53,4 +53,5 @@ repositories {
 */
 dependencies {
     implementation('com.etendoerp:copilot:1.11.0')
+    implementation 'com.github.jsqlparser:jsqlparser:5.1'
 }

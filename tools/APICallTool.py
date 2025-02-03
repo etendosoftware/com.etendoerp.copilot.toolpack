@@ -94,8 +94,13 @@ def do_request(body_params, endpoint, headers, method, url):
             post_result = requests.post(
                 url=(url + endpoint), data=body_params, headers=headers
             )
-        copilot_debug("response text: " + post_result.text)
-        copilot_debug("response raw: " + str(post_result.raw))
+        copilot_debug("----CURL----")
+        import curlify
+
+        copilot_debug(curlify.to_curl(post_result.request))
+        copilot_debug("----Response RAW----")
+        copilot_debug(str(post_result.raw))
+        copilot_debug("--------")
         api_response = post_result
 
     else:
