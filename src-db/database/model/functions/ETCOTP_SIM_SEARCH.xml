@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+  <database name="FUNCTION ETCOTP_SIM_SEARCH">
+    <function name="ETCOTP_SIM_SEARCH" type="NUMERIC">
+      <parameter name="table_name" type="VARCHAR" mode="in">
+        <default/>
+      </parameter>
+      <parameter name="record_id" type="VARCHAR" mode="in">
+        <default/>
+      </parameter>
+      <parameter name="search_term" type="VARCHAR" mode="in">
+        <default/>
+      </parameter>
+      <body><![CDATA[sql_query                 text;
+    result_id                 text;
+    result_identifier         text;
+    result_similarity_percent NUMBER;
+BEGIN
+    sql_query := '
+    SELECT ' || table_name || '_id as id , ad_column_identifier_std(''' || table_name || ''', ' || table_name || '_id),
+           (SIMILARITY(ad_column_identifier_std(''' || table_name || ''', ' || table_name || '_id), ''' ||
+                 search_term || ''') * 100)::numeric as similarity_percent
+    FROM ' || quote_ident(table_name) || '
+    order by similarity_percent desc
+    limit 1';
+
+    result_id := '';
+    result_identifier := ad_column_identifier_std(table_name, record_id);
+    result_similarity_percent := SIMILARITY(result_identifier, search_term) * 100;
+
+
+    RETURN result_similarity_percent;
+END ETCOTP_SIM_SEARCH
+]]></body>
+    </function>
+  </database>
