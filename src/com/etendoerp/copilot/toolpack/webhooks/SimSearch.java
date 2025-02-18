@@ -1,7 +1,5 @@
 package com.etendoerp.copilot.toolpack.webhooks;
 
-
-import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Map;
@@ -28,7 +26,6 @@ import com.smf.securewebservices.utils.WSResult.Status;
 
 /**
  * Webhook service for performing similarity searches.
- * This class extends the BaseWebhookService and overrides the get method to handle
  * similarity search requests based on provided parameters.
  */
 public class SimSearch extends BaseWebhookService {
@@ -36,7 +33,6 @@ public class SimSearch extends BaseWebhookService {
   private static final Logger LOG = LoggerFactory.getLogger(SimSearch.class);
   private static final String MESSAGE = "message";
   public static final int MIN_SIM_PERCENT = 30;
-  public static final String MESSAGE_RESULT_PROPERTY = "message";
 
   /**
    * Handles the GET request for the webhook.
@@ -75,6 +71,21 @@ public class SimSearch extends BaseWebhookService {
     responseVars.put(MESSAGE, responseText);
   }
 
+  /**
+   * Handles the similarity search based on the provided request parameters.
+   *
+   * @param requestParams
+   *     A map of request parameters.
+   * @return A WSResult object containing the search results.
+   * @throws JSONException
+   *     If an error occurs while processing JSON data.
+   * @throws NoSuchFieldException
+   *     If a field is not found.
+   * @throws IllegalAccessException
+   *     If access to a field is denied.
+   * @throws ClassNotFoundException
+   *     If the entity class is not found.
+   */
   public static WSResult handleSimSearch(
       Map<String, String> requestParams) throws JSONException, NoSuchFieldException, IllegalAccessException, ClassNotFoundException {
     String searchTerm = requestParams.get("searchTerm");
@@ -83,11 +94,10 @@ public class SimSearch extends BaseWebhookService {
     int qtyResults = Integer.parseInt(requestParams.getOrDefault("qtyResults", "1"));
     String minSimmilarityPercent = requestParams.getOrDefault("minSimPercent", String.valueOf(MIN_SIM_PERCENT));
 
-
     WSResult wsResult = new WSResult();
     JSONArray arrayResponse;
     String whereOrderByClause2 = String.format(
-        " as p where  etcpopp_sim_search(:tableName, p.id, :searchTerm) > %s order by etcpopp_sim_search(:tableName, p.id, :searchTerm) desc ",
+        " as p where  etcotp_sim_search(:tableName, p.id, :searchTerm) > %s order by etcotp_sim_search(:tableName, p.id, :searchTerm) desc ",
         Integer.parseInt(minSimmilarityPercent));
     Set<Entity> readableEntities = OBContext.getOBContext().getEntityAccessChecker().getReadableEntities();
     Entity entity = readableEntities.stream().filter(e -> e.getName().equals(entityName)).findFirst().orElse(
@@ -135,12 +145,8 @@ public class SimSearch extends BaseWebhookService {
     }
   }
 
-
   /**
-   * This method is used to search for entities that are similar to the provided search term.
-   * It creates an OBQuery object for the specified entity class and sets the where clause and parameters for the query.
-   * The query is executed and the results are converted into a JSONArray of JSONObjects.
-   * Each JSONObject contains the ID and name of the entity and the similarity percent between the entity and the search term.
+   * Searches for entities that are similar to the provided search term.
    *
    * @param <T>
    *     The type of the entity to be searched. It must be a subclass of BaseOBObject.
@@ -150,16 +156,16 @@ public class SimSearch extends BaseWebhookService {
    *     The search term to be used in the similarity search.
    * @param qtyResults
    *     The maximum number of results to be returned by the search.
+   * @param entityClass
+   *     The class of the entity to be searched.
    * @param tableName
-   * @param entityName
+   *     The name of the table where the entity belongs.
    * @return A JSONArray of JSONObjects, each representing a search result.
    * @throws JSONException
    *     If an error occurs while processing the JSON data.
    */
   private static <T extends BaseOBObject> JSONArray searchEntities(String whereOrderByClause2,
-      String searchTerm, int qtyResults, Class<T> entityClass, String tableName
-
-  ) throws JSONException {
+      String searchTerm, int qtyResults, Class<T> entityClass, String tableName) throws JSONException {
 
     OBQuery<T> searchQuery = OBDal.getInstance().createQuery(entityClass, whereOrderByClause2);
 
@@ -183,15 +189,15 @@ public class SimSearch extends BaseWebhookService {
    * Calculates the similarity percentage between a provided ID and a search term for a specific table.
    *
    * @param id
-   *     the ID of the entity.
+   *     The ID of the entity.
    * @param searchTerm
-   *     the search term to compare against.
+   *     The search term to compare against.
    * @param tableName
-   *     the name of the table where the entity belongs.
-   * @return the similarity percentage as a BigDecimal.
+   *     The name of the table where the entity belongs.
+   * @return The similarity percentage as a BigDecimal.
    */
   private static BigDecimal calcSimilarityPercent(String id, String searchTerm, String tableName) {
-    String sql = String.format("select etcpopp_sim_search('%s', '%s', '%s')", tableName, id, searchTerm);
+    String sql = String.format("select etcotp_sim_search('%s', '%s', '%s')", tableName, id, searchTerm);
     Query query = OBDal.getInstance().getSession().createSQLQuery(sql);
     ScrollableResults scroll = query.scroll(ScrollMode.FORWARD_ONLY);
     scroll.next();
