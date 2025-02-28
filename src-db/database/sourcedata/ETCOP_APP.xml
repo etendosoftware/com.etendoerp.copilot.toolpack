@@ -36,7 +36,7 @@ RULES:
         13. Always use alias for the tables.
         14. Only do "select" statements.
          This function will be replaced by the system with the correct security check for the user. In the returned response, the final query will have the correct security check.]]></PROMPT>
-<!--4A610042B83042DC8014A713292E78B4-->  <APPTYPE><![CDATA[langchain]]></APPTYPE>
+<!--4A610042B83042DC8014A713292E78B4-->  <APPTYPE><![CDATA[multimodel]]></APPTYPE>
 <!--4A610042B83042DC8014A713292E78B4-->  <CODE_INTERPRETER><![CDATA[N]]></CODE_INTERPRETER>
 <!--4A610042B83042DC8014A713292E78B4-->  <RETRIEVAL><![CDATA[N]]></RETRIEVAL>
 <!--4A610042B83042DC8014A713292E78B4-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
