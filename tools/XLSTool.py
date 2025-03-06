@@ -26,6 +26,7 @@ def process_file(file_path, mode):
         raise ValueError("The file must have a .csv or .xlsx extension")
 
     # load the file according to its extension
+    pd.options.display.max_columns = 2000
     if file_extension == ".csv":
         data = pd.read_csv(file_path)
     elif file_extension == ".xlsx":
