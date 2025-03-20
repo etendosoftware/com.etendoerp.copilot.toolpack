@@ -34,7 +34,7 @@ class AttachFileTool(ToolWrapper):
     args_schema: Type[ToolInput] = AttachFileInput
     return_direct: bool = False
 
-    def run(self, input_params: Dict, *args, **kwargs) -> str:
+    def run(self, input_params: Dict, *args, **kwargs) -> Dict:
         filepath = input_params.get("filepath")
         ad_tab_id = input_params.get("ad_tab_id")
         record_id = input_params.get("record_id")

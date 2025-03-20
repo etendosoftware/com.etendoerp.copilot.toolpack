@@ -14,6 +14,9 @@ import org.openbravo.dal.service.OBDal;
 
 import com.etendoerp.webhookevents.services.BaseWebhookService;
 
+/*
+ * This class is used to attach a file to a record in Etendo.
+ */
 public class AttachFileWebhook extends BaseWebhookService {
 
   private static final Logger log = LogManager.getLogger();

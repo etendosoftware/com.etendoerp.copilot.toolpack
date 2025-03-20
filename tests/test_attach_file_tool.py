@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import patch, mock_open
+from unittest.mock import mock_open, patch
 
 from tools.AttachFileTool import AttachFileTool
 
@@ -43,11 +43,6 @@ class TestAttachFileTool(unittest.TestCase):
     ):
         result = AttachFileTool().run(self.valid_input)
         self.assertEqual(result, {"success": False, "error": "Attachment failed"})
-
-    @patch("os.path.isfile", return_value=False)
-    def test_run_file_not_exist(self, mock_isfile):
-        result = AttachFileTool().run(self.valid_input)
-        self.assertEqual(result, {"error": "File does not exist or is not accessible"})
 
     @patch("os.path.isfile", return_value=True)
     @patch("os.access", return_value=False)

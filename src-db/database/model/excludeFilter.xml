@@ -1,4 +1,4 @@
-    <?xml version="1.0"?>
-      <vector>
-        <excludedFunction name="ETCOTP_SIM_SEARCH"/>
-      </vector>
+<?xml version="1.0"?>
+  <vector>
+    <excludedFunction name="ETCOTP_SIM_SEARCH"/>
+  </vector>
