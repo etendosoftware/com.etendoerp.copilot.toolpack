@@ -500,6 +500,45 @@
 <!--C816B0D4763B41D0BACE39A8CDA573BC-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
 <!--C816B0D4763B41D0BACE39A8CDA573BC--></ETCOP_TOOL>
 
+<!--DD195D1E832A430E914D36748244B0D6--><ETCOP_TOOL>
+<!--DD195D1E832A430E914D36748244B0D6-->  <ETCOP_TOOL_ID><![CDATA[DD195D1E832A430E914D36748244B0D6]]></ETCOP_TOOL_ID>
+<!--DD195D1E832A430E914D36748244B0D6-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
+<!--DD195D1E832A430E914D36748244B0D6-->  <AD_ORG_ID><![CDATA[0]]></AD_ORG_ID>
+<!--DD195D1E832A430E914D36748244B0D6-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
+<!--DD195D1E832A430E914D36748244B0D6-->  <VALUE><![CDATA[TaskCreatorTool]]></VALUE>
+<!--DD195D1E832A430E914D36748244B0D6-->  <NAME><![CDATA[Task Creator Tool]]></NAME>
+<!--DD195D1E832A430E914D36748244B0D6-->  <DESCRIPTION><![CDATA[Processes a ZIP, CSV, or Excel file and creates a task for each extracted file or row. For ZIP files, each uncompressed file's full path is added to the description. For CSV or Excel files, the header row is skipped and each subsequent row task includes the header and the row data. If the file format is unsupported, a task is created with the file path.]]></DESCRIPTION>
+<!--DD195D1E832A430E914D36748244B0D6-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
+<!--DD195D1E832A430E914D36748244B0D6-->  <JSON_STRUCTURE><![CDATA[{
+  "type": "function",
+  "function": {
+    "name": "TaskCreatorTool",
+    "description": "Processes a ZIP, CSV, or Excel file and creates a task for each extracted file or row. For ZIP files, each uncompressed file's full path is added to the description. For CSV or Excel files, the header row is skipped and each subsequent row task includes the header and the row data. If the file format is unsupported, a task is created with the file path.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "file_path": {
+          "description": "Path to the ZIP, CSV, XLS, or XLSX file.",
+          "title": "File Path",
+          "type": "string"
+        },
+        "task_type_id": {
+          "description": "ID of the task type.",
+          "title": "Task Type",
+          "type": "string"
+        },
+        "status_id": {
+          "description": "ID of the pending status.",
+          "title": "Status",
+          "type": "string"
+        }
+      }
+    }
+  }
+}]]></JSON_STRUCTURE>
+<!--DD195D1E832A430E914D36748244B0D6-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--DD195D1E832A430E914D36748244B0D6--></ETCOP_TOOL>
+
 <!--E6050C9D77BD4CC4BBA7B79748C57770--><ETCOP_TOOL>
 <!--E6050C9D77BD4CC4BBA7B79748C57770-->  <ETCOP_TOOL_ID><![CDATA[E6050C9D77BD4CC4BBA7B79748C57770]]></ETCOP_TOOL_ID>
 <!--E6050C9D77BD4CC4BBA7B79748C57770-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
