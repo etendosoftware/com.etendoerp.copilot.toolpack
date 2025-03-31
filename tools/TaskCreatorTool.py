@@ -1,7 +1,9 @@
 import csv
 import os
 import tempfile
+import uuid
 import zipfile
+from pathlib import Path
 from typing import Dict, List, Type
 
 import curlify
@@ -9,7 +11,7 @@ import pandas as pd
 import requests
 from requests import Response
 
-from copilot.core import etendo_utils
+from copilot.core import etendo_utils, utils
 from copilot.core.exceptions import ToolException
 from copilot.core.threadcontext import ThreadContext
 from copilot.core.tool_input import ToolField, ToolInput
@@ -100,19 +102,24 @@ def simple_request_to_etendo(method, payload, endpoint) -> requests.Response:
 def process_zip(zip_path: str) -> List[str]:
     try:
         result = []
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            with zipfile.ZipFile(zip_path, "r") as zip_ref:
-                members = [
-                    m
-                    for m in zip_ref.infolist()
-                    if not m.filename.startswith("__MACOSX/")
-                ]
-                zip_ref.extractall(tmp_dir, members=[m.filename for m in members])
-            # Walk through the temporary directory to create tasks for each valid file.
-            for root, _, files in os.walk(tmp_dir):
-                for file_name in files:
-                    full_path = os.path.join(root, file_name)
-                    result.append(full_path)
+
+        # Determine prefix based on the environment
+        prefix = os.getcwd() if not utils.is_docker() else ""
+        temp_file_path = Path(f"{prefix}/copilotAttachedFiles/{uuid.uuid4()}")
+        temp_file_path.mkdir(parents=True, exist_ok=True)
+
+        with zipfile.ZipFile(zip_path, "r") as zip_ref:
+            members = [
+                m for m in zip_ref.infolist() if not m.filename.startswith("__MACOSX/")
+            ]
+            zip_ref.extractall(temp_file_path, members=[m.filename for m in members])
+
+        # Walk through the extracted files and store their paths
+        for root, _, files in os.walk(temp_file_path):
+            for file_name in files:
+                full_path = os.path.join(root, file_name)
+                result.append(full_path)
+
         return result
 
     except Exception as e:
