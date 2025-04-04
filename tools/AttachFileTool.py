@@ -2,8 +2,7 @@ import base64
 import os
 from typing import Type, Optional, Dict
 
-from copilot.core import utils
-from copilot.core.etendo_utils import call_webhook, get_etendo_token
+from copilot.core.etendo_utils import call_webhook, get_etendo_host, get_etendo_token
 from copilot.core.tool_input import ToolInput, ToolField
 from copilot.core.tool_wrapper import ToolWrapper
 from copilot.core.utils import copilot_debug
@@ -56,9 +55,7 @@ class AttachFileTool(ToolWrapper):
             file_base64 = base64.b64encode(file_content).decode("utf-8")
         file_name = os.path.basename(filepath)
         access_token = get_etendo_token()
-        etendo_host = utils.read_optional_env_var(
-            "ETENDO_HOST", "http://host.docker.internal:8080/etendo"
-        )
+        etendo_host = get_etendo_host()
         copilot_debug(f"ETENDO_HOST: {etendo_host}")
         return self.attach_file(
             etendo_host, access_token, ad_tab_id, record_id, file_name, file_base64
