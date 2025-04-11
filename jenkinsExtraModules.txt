@@ -1,1 +1,1 @@
-com.etendoerp.etendorx
+git@bitbucket.org:koodu_software/com.etendoerp.task.git,git@github.com:etendosoftware/com.etendoerp.etendorx.git
