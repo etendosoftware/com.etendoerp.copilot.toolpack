@@ -38,4 +38,7 @@ docker = "*"
 "curlify" = "*"
 
 [PdfSplitterTool]
-"PyPDF2" = "*"
+PyPDF2 = "*"
+
+[ExcelOCRTool]
+matplotlib = "*"

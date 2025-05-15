@@ -1,6 +1,5 @@
 from pathlib import Path
 from typing import Type
-from PyPDF2 import PdfReader, PdfWriter
 
 from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import ToolWrapper
@@ -18,6 +17,7 @@ class PdfSplitterTool(ToolWrapper):
 
     def run(self, input_params, *args, **kwargs):
         try:
+            from PyPDF2 import PdfReader, PdfWriter
             pdf_path = input_params.get("path")
 
             if not Path(pdf_path).is_file():

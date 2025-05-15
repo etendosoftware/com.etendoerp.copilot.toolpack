@@ -80,6 +80,40 @@
 }]]></JSON_STRUCTURE>
 <!--206B71E96BF145D480FE535BF7607CD4--></ETCOP_TOOL>
 
+<!--2A95B3081BF443F880BF8D3C2FA6A755--><ETCOP_TOOL>
+<!--2A95B3081BF443F880BF8D3C2FA6A755-->  <ETCOP_TOOL_ID><![CDATA[2A95B3081BF443F880BF8D3C2FA6A755]]></ETCOP_TOOL_ID>
+<!--2A95B3081BF443F880BF8D3C2FA6A755-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
+<!--2A95B3081BF443F880BF8D3C2FA6A755-->  <AD_ORG_ID><![CDATA[0]]></AD_ORG_ID>
+<!--2A95B3081BF443F880BF8D3C2FA6A755-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
+<!--2A95B3081BF443F880BF8D3C2FA6A755-->  <VALUE><![CDATA[ExcelOCRTool]]></VALUE>
+<!--2A95B3081BF443F880BF8D3C2FA6A755-->  <NAME><![CDATA[XLS/CSV OCR Tool]]></NAME>
+<!--2A95B3081BF443F880BF8D3C2FA6A755-->  <DESCRIPTION><![CDATA[Extract structured data from Excel using OCR + Vision model.]]></DESCRIPTION>
+<!--2A95B3081BF443F880BF8D3C2FA6A755-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
+<!--2A95B3081BF443F880BF8D3C2FA6A755-->  <JSON_STRUCTURE><![CDATA[{
+  "type": "function",
+  "function": {
+    "name": "ExcelOCRTool",
+    "description": "Extract structured data from Excel using OCR + Vision model.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "description": "Path to the Excel file (xls\/xlsx\/csv)",
+          "title": "Path",
+          "type": "string"
+        },
+        "question": {
+          "description": "Precise instruction on what to extract from the file content.",
+          "title": "Question",
+          "type": "string"
+        }
+      }
+    }
+  }
+}]]></JSON_STRUCTURE>
+<!--2A95B3081BF443F880BF8D3C2FA6A755-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--2A95B3081BF443F880BF8D3C2FA6A755--></ETCOP_TOOL>
+
 <!--31C61BF695C84B79936D273318FA5AD3--><ETCOP_TOOL>
 <!--31C61BF695C84B79936D273318FA5AD3-->  <ETCOP_TOOL_ID><![CDATA[31C61BF695C84B79936D273318FA5AD3]]></ETCOP_TOOL_ID>
 <!--31C61BF695C84B79936D273318FA5AD3-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
