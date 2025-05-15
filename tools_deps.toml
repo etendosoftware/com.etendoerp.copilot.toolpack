@@ -36,3 +36,6 @@ docker = "*"
 
 [APICallTool]
 "curlify" = "*"
+
+[PdfSplitterTool]
+"PyPDF2" = "*"
