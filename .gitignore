@@ -51,3 +51,7 @@ build/*
 !build/classes/**
 etendo.artifact.properties
 .gradle/
+
+build/
+!build/classes/
+etendo.artifact.properties
