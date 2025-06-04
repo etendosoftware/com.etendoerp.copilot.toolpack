@@ -7,9 +7,6 @@
 node_modules/
 dist/
 
-# Compiled Java class files
-*.class
-
 # Compiled Python bytecode
 *.py[cod]
 
@@ -49,7 +46,8 @@ Thumbs.db
 *.wmv
 
 
-build/
+build/*
 !build/classes/
+!build/classes/**
 etendo.artifact.properties
 .gradle/
