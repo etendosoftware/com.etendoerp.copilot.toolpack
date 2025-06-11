@@ -1,21 +1,24 @@
 import csv
 import os
-import tempfile
 import uuid
 import zipfile
 from pathlib import Path
-from typing import Dict, List, Type
+from typing import Dict, List, Optional, Type
 
-import curlify
 import pandas as pd
-import requests
 from requests import Response
 
-from copilot.core import etendo_utils, utils
+from copilot.core.etendo_utils import (
+    get_etendo_host,
+    get_etendo_token,
+    request_to_etendo,
+    simple_request_to_etendo,
+)
 from copilot.core.exceptions import ToolException
 from copilot.core.threadcontext import ThreadContext
 from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import ToolWrapper
+from copilot.core.utils import is_docker
 
 TASK_STATUS_PENDING = "D0FCC72902F84486A890B70C1EB10C9C"
 
@@ -23,8 +26,12 @@ TASK_STATUS_PENDING = "D0FCC72902F84486A890B70C1EB10C9C"
 class TaskCreatorToolInput(ToolInput):
     question: str = ToolField(
         title="Question",
-        description="Question/request for the Task. The tool will create a task for each"
-        " extracted file or row.",
+        description="""Question/request for the Task. The tool will create a task for
+        each extracted file or row. The question will be used as the task description,
+        for  the item, so is recommended that be a singularized question/request.
+        For example, if the file contains a list of products and the main objective is
+        to "process" the products, the question should be "Process the "product"."
+        """,
     )
     file_path: str = ToolField(
         title="File Path", description="Path to the ZIP, CSV, XLS, or XLSX file."
@@ -35,14 +42,19 @@ class TaskCreatorToolInput(ToolInput):
         "tool will "
         "create it.",
     )
-    task_type_id: str = ToolField(
+    task_type_id: Optional[str] = ToolField(
         title="Task Type",
         description="ID of the task type. If not provided, the tool will create it.",
     )
-    status_id: str = ToolField(
+    status_id: Optional[str] = ToolField(
         title="Status",
         description="ID of the pending status. If not provided, the tool will "
         "create it.",
+    )
+    agent_id: str = ToolField(
+        title="Agent ID",
+        description="ID of the agent to which the task is assigned. This agent will be"
+        " who processes the task.",
     )
 
 
@@ -63,48 +75,12 @@ def send_taskapi_request(
     return response
 
 
-def request_to_etendo(
-    method,
-    payload,
-    endpoint,
-    etendo_host,
-    bearer_token,
-) -> requests.Response:
-    url = f"{etendo_host}{endpoint}"
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {bearer_token}",
-    }
-    if method.upper() == "GET":
-        response = requests.get(url, headers=headers)
-    elif method.upper() == "POST":
-        response = requests.post(url, headers=headers, json=payload)
-    elif method.upper() == "PUT":
-        response = requests.put(url, headers=headers, json=payload)
-    elif method.upper() == "DELETE":
-        response = requests.delete(url, headers=headers)
-    else:
-        raise ToolException(f"Invalid HTTP method: {method}")
-    etendo_utils.copilot_debug(curlify.to_curl(response.request))
-    return response
-
-
-def simple_request_to_etendo(method, payload, endpoint) -> requests.Response:
-    return request_to_etendo(
-        method,
-        payload,
-        endpoint,
-        etendo_host=etendo_utils.get_etendo_host(),
-        bearer_token=etendo_utils.get_etendo_token(),
-    )
-
-
 def process_zip(zip_path: str) -> List[str]:
     try:
         result = []
 
         # Determine prefix based on the environment
-        prefix = os.getcwd() if not utils.is_docker() else ""
+        prefix = os.getcwd() if not is_docker() else ""
         temp_file_path = Path(f"{prefix}/copilotAttachedFiles/{uuid.uuid4()}")
         temp_file_path.mkdir(parents=True, exist_ok=True)
 
@@ -191,6 +167,10 @@ def get_or_create_task_type(name):
             record = read_record(task_types)
             if len(record) > 0:
                 tt_id = record[0].get("id")
+    if response.status_code == 500:
+        raise ToolException(
+            "Error retrieving TaskType. Check if the user has permission to view TaskTypes."
+        )
     if not tt_id:
         response = simple_request_to_etendo(
             "POST", {"name": name}, "/sws/com.etendoerp.etendorx.datasource/TaskType"
@@ -238,7 +218,7 @@ class TaskCreatorTool(ToolWrapper):
             task_type = input_params.get("task_type_id")
             status = input_params.get("status_id")
             group_id = input_params.get("group_id")
-            agent = ThreadContext.get_data("assistant_id")
+            agent = input_params.get("agent_id")
 
             if not task_type or task_type == "":
                 task_type = get_or_create_task_type("Copilot")
@@ -251,8 +231,8 @@ class TaskCreatorTool(ToolWrapper):
 
             import concurrent.futures
 
-            host = etendo_utils.get_etendo_host()
-            token = etendo_utils.get_etendo_token()
+            host = get_etendo_host()
+            token = get_etendo_token()
 
             def process_item(i):
                 return send_taskapi_request(
