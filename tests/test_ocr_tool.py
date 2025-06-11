@@ -60,13 +60,13 @@ class TestOcrTool(unittest.TestCase):
         mock_guess.return_value = None
         self.assertIsNone(read_mime('dummy_path'))
 
-    @unit
     def test_ocr_tool_run(self):
-        image_url = 'https://docs.etendo.software/latest/assets/home/index/cover-welcome-to-etendo.png'
-        os.system(f'wget -O /tmp/img_ocr_test.png {image_url}')
 
         ocr_tool = OcrTool()
-        input_params = {'path': '/tmp/img_ocr_test.png', 'question': 'Describe the image and its content in detail.'}
+        input_params = {
+            "path": "./resources/images/welcome-etendo.png",
+            "question": "Describe the image and its content in detail.",
+        }
         result = ocr_tool.run(input_params)
 
         self.assertIsNot(result, None)
