@@ -20,6 +20,8 @@ from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import ToolWrapper
 from copilot.core.utils import is_docker
 
+TASK_TYPE_COPILOT = "A83E397389DB42559B2D7719A442168F"
+
 TASK_STATUS_PENDING = "D0FCC72902F84486A890B70C1EB10C9C"
 
 
@@ -44,17 +46,19 @@ class TaskCreatorToolInput(ToolInput):
     )
     task_type_id: Optional[str] = ToolField(
         title="Task Type",
-        description="ID of the task type. If not provided, the tool will create it.",
+        description="ID of the task type. If not provided, the tool use the Copilot's "
+        "default task type.",
     )
     status_id: Optional[str] = ToolField(
         title="Status",
         description="ID of the pending status. If not provided, the tool will "
         "create it.",
     )
-    agent_id: str = ToolField(
+    agent_id: Optional[str] = ToolField(
         title="Agent ID",
         description="ID of the agent to which the task is assigned. This agent will be"
-        " who processes the task.",
+        " who processes the task. If not provided, the tool will use the current main "
+        "assistant's ID.",
     )
 
 
@@ -221,11 +225,13 @@ class TaskCreatorTool(ToolWrapper):
             agent = input_params.get("agent_id")
 
             if not task_type or task_type == "":
-                task_type = get_or_create_task_type("Copilot")
+                task_type = TASK_TYPE_COPILOT
             if not status or status == "":
                 status = TASK_STATUS_PENDING
             if not group_id or group_id == "":
                 group_id = ThreadContext.get_data("conversation_id")
+            if not agent or agent == "":
+                agent = ThreadContext.get_data("assistant_id")
             items = process_file(file_path)
             responses = []
 
