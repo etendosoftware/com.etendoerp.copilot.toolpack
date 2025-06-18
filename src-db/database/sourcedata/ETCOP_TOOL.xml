@@ -684,30 +684,54 @@
 <!--DD195D1E832A430E914D36748244B0D6-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
 <!--DD195D1E832A430E914D36748244B0D6-->  <VALUE><![CDATA[TaskCreatorTool]]></VALUE>
 <!--DD195D1E832A430E914D36748244B0D6-->  <NAME><![CDATA[Task Creator Tool]]></NAME>
-<!--DD195D1E832A430E914D36748244B0D6-->  <DESCRIPTION><![CDATA[Processes a ZIP, CSV, or Excel file and creates a task for each extracted file or row. For ZIP files, each uncompressed file's full path is added to the description. For CSV or Excel files, the header row is skipped and each subsequent row task includes the header and the row data. If the file format is unsupported, a task is created with the file path.]]></DESCRIPTION>
+<!--DD195D1E832A430E914D36748244B0D6-->  <DESCRIPTION><![CDATA[Processes a ZIP, CSV, or Excel file and creates a task for each extracted file or row. For ZIP files, each uncompressed file's full path is added to the question/request. For CSV or Excel files, the header row is skipped and each subsequent row task includes the header and the row data. If the file format is unsupported, a task is created with the file path.]]></DESCRIPTION>
 <!--DD195D1E832A430E914D36748244B0D6-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
 <!--DD195D1E832A430E914D36748244B0D6-->  <JSON_STRUCTURE><![CDATA[{
   "type": "function",
   "function": {
     "name": "TaskCreatorTool",
-    "description": "Processes a ZIP, CSV, or Excel file and creates a task for each extracted file or row. For ZIP files, each uncompressed file's full path is added to the description. For CSV or Excel files, the header row is skipped and each subsequent row task includes the header and the row data. If the file format is unsupported, a task is created with the file path.",
+    "description": "Processes a ZIP, CSV, or Excel file and creates a task for each extracted file or row. For ZIP files, each uncompressed file's full path is added to the question\/request. For CSV or Excel files, the header row is skipped and each subsequent row task includes the header and the row data. If the file format is unsupported, a task is created with the file path.",
     "parameters": {
       "type": "object",
       "properties": {
+        "question": {
+          "description": "Question\/request for the Task. The tool will create a task for\n        each extracted file or row. The question will be used as the task description,\n        for  the item, so is recommended that be a singularized question\/request.\n        For example, if the file contains a list of products and the main objective is\n        to \"process\" the products, the question should be \"Process the \"product\".\"\n        ",
+          "title": "Question",
+          "type": "string"
+        },
         "file_path": {
           "description": "Path to the ZIP, CSV, XLS, or XLSX file.",
           "title": "File Path",
           "type": "string"
         },
-        "task_type_id": {
-          "description": "ID of the task type.",
-          "title": "Task Type",
+        "group_id": {
+          "description": "ID of the group to which the task belongs. If not provided, the tool will create it.",
+          "title": "Group ID",
           "type": "string"
         },
+        "task_type_id": {
+          "anyOf": [
+            {"type": "string"},
+            {"type": "null"}
+          ],
+          "description": "ID of the task type. If not provided, the tool use the Copilot's default task type.",
+          "title": "Task Type"
+        },
         "status_id": {
-          "description": "ID of the pending status.",
-          "title": "Status",
-          "type": "string"
+          "anyOf": [
+            {"type": "string"},
+            {"type": "null"}
+          ],
+          "description": "ID of the pending status. If not provided, the tool will create it.",
+          "title": "Status"
+        },
+        "agent_id": {
+          "anyOf": [
+            {"type": "string"},
+            {"type": "null"}
+          ],
+          "description": "ID of the agent to which the task is assigned. This agent will be who processes the task. If not provided, the tool will use the current main assistant's ID.",
+          "title": "Agent ID"
         }
       }
     }
