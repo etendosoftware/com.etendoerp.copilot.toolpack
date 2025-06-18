@@ -59,8 +59,16 @@ public class SimSearch extends BaseWebhookService {
       return;
     }
 
-    int qtyResults = Integer.parseInt(parameter.getOrDefault("qtyResults", "1"));
+    String qtyResultsStr = parameter.getOrDefault("qtyResults", "1");
+    if (qtyResultsStr == null || qtyResultsStr.equalsIgnoreCase("null") || qtyResultsStr.isEmpty()) {
+      qtyResultsStr = "1";
+    }
+    int qtyResults = Integer.parseInt(qtyResultsStr);
+
     String minSimilarityPercent = parameter.getOrDefault("minSimPercent", String.valueOf(MIN_SIM_PERCENT));
+    if (minSimilarityPercent == null || minSimilarityPercent.equalsIgnoreCase("null") || minSimilarityPercent.isEmpty()) {
+      minSimilarityPercent = "30";
+    }
 
     try {
       JSONArray itemsArray = new JSONArray(itemsJson);
@@ -68,6 +76,7 @@ public class SimSearch extends BaseWebhookService {
 
       for (int i = 0; i < itemsArray.length(); i++) {
         String searchTerm = itemsArray.getString(i);
+        searchTerm = searchTerm.replace("'", "''");
         String label = "item_" + i;
 
         if (StringUtils.isNotBlank(searchTerm)) {
