@@ -47,7 +47,7 @@ class AudioTool(ToolWrapper):
 
             audio_file = open(file_path, "rb")
             transcription = client.audio.transcriptions.create(
-                model="gpt-4o-transcribe", file=audio_file
+                model="whisper-1", file=audio_file
             )
             print(transcription.text)
         except Exception as e:
