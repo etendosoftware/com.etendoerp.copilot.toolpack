@@ -76,7 +76,7 @@ public class SimSearch extends BaseWebhookService {
 
       for (int i = 0; i < itemsArray.length(); i++) {
         String searchTerm = itemsArray.getString(i);
-        searchTerm = searchTerm.replace("'", "''");
+        searchTerm = searchTerm.replace("'", "");
         String label = "item_" + i;
 
         if (StringUtils.isNotBlank(searchTerm)) {
