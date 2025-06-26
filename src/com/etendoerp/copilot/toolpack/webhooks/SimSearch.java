@@ -36,7 +36,7 @@ public class SimSearch extends BaseWebhookService {
 
   /**
    * Handles the GET request for the webhook.
-   * This method retrieves the search term and entity name from the parameters,
+   * This method retrieves an array of items and entity name from the parameters,
    * performs a similarity search, and constructs a JSON response with the results.
    *
    * @param parameter
@@ -51,54 +51,72 @@ public class SimSearch extends BaseWebhookService {
       LOG.debug("Parameter: {} = {}", entry.getKey(), entry.getValue());
     }
 
-    String searchTerm = parameter.get("searchTerm");
+    String itemsJson = parameter.get("items");
     String entityName = parameter.get("entityName");
 
-    if (StringUtils.isEmpty(searchTerm) || StringUtils.isEmpty(entityName)) {
+    if (StringUtils.isEmpty(itemsJson) || StringUtils.isEmpty(entityName)) {
       responseVars.put("error", "Missing required parameters");
       return;
     }
-    WSResult result = null;
-    String responseText = "";
-    try {
-      result = handleSimSearch(parameter);
-      responseText = result.getJSONResponse().toString(4);
-    } catch (Exception e) {
-      LOG.error("Error executing process", e);
-      responseVars.put("error", e.getMessage());
+
+    String qtyResultsStr = parameter.getOrDefault("qtyResults", "1");
+    if (qtyResultsStr == null || qtyResultsStr.equalsIgnoreCase("null") || qtyResultsStr.isEmpty()) {
+      qtyResultsStr = "1";
+    }
+    int qtyResults = Integer.parseInt(qtyResultsStr);
+
+    String minSimilarityPercent = parameter.getOrDefault("minSimPercent", String.valueOf(MIN_SIM_PERCENT));
+    if (minSimilarityPercent == null || minSimilarityPercent.equalsIgnoreCase("null") || minSimilarityPercent.isEmpty()) {
+      minSimilarityPercent = "30";
     }
 
-    responseVars.put(MESSAGE, responseText);
+    try {
+      JSONArray itemsArray = new JSONArray(itemsJson);
+      JSONObject results = new JSONObject();
+
+      for (int i = 0; i < itemsArray.length(); i++) {
+        String searchTerm = itemsArray.getString(i);
+        searchTerm = searchTerm.replace("'", "");
+        String label = "item_" + i;
+
+        if (StringUtils.isNotBlank(searchTerm)) {
+          WSResult result = handleSimSearch(searchTerm, entityName, qtyResults, minSimilarityPercent);
+          results.put(label, result.getJSONResponse());
+        }
+      }
+
+      responseVars.put(MESSAGE, results.toString());
+    } catch (Exception e) {
+      LOG.error("Error processing SimSearch batch", e);
+      responseVars.put("error", e.getMessage());
+    }
   }
 
   /**
    * Handles the similarity search based on the provided request parameters.
    *
-   * @param requestParams
-   *     A map of request parameters.
+   * @param searchTerm
+   *     Term to search.
+   * @param entityName
+   *     Name of the entity to search.
+   * @param qtyResults
+   *     Max amount of results, by default 1.
+   * @param minSimilarityPercent
+   *     Minimum similarity percent, by default 30%.
    * @return A WSResult object containing the search results.
    * @throws JSONException
    *     If an error occurs while processing JSON data.
-   * @throws NoSuchFieldException
-   *     If a field is not found.
-   * @throws IllegalAccessException
-   *     If access to a field is denied.
    * @throws ClassNotFoundException
    *     If the entity class is not found.
    */
-  public static WSResult handleSimSearch(
-      Map<String, String> requestParams) throws JSONException, NoSuchFieldException, IllegalAccessException, ClassNotFoundException {
-    String searchTerm = requestParams.get("searchTerm");
-    String entityName = requestParams.get("entityName");
+  public static WSResult handleSimSearch(String searchTerm, String entityName, int qtyResults, String minSimilarityPercent) throws JSONException, ClassNotFoundException {
     Result result = new Result(searchTerm, entityName);
-    int qtyResults = Integer.parseInt(requestParams.getOrDefault("qtyResults", "1"));
-    String minSimmilarityPercent = requestParams.getOrDefault("minSimPercent", String.valueOf(MIN_SIM_PERCENT));
 
     WSResult wsResult = new WSResult();
     JSONArray arrayResponse;
     String whereOrderByClause2 = String.format(
         " as p where  etcotp_sim_search(:tableName, p.id, :searchTerm) > %s order by etcotp_sim_search(:tableName, p.id, :searchTerm) desc ",
-        Integer.parseInt(minSimmilarityPercent));
+        Integer.parseInt(minSimilarityPercent));
     Set<Entity> readableEntities = OBContext.getOBContext().getEntityAccessChecker().getReadableEntities();
     Entity entity = readableEntities.stream().filter(e -> e.getName().equals(entityName)).findFirst().orElse(
         null);
