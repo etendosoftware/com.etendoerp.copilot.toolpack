@@ -164,7 +164,7 @@ class OcrTool(ToolWrapper):
     def run(self, input_params, *args, **kwargs):
         try:
             openai_model = utils.read_optional_env_var(
-                "COPILOT_OCRTOOL_MODEL", "gpt-4o"
+                "COPILOT_OCRTOOL_MODEL", "gpt-4.1"
             )
             ocr_image_url = get_file_path(input_params)
             mime = read_mime(ocr_image_url)
