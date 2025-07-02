@@ -1,6 +1,5 @@
 package com.etendoerp.copilot.toolpack.webhooks;
 
-import java.util.Calendar;
 import java.util.Date;
 import java.util.Map;
 
@@ -19,8 +18,6 @@ import com.etendoerp.webhookevents.services.BaseWebhookService;
 public class ReadOAuthToken extends BaseWebhookService {
 
   private static final Logger LOG = LoggerFactory.getLogger(ReadOAuthToken.class);
-  private static final String MESSAGE = "message";
-  public static final int MIN_SIM_PERCENT = 30;
 
   /**
    * Handles the GET request for the webhook.

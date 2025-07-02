@@ -2,6 +2,7 @@ from typing import Dict, Optional, Type
 
 from copilot.core import etendo_utils
 from copilot.core.etendo_utils import get_etendo_host, get_etendo_token
+from copilot.core.exceptions import ToolException
 from copilot.core.threadcontext import ThreadContext
 from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import (
@@ -43,7 +44,7 @@ class LoadOAuthTokenTool(ToolWrapper):
                 body_params={},
             )
             if not token_oauth or token_oauth.get("token") is None:
-                raise Exception(
+                raise ToolException(
                     f"No OAuth token found. " f"Error " f"message:{str(token_oauth)}"
                 )
 

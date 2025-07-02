@@ -8,8 +8,11 @@ from typing import List, Optional
 
 import requests
 
+from copilot.core.exceptions import ToolException
 from copilot.core.threadcontext import ThreadContext
 from copilot.core.utils import copilot_debug_curl
+
+APPLICATION_JSON = "application/json"
 
 
 def get_token_by_alias(alias: str) -> str:
@@ -63,9 +66,9 @@ class GoogleServiceUtil:
         spreadsheet = service.spreadsheets().get(spreadsheetId=sheet_id).execute()
         sheets = spreadsheet.get("sheets", [])
         if not sheets:
-            raise Exception("Spreadsheet doesn't contain tabs.")
+            raise ToolException("Spreadsheet doesn't contain tabs.")
         if index >= len(sheets):
-            raise Exception("Wrong tab number.")
+            raise ToolException("Wrong tab number.")
         return sheets[index]["properties"]["title"]
 
     @staticmethod
@@ -115,7 +118,7 @@ class GoogleServiceUtil:
             "https://www.googleapis.com/drive/v3/files", headers=headers, params=params
         )
         if response.status_code != 200:
-            raise Exception(f"Error getting files: {response.status_code}")
+            raise ToolException(f"Error getting files: {response.status_code}")
         return response.json().get("files", [])
 
     @staticmethod
@@ -130,9 +133,9 @@ class GoogleServiceUtil:
             "https://www.googleapis.com/drive/v3/files", headers=headers, json=data
         )
         if response.status_code == 401:
-            raise Exception("Unauthorized Operation - Refresh the token.")
+            raise ToolException("Unauthorized Operation - Refresh the token.")
         if response.status_code != 200:
-            raise Exception(f"Failed to create file: HTTP {response.status_code}")
+            raise ToolException(f"Failed to create file: HTTP {response.status_code}")
         return response.json()
 
     @staticmethod
@@ -149,7 +152,7 @@ class GoogleServiceUtil:
     ) -> str:
         values = GoogleServiceUtil.read_sheet(token_alias, file_id, range_)
         if not values:
-            raise Exception("No data found in the specified sheet or range.")
+            raise ToolException("No data found in the specified sheet or range.")
 
         # Obtener nombre real del archivo desde Drive
         base_name = GoogleServiceUtil.get_drive_file_name(token_alias, file_id)
@@ -196,7 +199,9 @@ class GoogleServiceUtil:
             response = requests.post(url, headers=headers, files=files)
 
         if response.status_code != 200:
-            raise Exception(f"Upload failed: {response.status_code} - {response.text}")
+            raise ToolException(
+                f"Upload failed: {response.status_code} - {response.text}"
+            )
 
         return response.json()
 
@@ -222,14 +227,14 @@ class GoogleServiceUtil:
         # Construimos el body multipart de forma segura
         with open(local_csv_path, "rb") as file_data:
             multipart_data = {
-                "metadata": ("metadata.json", json.dumps(metadata), "application/json"),
+                "metadata": ("metadata.json", json.dumps(metadata), APPLICATION_JSON),
                 "file": (os.path.basename(local_csv_path), file_data, "text/csv"),
             }
 
             response = requests.post(endpoint, headers=headers, files=multipart_data)
             copilot_debug_curl(response.request)
         if response.status_code != 200:
-            raise Exception(
+            raise ToolException(
                 f"Failed to upload CSV as spreadsheet: {response.status_code} - {response.text}"
             )
 
