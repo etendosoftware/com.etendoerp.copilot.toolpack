@@ -76,12 +76,14 @@ class TestOcrTool(unittest.TestCase):
         result = ocr_tool.run(input_params)
 
         self.assertIsNot(result, None)
+        print(result)
         self.assertTrue(
             isinstance(result, str)
             or (
                 isinstance(result, dict)
                 and ("message" in result or "content" in result)
-            )
+            ),
+            str(result),
         )
         result_str = str(result)
         for keyword in ["etendo", "welcome", "wiki"]:
