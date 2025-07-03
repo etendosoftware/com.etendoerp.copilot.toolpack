@@ -1,6 +1,5 @@
 import csv
 import os
-import tempfile
 import uuid
 import zipfile
 from pathlib import Path
@@ -18,6 +17,7 @@ from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import ToolWrapper
 
 TASK_STATUS_PENDING = "D0FCC72902F84486A890B70C1EB10C9C"
+TASK_TYPE_COPILOT = "A83E397389DB42559B2D7719A442168F"
 
 
 class TaskCreatorToolInput(ToolInput):
@@ -241,7 +241,7 @@ class TaskCreatorTool(ToolWrapper):
             agent = ThreadContext.get_data("assistant_id")
 
             if not task_type or task_type == "":
-                task_type = get_or_create_task_type("Copilot")
+                task_type = TASK_TYPE_COPILOT
             if not status or status == "":
                 status = TASK_STATUS_PENDING
             if not group_id or group_id == "":
