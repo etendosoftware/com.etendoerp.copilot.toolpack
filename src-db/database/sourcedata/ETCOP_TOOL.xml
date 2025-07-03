@@ -151,6 +151,80 @@
 }]]></JSON_STRUCTURE>
 <!--438B5A5EB8B1405BABE39F9EEE34F44F--></ETCOP_TOOL>
 
+<!--4F02003167F54F1290A120C45E265860--><ETCOP_TOOL>
+<!--4F02003167F54F1290A120C45E265860-->  <ETCOP_TOOL_ID><![CDATA[4F02003167F54F1290A120C45E265860]]></ETCOP_TOOL_ID>
+<!--4F02003167F54F1290A120C45E265860-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
+<!--4F02003167F54F1290A120C45E265860-->  <AD_ORG_ID><![CDATA[0]]></AD_ORG_ID>
+<!--4F02003167F54F1290A120C45E265860-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
+<!--4F02003167F54F1290A120C45E265860-->  <VALUE><![CDATA[GoogleSpreadsheetsTool]]></VALUE>
+<!--4F02003167F54F1290A120C45E265860-->  <NAME><![CDATA[GoogleSpreadsheetsTool]]></NAME>
+<!--4F02003167F54F1290A120C45E265860-->  <DESCRIPTION><![CDATA[Tool to interact with Google Spreadsheets through Google Drive API. The tool have the following modes: - list: List all accessible spreadsheets.
+- create: Create a new spreadsheet with the specified name.
+- upload: Upload a csv file to Google Drive as a new spreadsheet.
+- read: Read the content of a specified spreadsheet.
+- download: Download a specified spreadsheet as a CSV file.]]></DESCRIPTION>
+<!--4F02003167F54F1290A120C45E265860-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
+<!--4F02003167F54F1290A120C45E265860-->  <JSON_STRUCTURE><![CDATA[{
+  "type": "function",
+  "function": {
+    "name": "GoogleSpreadsheetsTool",
+    "description": "Tool to interact with Google Spreadsheets through Google Drive API. The tool have the following modes: - list: List all accessible spreadsheets.\n- create: Create a new spreadsheet with the specified name.\n- upload: Upload a csv file to Google Drive as a new spreadsheet.\n- read: Read the content of a specified spreadsheet.\n- download: Download a specified spreadsheet as a CSV file.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "alias": {
+          "description": "Alias of the OAuth token to use.",
+          "title": "Alias",
+          "type": "string"
+        },
+        "mode": {
+          "description": "Action to perform",
+          "title": "Mode",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {"type": "string"},
+            {"type": "null"}
+          ],
+          "default": null,
+          "description": "Name of spreadsheet to create (required for create\/upload mode). ",
+          "title": "Name"
+        },
+        "file_id": {
+          "anyOf": [
+            {"type": "string"},
+            {"type": "null"}
+          ],
+          "default": null,
+          "description": "ID of the spreadsheet to read (required for read mode).",
+          "title": "File Id"
+        },
+        "range": {
+          "anyOf": [
+            {"type": "string"},
+            {"type": "null"}
+          ],
+          "default": null,
+          "description": "Cell range to read (optional, defaults to A1:Z1000).",
+          "title": "Range"
+        },
+        "file_path": {
+          "anyOf": [
+            {"type": "string"},
+            {"type": "null"}
+          ],
+          "default": null,
+          "description": "Local path to the CSV file to upload (required for upload mode).",
+          "title": "File Path"
+        }
+      }
+    }
+  }
+}]]></JSON_STRUCTURE>
+<!--4F02003167F54F1290A120C45E265860-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--4F02003167F54F1290A120C45E265860--></ETCOP_TOOL>
+
 <!--57761B3A2CD24870BF3D75D2B3562415--><ETCOP_TOOL>
 <!--57761B3A2CD24870BF3D75D2B3562415-->  <ETCOP_TOOL_ID><![CDATA[57761B3A2CD24870BF3D75D2B3562415]]></ETCOP_TOOL_ID>
 <!--57761B3A2CD24870BF3D75D2B3562415-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
@@ -249,6 +323,78 @@
 <!--6CE408BCFCF84D2F9DA6F4FE276C9A70-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
 <!--6CE408BCFCF84D2F9DA6F4FE276C9A70--></ETCOP_TOOL>
 
+<!--7ACB63A4A83B4CF18FBDBF7F4129DC93--><ETCOP_TOOL>
+<!--7ACB63A4A83B4CF18FBDBF7F4129DC93-->  <ETCOP_TOOL_ID><![CDATA[7ACB63A4A83B4CF18FBDBF7F4129DC93]]></ETCOP_TOOL_ID>
+<!--7ACB63A4A83B4CF18FBDBF7F4129DC93-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
+<!--7ACB63A4A83B4CF18FBDBF7F4129DC93-->  <AD_ORG_ID><![CDATA[0]]></AD_ORG_ID>
+<!--7ACB63A4A83B4CF18FBDBF7F4129DC93-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
+<!--7ACB63A4A83B4CF18FBDBF7F4129DC93-->  <VALUE><![CDATA[GoogleDriveTool]]></VALUE>
+<!--7ACB63A4A83B4CF18FBDBF7F4129DC93-->  <NAME><![CDATA[GoogleDriveTool]]></NAME>
+<!--7ACB63A4A83B4CF18FBDBF7F4129DC93-->  <DESCRIPTION><![CDATA[Tool to interact with Google Drive. Supports:
+- 'list': list accessible files of a certain type.
+- 'upload': upload a local file to Drive.]]></DESCRIPTION>
+<!--7ACB63A4A83B4CF18FBDBF7F4129DC93-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
+<!--7ACB63A4A83B4CF18FBDBF7F4129DC93-->  <JSON_STRUCTURE><![CDATA[{
+  "type": "function",
+  "function": {
+    "name": "GoogleDriveTool",
+    "description": "Tool to interact with Google Drive. Supports:\n- 'list': list accessible files of a certain type.\n- 'upload': upload a local file to Drive.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "alias": {
+          "description": "Alias of the OAuth token to use.",
+          "title": "Alias",
+          "type": "string"
+        },
+        "mode": {
+          "description": "Action to perform: 'list' or 'upload'.",
+          "title": "Mode",
+          "type": "string"
+        },
+        "file_type": {
+          "anyOf": [
+            {"type": "string"},
+            {"type": "null"}
+          ],
+          "default": "spreadsheet",
+          "description": "File type to filter (spreadsheet, doc, pdf, etc.). Used in 'list' mode.",
+          "title": "File Type"
+        },
+        "file_path": {
+          "anyOf": [
+            {"type": "string"},
+            {"type": "null"}
+          ],
+          "default": null,
+          "description": "Local path to the file to upload. Required for 'upload' mode.",
+          "title": "File Path"
+        },
+        "name": {
+          "anyOf": [
+            {"type": "string"},
+            {"type": "null"}
+          ],
+          "default": null,
+          "description": "Name to assign to the uploaded file in Drive (optional).",
+          "title": "Name"
+        },
+        "mime_type": {
+          "anyOf": [
+            {"type": "string"},
+            {"type": "null"}
+          ],
+          "default": null,
+          "description": "MIME type of the file (e.g., 'application\/pdf'). Optional.",
+          "title": "Mime Type"
+        }
+      }
+    }
+  }
+}]]></JSON_STRUCTURE>
+<!--7ACB63A4A83B4CF18FBDBF7F4129DC93-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--7ACB63A4A83B4CF18FBDBF7F4129DC93--></ETCOP_TOOL>
+
 <!--7B591C3A095844919932177F794E4E79--><ETCOP_TOOL>
 <!--7B591C3A095844919932177F794E4E79-->  <ETCOP_TOOL_ID><![CDATA[7B591C3A095844919932177F794E4E79]]></ETCOP_TOOL_ID>
 <!--7B591C3A095844919932177F794E4E79-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
@@ -275,6 +421,37 @@
 }]]></JSON_STRUCTURE>
 <!--7B591C3A095844919932177F794E4E79-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
 <!--7B591C3A095844919932177F794E4E79--></ETCOP_TOOL>
+
+<!--7B9D485A48F94CA181841E31A9D21B5F--><ETCOP_TOOL>
+<!--7B9D485A48F94CA181841E31A9D21B5F-->  <ETCOP_TOOL_ID><![CDATA[7B9D485A48F94CA181841E31A9D21B5F]]></ETCOP_TOOL_ID>
+<!--7B9D485A48F94CA181841E31A9D21B5F-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
+<!--7B9D485A48F94CA181841E31A9D21B5F-->  <AD_ORG_ID><![CDATA[0]]></AD_ORG_ID>
+<!--7B9D485A48F94CA181841E31A9D21B5F-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
+<!--7B9D485A48F94CA181841E31A9D21B5F-->  <VALUE><![CDATA[LoadOAuthTokenTool]]></VALUE>
+<!--7B9D485A48F94CA181841E31A9D21B5F-->  <NAME><![CDATA[LoadOAuthTokenTool]]></NAME>
+<!--7B9D485A48F94CA181841E31A9D21B5F-->  <DESCRIPTION><![CDATA[This tool loads an OAuth token and returns a message indicating the alias wich was used to load the token.]]></DESCRIPTION>
+<!--7B9D485A48F94CA181841E31A9D21B5F-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
+<!--7B9D485A48F94CA181841E31A9D21B5F-->  <JSON_STRUCTURE><![CDATA[{
+  "type": "function",
+  "function": {
+    "name": "LoadOAuthTokenTool",
+    "description": "This tool loads an OAuth token and returns a message indicating the alias wich was used to load the token.",
+    "parameters": {
+      "type": "object",
+      "properties": {"al": {
+        "anyOf": [
+          {"type": "string"},
+          {"type": "null"}
+        ],
+        "default": null,
+        "description": "Alias of the OAuth token to load. If not provided, the default alias will be used.",
+        "title": "Al"
+      }}
+    }
+  }
+}]]></JSON_STRUCTURE>
+<!--7B9D485A48F94CA181841E31A9D21B5F-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--7B9D485A48F94CA181841E31A9D21B5F--></ETCOP_TOOL>
 
 <!--9154462E3B9F427496F00FA5C136F357--><ETCOP_TOOL>
 <!--9154462E3B9F427496F00FA5C136F357-->  <ETCOP_TOOL_ID><![CDATA[9154462E3B9F427496F00FA5C136F357]]></ETCOP_TOOL_ID>
@@ -507,30 +684,54 @@
 <!--DD195D1E832A430E914D36748244B0D6-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
 <!--DD195D1E832A430E914D36748244B0D6-->  <VALUE><![CDATA[TaskCreatorTool]]></VALUE>
 <!--DD195D1E832A430E914D36748244B0D6-->  <NAME><![CDATA[Task Creator Tool]]></NAME>
-<!--DD195D1E832A430E914D36748244B0D6-->  <DESCRIPTION><![CDATA[Processes a ZIP, CSV, or Excel file and creates a task for each extracted file or row. For ZIP files, each uncompressed file's full path is added to the description. For CSV or Excel files, the header row is skipped and each subsequent row task includes the header and the row data. If the file format is unsupported, a task is created with the file path.]]></DESCRIPTION>
+<!--DD195D1E832A430E914D36748244B0D6-->  <DESCRIPTION><![CDATA[Processes a ZIP, CSV, or Excel file and creates a task for each extracted file or row. For ZIP files, each uncompressed file's full path is added to the question/request. For CSV or Excel files, the header row is skipped and each subsequent row task includes the header and the row data. If the file format is unsupported, a task is created with the file path.]]></DESCRIPTION>
 <!--DD195D1E832A430E914D36748244B0D6-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
 <!--DD195D1E832A430E914D36748244B0D6-->  <JSON_STRUCTURE><![CDATA[{
   "type": "function",
   "function": {
     "name": "TaskCreatorTool",
-    "description": "Processes a ZIP, CSV, or Excel file and creates a task for each extracted file or row. For ZIP files, each uncompressed file's full path is added to the description. For CSV or Excel files, the header row is skipped and each subsequent row task includes the header and the row data. If the file format is unsupported, a task is created with the file path.",
+    "description": "Processes a ZIP, CSV, or Excel file and creates a task for each extracted file or row. For ZIP files, each uncompressed file's full path is added to the question\/request. For CSV or Excel files, the header row is skipped and each subsequent row task includes the header and the row data. If the file format is unsupported, a task is created with the file path.",
     "parameters": {
       "type": "object",
       "properties": {
+        "question": {
+          "description": "Question\/request for the Task. The tool will create a task for\n        each extracted file or row. The question will be used as the task description,\n        for  the item, so is recommended that be a singularized question\/request.\n        For example, if the file contains a list of products and the main objective is\n        to \"process\" the products, the question should be \"Process the \"product\".\"\n        ",
+          "title": "Question",
+          "type": "string"
+        },
         "file_path": {
           "description": "Path to the ZIP, CSV, XLS, or XLSX file.",
           "title": "File Path",
           "type": "string"
         },
-        "task_type_id": {
-          "description": "ID of the task type.",
-          "title": "Task Type",
+        "group_id": {
+          "description": "ID of the group to which the task belongs. If not provided, the tool will create it.",
+          "title": "Group ID",
           "type": "string"
         },
+        "task_type_id": {
+          "anyOf": [
+            {"type": "string"},
+            {"type": "null"}
+          ],
+          "description": "ID of the task type. If not provided, the tool use the Copilot's default task type.",
+          "title": "Task Type"
+        },
         "status_id": {
-          "description": "ID of the pending status.",
-          "title": "Status",
-          "type": "string"
+          "anyOf": [
+            {"type": "string"},
+            {"type": "null"}
+          ],
+          "description": "ID of the pending status. If not provided, the tool will create it.",
+          "title": "Status"
+        },
+        "agent_id": {
+          "anyOf": [
+            {"type": "string"},
+            {"type": "null"}
+          ],
+          "description": "ID of the agent to which the task is assigned. This agent will be who processes the task. If not provided, the tool will use the current main assistant's ID.",
+          "title": "Agent ID"
         }
       }
     }
