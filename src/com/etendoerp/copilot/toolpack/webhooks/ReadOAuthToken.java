@@ -37,7 +37,7 @@ public class ReadOAuthToken extends BaseWebhookService {
   private String getToken() {
     var crit = OBDal.getInstance().createCriteria(ETRXTokenInfo.class);
     crit.setMaxResults(1);
-    crit.add(Restrictions.le(ETRXTokenInfo.PROPERTY_VALIDUNTIL, new Date()));
+    crit.add(Restrictions.ge(ETRXTokenInfo.PROPERTY_VALIDUNTIL, new Date()));
     crit.add(Restrictions.ilike(ETRXTokenInfo.PROPERTY_MIDDLEWAREPROVIDER, "%drive%"));
     ETRXTokenInfo res = (ETRXTokenInfo) crit.uniqueResult();
     if (res == null) {
