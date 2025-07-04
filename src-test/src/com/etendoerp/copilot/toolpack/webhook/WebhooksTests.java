@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
+import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
@@ -24,7 +25,6 @@ import com.etendoerp.copilot.toolpack.webhooks.SimSearch;
 
 /**
  * Unit tests for the Webhooks in the Copilot Toolpack.
- *
  */
 
 public class WebhooksTests extends WeldBaseTest {
@@ -122,15 +122,19 @@ public class WebhooksTests extends WeldBaseTest {
     Map<String, String> respVars;
 
     // Test search with a search term and entity name
-    parameter.put("searchTerm", "c_order");
+    var items = new JSONArray();
+    items.put("c_order");
+    parameter.put("items", items.toString());
     parameter.put("entityName", "ADTable");
     respVars = new HashMap<>();
     ss.get(parameter, respVars);
     assertTrue(!respVars.keySet().isEmpty());
     assertTrue(StringUtils.isNotEmpty(respVars.get("message")));
     JSONObject json = new JSONObject(respVars.get("message"));
-    assertTrue(json.has("data"));
-    assertTrue(json.getJSONArray("data").length() > 0);
+    assertTrue(json.has("item_0"));
+    JSONObject item0 = json.getJSONObject("item_0");
+    assertTrue(item0.has("data"));
+    assertTrue(item0.getJSONArray("data").length() > 0);
   }
 
   /**
