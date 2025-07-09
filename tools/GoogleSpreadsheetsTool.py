@@ -37,7 +37,7 @@ def download_mode(alias, input_params):
         return ToolOutputError(error="Missing 'file_id' parameter for download mode.")
     range_ = input_params.get("range", "A1:Z1000")
     try:
-        # Descarga y guarda el archivo como CSV en una ruta temporal
+        # Download the sheet as CSV and save it to a temporary path
         file_path = GoogleServiceUtil.download_sheet_as_csv(alias, file_id, range_)
         return ToolOutputMessage(message=f"✅ CSV file downloaded at: {file_path}")
     except Exception as e:

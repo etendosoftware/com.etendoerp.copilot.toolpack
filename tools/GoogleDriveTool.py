@@ -54,7 +54,7 @@ class GoogleDriveTool(ToolWrapper):
                 file_type = input_params.get("file_type")
                 if not file_type:
                     return ToolOutputError(
-                        message="Missing 'file_type' parameter for list mode."
+                        error="Missing 'file_type' parameter for list mode."
                     )
                 files = GoogleServiceUtil.list_accessible_files(file_type, alias)
                 if not files:
@@ -82,8 +82,8 @@ class GoogleDriveTool(ToolWrapper):
 
             else:
                 return ToolOutputError(
-                    message=f"Unsupported mode: '{mode}'. Use 'list' or 'upload'."
+                    error=f"Unsupported mode: '{mode}'. Use 'list' or 'upload'."
                 )
 
         except Exception as e:
-            return ToolOutputError(message=f"❌ GoogleDriveTool error: {str(e)}")
+            return ToolOutputError(error=f"❌ GoogleDriveTool error: {str(e)}")

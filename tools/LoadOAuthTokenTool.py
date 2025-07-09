@@ -25,7 +25,7 @@ class LoadOAuthTokenTool(ToolWrapper):
     name: str = "LoadOAuthTokenTool"
     description: str = (
         "This tool loads an OAuth token and returns a message indicating"
-        " the alias wich was used to load the token."
+        " the alias which was used to load the token."
     )
 
     args_schema: Type[ToolInput] = LoadOAuthTokenInput
@@ -63,4 +63,4 @@ class LoadOAuthTokenTool(ToolWrapper):
             return ToolOutputMessage(message=result_message)
         except Exception as e:
             error_message = f"Error loading OAuth token: {str(e)}"
-            return ToolOutputError(message=error_message)
+            return ToolOutputError(error=error_message)

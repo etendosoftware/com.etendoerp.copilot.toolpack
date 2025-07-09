@@ -126,7 +126,7 @@ class GoogleServiceUtil:
         access_token = get_token_by_alias(token_alias)
         headers = {
             "Authorization": f"Bearer {access_token}",
-            "Content-Type": "application/json",
+            "Content-Type": APPLICATION_JSON,
         }
         data = {"name": name, "mimeType": mime_type}
         response = requests.post(
@@ -154,7 +154,7 @@ class GoogleServiceUtil:
         if not values:
             raise ToolException("No data found in the specified sheet or range.")
 
-        # Obtener nombre real del archivo desde Drive
+        # Obtain the actual file name from Google Drive
         base_name = GoogleServiceUtil.get_drive_file_name(token_alias, file_id)
         sanitized_name = "".join(
             c if c.isalnum() or c in ("_", "-") else "_" for c in base_name
@@ -192,7 +192,7 @@ class GoogleServiceUtil:
 
         with open(local_path, "rb") as f:
             files = {
-                "metadata": ("metadata.json", json.dumps(metadata), "application/json"),
+                "metadata": ("metadata.json", json.dumps(metadata), APPLICATION_JSON),
                 "file": (drive_filename, f, mime_type),
             }
 
@@ -224,7 +224,7 @@ class GoogleServiceUtil:
             "mimeType": "application/vnd.google-apps.spreadsheet",
         }
 
-        # Construimos el body multipart de forma segura
+        # Building the multipart body securely
         with open(local_csv_path, "rb") as file_data:
             multipart_data = {
                 "metadata": ("metadata.json", json.dumps(metadata), APPLICATION_JSON),
