@@ -91,7 +91,7 @@ public class ExecSQL extends BaseWebhookService {
       }
 
 
-    } catch (JSQLParserException e) {
+    } catch (Exception e) {
       responseVars.put(ERROR, e.getMessage());
     }
   }
