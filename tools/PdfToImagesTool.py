@@ -3,7 +3,7 @@ from typing import Type
 
 from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import ToolWrapper
-from copilot.core.utils import copilot_debug
+from baseutils.logging_envvar import copilot_debug
 
 
 class PdfToImagesToolInput(ToolInput):

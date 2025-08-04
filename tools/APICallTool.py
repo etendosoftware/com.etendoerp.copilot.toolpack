@@ -1,10 +1,10 @@
-import base64
 from typing import Dict, Optional, Type
 
-from copilot.core import etendo_utils
 from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import ToolOutput, ToolWrapper
-from copilot.core.utils import copilot_debug
+from core.toolgen.api_tool_util import token_not_none
+from core.toolgen.openapi_tool_gen import replace_base64_filepaths
+from baseutils.logging_envvar import copilot_debug
 
 
 class APICallToolInput(ToolInput):
@@ -31,21 +31,7 @@ class APICallToolInput(ToolInput):
     )
 
 
-def replace_base64_filepaths(body_params):
-    if isinstance(body_params, str):
-        while "@BASE64_" in body_params:
-            start = body_params.find("@BASE64_")
-            end = body_params.find("@", start + 1)
-            filepath = body_params[start + 8 : end]
-            with open(filepath, "rb") as file:
-                file_content = file.read()
-                file_content = base64.b64encode(file_content).decode("utf-8")
-                body_params = body_params.replace(f"@BASE64_{filepath}@", file_content)
-
-    return body_params
-
-
-def do_request(body_params, endpoint, headers, method, url):
+def do_request(body_params, endpoint: str, method: str, url, token=None):
     """
     This function performs an HTTP request based on the provided parameters.
 
@@ -67,6 +53,9 @@ def do_request(body_params, endpoint, headers, method, url):
     if method is None or method == "":
         return {"error": "method is required"}
     import requests
+
+    headers = {}
+    token_not_none(headers, token)
 
     # if a value in the body_params, that is a dict, is string and has @BASE64_FILEPATH@,
     # it will be replaced by the content of the file in base64
@@ -143,13 +132,6 @@ def endpoint_not_none(endpoint, method):
     return endpoint, method
 
 
-def token_not_none(headers, token):
-    if token:
-        if token == "ETENDO_TOKEN":
-            token = etendo_utils.get_etendo_token()
-        headers["Authorization"] = f"Bearer {token}"
-
-
 class APICallTool(ToolWrapper):
     name: str = "APICallTool"
     description: str = """ This Tool, executes a call to an API, and returns the response. This tool requires the following parameters:
@@ -170,8 +152,7 @@ class APICallTool(ToolWrapper):
         body_params = input_params.get("body_params")
         query_params = input_params.get("query_params")
         token = input_params.get("token")
-        headers = {}
-        token_not_none(headers, token)
+
         try:
             # if url starts with the method, for example GET https://api.example.com/endpoint
             endpoint, method = endpoint_not_none(endpoint, method)
@@ -196,7 +177,7 @@ class APICallTool(ToolWrapper):
                     first_query_param = "&"
 
             copilot_debug(f"Method = '{method}'")
-            api_response = do_request(body_params, endpoint, headers, method, url)
+            api_response = do_request(body_params, endpoint, method, url, token)
 
             status_code = api_response.status_code
 

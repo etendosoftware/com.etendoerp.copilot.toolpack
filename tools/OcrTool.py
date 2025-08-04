@@ -8,7 +8,7 @@ from langsmith import traceable
 from copilot.core import utils
 from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import ToolWrapper
-from copilot.core.utils import copilot_debug
+from baseutils.logging_envvar import copilot_debug
 
 GET_JSON_PROMPT: Final[
     str

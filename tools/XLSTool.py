@@ -5,7 +5,7 @@ from typing import Dict, Optional, Type
 from copilot.core.exceptions import ToolException
 from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import ToolOutput, ToolOutputError, ToolWrapper
-from copilot.core.utils import copilot_debug
+from baseutils.logging_envvar import copilot_debug
 
 
 class XLSToolInput(ToolInput):
@@ -25,9 +25,9 @@ def process_file(file_path, mode):
     if file_extension not in valid_extensions:
         raise ValueError("The file must have a .csv or .xlsx extension")
 
-    pd.set_option('display.max_rows', None)
-    pd.set_option('display.max_columns', None)
-    pd.set_option('display.max_colwidth', None)
+    pd.set_option("display.max_rows", None)
+    pd.set_option("display.max_columns", None)
+    pd.set_option("display.max_colwidth", None)
     # load the file according to its extension
     if file_extension == ".csv":
         data = pd.read_csv(file_path)

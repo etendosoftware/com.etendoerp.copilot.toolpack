@@ -5,7 +5,7 @@ from typing import Dict, List, Type
 from copilot.core.threadcontext import ThreadContext
 from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import ToolOutput, ToolOutputMessage, ToolWrapper
-from copilot.core.utils import copilot_debug
+from baseutils.logging_envvar import copilot_debug
 
 
 class DockerToolInput(ToolInput):
