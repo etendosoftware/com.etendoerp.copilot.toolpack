@@ -1,7 +1,7 @@
 from typing import Dict, Optional, Type
 
-from copilot.core import etendo_utils
-from copilot.core.etendo_utils import get_etendo_host, get_etendo_token
+from core.utils import etendo_utils
+from core.utils.etendo_utils import get_etendo_host, get_etendo_token
 from copilot.core.exceptions import ToolException
 from copilot.core.threadcontext import ThreadContext
 from copilot.core.tool_input import ToolField, ToolInput
