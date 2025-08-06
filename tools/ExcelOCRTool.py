@@ -19,6 +19,7 @@ class ExcelOCRTool(ToolWrapper):
 
     @traceable
     def run(self, input_params, *args, **kwargs):
+        output_images = []
         try:
             file_path = input_params["path"]
             question = input_params.get("question", GET_JSON_PROMPT)
@@ -39,6 +40,15 @@ class ExcelOCRTool(ToolWrapper):
 
         except Exception as e:
             return {"error": str(e)}
+        finally:
+            # Clean up temporary image files
+            import os
+            for img_path in output_images:
+                try:
+                    if os.path.exists(img_path):
+                        os.unlink(img_path)
+                except OSError:
+                    pass  # Ignore cleanup errors
 
     def render_excel_to_images(self, file_path) -> List[str]:
         """
@@ -48,6 +58,8 @@ class ExcelOCRTool(ToolWrapper):
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
+        import tempfile
+        import os
 
         temp_images = []
         xls = pd.ExcelFile(file_path)
@@ -59,7 +71,9 @@ class ExcelOCRTool(ToolWrapper):
             tbl = ax.table(cellText=df.values, colLabels=df.columns, loc='center', cellLoc='left')
             tbl.auto_set_font_size(False)
             tbl.set_fontsize(8)
-            img_path = f"/tmp/sheet_{idx}.jpeg"
+            # Create a secure temporary file with proper permissions
+            temp_fd, img_path = tempfile.mkstemp(suffix=".jpeg", prefix=f"sheet_{idx}_")
+            os.close(temp_fd)
             temp_images.append(img_path)
             plt.savefig(img_path, bbox_inches='tight')
             plt.close(fig)
