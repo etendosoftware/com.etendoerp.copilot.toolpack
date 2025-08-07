@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Type
+from typing import Dict, List, Optional, Type
 
 from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import (
@@ -29,6 +29,10 @@ class GoogleSpreadsheetToolInput(ToolInput):
         default=None,
         description="Local path to the CSV file to upload (required for upload mode).",
     )
+    headers: Optional[List[str]] = ToolField(
+        default=None,
+        description="List of headers to add to the spreadsheet (optional, for create mode).",
+    )
 
 
 def download_mode(alias, input_params):
@@ -56,13 +60,36 @@ def create_mode(alias, input_params):
     name = input_params.get("name")
     if not name:
         return ToolOutputError(error="Missing 'name' parameter for create mode.")
+
+    # Create the spreadsheet
     created = GoogleServiceUtil.create_drive_file(
         name, "application/vnd.google-apps.spreadsheet", alias
     )
-    url = f"https://docs.google.com/spreadsheets/d/{created['id']}/edit"
-    return ToolOutputMessage(
-        message=f"Spreadsheet '{created['name']}' created with ID: {created['id']}. Can be accessed at: {url}"
-    )
+
+    # Add headers if provided
+    headers = input_params.get("headers")
+    if headers:
+        try:
+            # Convert headers list to the format expected by the API (list of lists)
+            headers_values = [headers]
+            GoogleServiceUtil.update_spreadsheet_values(
+                created["id"], alias, "A1", headers_values
+            )
+            url = f"https://docs.google.com/spreadsheets/d/{created['id']}/edit"
+            return ToolOutputMessage(
+                message=f"✅ Spreadsheet '{created['name']}' created with headers: {', '.join(headers)}.\n🔗 ID: {created['id']}\n🔗 Link: {url}"
+            )
+        except Exception as e:
+            # If adding headers fails, still return success for the creation but mention the error
+            url = f"https://docs.google.com/spreadsheets/d/{created['id']}/edit"
+            return ToolOutputMessage(
+                message=f"✅ Spreadsheet '{created['name']}' created with ID: {created['id']}.\n⚠️ Warning: Failed to add headers: {str(e)}\n🔗 Link: {url}"
+            )
+    else:
+        url = f"https://docs.google.com/spreadsheets/d/{created['id']}/edit"
+        return ToolOutputMessage(
+            message=f"✅ Spreadsheet '{created['name']}' created with ID: {created['id']}.\n🔗 Link: {url}"
+        )
 
 
 def read_mode(alias, input_params):
@@ -98,7 +125,7 @@ class GoogleSpreadsheetsTool(ToolWrapper):
         "Tool to interact with Google Spreadsheets through Google Drive API. "
         "The tool have the following modes: "
         "- list: List all accessible spreadsheets.\n"
-        "- create: Create a new spreadsheet with the specified name.\n"
+        "- create: Create a new spreadsheet with the specified name. Optionally add headers as the first row.\n"
         "- upload: Upload a csv file to Google Drive as a new spreadsheet.\n"
         "- read: Read the content of a specified spreadsheet.\n"
         "- download: Download a specified spreadsheet as a CSV file."

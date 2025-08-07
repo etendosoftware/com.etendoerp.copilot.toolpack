@@ -159,7 +159,7 @@
 <!--4F02003167F54F1290A120C45E265860-->  <VALUE><![CDATA[GoogleSpreadsheetsTool]]></VALUE>
 <!--4F02003167F54F1290A120C45E265860-->  <NAME><![CDATA[GoogleSpreadsheetsTool]]></NAME>
 <!--4F02003167F54F1290A120C45E265860-->  <DESCRIPTION><![CDATA[Tool to interact with Google Spreadsheets through Google Drive API. The tool have the following modes: - list: List all accessible spreadsheets.
-- create: Create a new spreadsheet with the specified name.
+- create: Create a new spreadsheet with the specified name. Optionally add headers as the first row.
 - upload: Upload a csv file to Google Drive as a new spreadsheet.
 - read: Read the content of a specified spreadsheet.
 - download: Download a specified spreadsheet as a CSV file.]]></DESCRIPTION>
@@ -168,7 +168,7 @@
   "type": "function",
   "function": {
     "name": "GoogleSpreadsheetsTool",
-    "description": "Tool to interact with Google Spreadsheets through Google Drive API. The tool have the following modes: - list: List all accessible spreadsheets.\n- create: Create a new spreadsheet with the specified name.\n- upload: Upload a csv file to Google Drive as a new spreadsheet.\n- read: Read the content of a specified spreadsheet.\n- download: Download a specified spreadsheet as a CSV file.",
+    "description": "Tool to interact with Google Spreadsheets through Google Drive API. The tool have the following modes: - list: List all accessible spreadsheets.\n- create: Create a new spreadsheet with the specified name. Optionally add headers as the first row.\n- upload: Upload a csv file to Google Drive as a new spreadsheet.\n- read: Read the content of a specified spreadsheet.\n- download: Download a specified spreadsheet as a CSV file.",
     "parameters": {
       "type": "object",
       "properties": {
@@ -217,6 +217,18 @@
           "default": null,
           "description": "Local path to the CSV file to upload (required for upload mode).",
           "title": "File Path"
+        },
+        "headers": {
+          "anyOf": [
+            {
+              "items": {"type": "string"},
+              "type": "array"
+            },
+            {"type": "null"}
+          ],
+          "default": null,
+          "description": "List of headers to add to the spreadsheet (optional, for create mode).",
+          "title": "Headers"
         }
       }
     }
@@ -676,6 +688,68 @@
 }]]></JSON_STRUCTURE>
 <!--C816B0D4763B41D0BACE39A8CDA573BC-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
 <!--C816B0D4763B41D0BACE39A8CDA573BC--></ETCOP_TOOL>
+
+<!--D9BF53C2260449CB90C4E65C50105FE0--><ETCOP_TOOL>
+<!--D9BF53C2260449CB90C4E65C50105FE0-->  <ETCOP_TOOL_ID><![CDATA[D9BF53C2260449CB90C4E65C50105FE0]]></ETCOP_TOOL_ID>
+<!--D9BF53C2260449CB90C4E65C50105FE0-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
+<!--D9BF53C2260449CB90C4E65C50105FE0-->  <AD_ORG_ID><![CDATA[0]]></AD_ORG_ID>
+<!--D9BF53C2260449CB90C4E65C50105FE0-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
+<!--D9BF53C2260449CB90C4E65C50105FE0-->  <VALUE><![CDATA[MemoryTool]]></VALUE>
+<!--D9BF53C2260449CB90C4E65C50105FE0-->  <NAME><![CDATA[Memory Tool]]></NAME>
+<!--D9BF53C2260449CB90C4E65C50105FE0-->  <DESCRIPTION><![CDATA[A comprehensive tool for managing user memories in a vector database. Supports four operation modes: 'add' (requires 'memory' field), 'search' (requires 'query' field, optional 'k' for result limit), 'update' (requires 'memory_id' and 'memory' fields), 'delete' (requires 'memory_id' field). All operations are user-scoped and use memory_id for specific memory identification.]]></DESCRIPTION>
+<!--D9BF53C2260449CB90C4E65C50105FE0-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
+<!--D9BF53C2260449CB90C4E65C50105FE0-->  <JSON_STRUCTURE><![CDATA[{
+  "type": "function",
+  "function": {
+    "name": "MemoryTool",
+    "description": "A comprehensive tool for managing user memories in a vector database. Supports four operation modes: 'add' (requires 'memory' field), 'search' (requires 'query' field, optional 'k' for result limit), 'update' (requires 'memory_id' and 'memory' fields), 'delete' (requires 'memory_id' field). All operations are user-scoped and use memory_id for specific memory identification.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "description": "Operation mode. Must be one of: 'add', 'search', 'update', or 'delete'.",
+          "title": "Mode",
+          "type": "string"
+        },
+        "memory": {
+          "anyOf": [
+            {"type": "string"},
+            {"type": "null"}
+          ],
+          "default": null,
+          "description": "The memory content to store or update. Required for 'add' and 'update' modes.",
+          "title": "Memory"
+        },
+        "query": {
+          "anyOf": [
+            {"type": "string"},
+            {"type": "null"}
+          ],
+          "default": null,
+          "description": "Search query string to find similar memories. Required for 'search' mode.",
+          "title": "Query"
+        },
+        "memory_id": {
+          "anyOf": [
+            {"type": "string"},
+            {"type": "null"}
+          ],
+          "default": null,
+          "description": "Unique identifier of the memory to modify or remove. Required for 'update' and 'delete' modes.",
+          "title": "Memory Id"
+        },
+        "k": {
+          "default": 3,
+          "description": "Maximum number of search results to return. Only used in 'search' mode.",
+          "title": "K",
+          "type": "integer"
+        }
+      }
+    }
+  }
+}]]></JSON_STRUCTURE>
+<!--D9BF53C2260449CB90C4E65C50105FE0-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--D9BF53C2260449CB90C4E65C50105FE0--></ETCOP_TOOL>
 
 <!--DD195D1E832A430E914D36748244B0D6--><ETCOP_TOOL>
 <!--DD195D1E832A430E914D36748244B0D6-->  <ETCOP_TOOL_ID><![CDATA[DD195D1E832A430E914D36748244B0D6]]></ETCOP_TOOL_ID>
