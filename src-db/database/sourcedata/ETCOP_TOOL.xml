@@ -27,6 +27,50 @@
 <!--00E862E15C034796B54182C9DEDE295A-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
 <!--00E862E15C034796B54182C9DEDE295A--></ETCOP_TOOL>
 
+<!--0D6969A0549F4812A96A25E8B4F925F4--><ETCOP_TOOL>
+<!--0D6969A0549F4812A96A25E8B4F925F4-->  <ETCOP_TOOL_ID><![CDATA[0D6969A0549F4812A96A25E8B4F925F4]]></ETCOP_TOOL_ID>
+<!--0D6969A0549F4812A96A25E8B4F925F4-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
+<!--0D6969A0549F4812A96A25E8B4F925F4-->  <AD_ORG_ID><![CDATA[0]]></AD_ORG_ID>
+<!--0D6969A0549F4812A96A25E8B4F925F4-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
+<!--0D6969A0549F4812A96A25E8B4F925F4-->  <VALUE><![CDATA[EtendoSQLToCSVTool]]></VALUE>
+<!--0D6969A0549F4812A96A25E8B4F925F4-->  <NAME><![CDATA[Etendo SQL to CSV Downloader Tool]]></NAME>
+<!--0D6969A0549F4812A96A25E8B4F925F4-->  <DESCRIPTION><![CDATA[Tool to execute SQL queries in Etendo using the DBQueryExec webhook and convert results to CSV. This tool connects to Etendo's database through the DBQueryExec webhook, executes SELECT queries, and downloads the JSON result converted to CSV format. REQUIREMENTS: Only SELECT queries are allowed, all tables must have aliases (e.g., 'SELECT u.name FROM ad_user u'), and tables must be accessible to the current user. Security filters are automatically applied by Etendo. Authentication and Etendo host are handled automatically through the copilot context. Parameters: sql_query (required), output_file (optional), include_headers (optional, default: true).]]></DESCRIPTION>
+<!--0D6969A0549F4812A96A25E8B4F925F4-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
+<!--0D6969A0549F4812A96A25E8B4F925F4-->  <JSON_STRUCTURE><![CDATA[{
+  "type": "function",
+  "function": {
+    "name": "EtendoSQLToCSVTool",
+    "description": "Tool to execute SQL queries in Etendo using the DBQueryExec webhook and convert results to CSV. This tool connects to Etendo's database through the DBQueryExec webhook, executes SELECT queries, and downloads the JSON result converted to CSV format. REQUIREMENTS: Only SELECT queries are allowed, all tables must have aliases (e.g., 'SELECT u.name FROM ad_user u'), and tables must be accessible to the current user. Security filters are automatically applied by Etendo. Authentication and Etendo host are handled automatically through the copilot context. Parameters: sql_query (required), output_file (optional), include_headers (optional, default: true).",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "sql_query": {
+          "description": "SQL SELECT query to execute in Etendo database. All tables must have aliases (e.g., 'SELECT u.name FROM ad_user u').",
+          "title": "Sql Query",
+          "type": "string"
+        },
+        "output_file": {
+          "anyOf": [
+            {"type": "string"},
+            {"type": "null"}
+          ],
+          "default": null,
+          "description": "Path where to save the CSV file. If not provided, a temporary file will be created.",
+          "title": "Output File"
+        },
+        "include_headers": {
+          "default": true,
+          "description": "Whether to include column headers in the CSV output.",
+          "title": "Include Headers",
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}]]></JSON_STRUCTURE>
+<!--0D6969A0549F4812A96A25E8B4F925F4-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--0D6969A0549F4812A96A25E8B4F925F4--></ETCOP_TOOL>
+
 <!--206B71E96BF145D480FE535BF7607CD4--><ETCOP_TOOL>
 <!--206B71E96BF145D480FE535BF7607CD4-->  <ETCOP_TOOL_ID><![CDATA[206B71E96BF145D480FE535BF7607CD4]]></ETCOP_TOOL_ID>
 <!--206B71E96BF145D480FE535BF7607CD4-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
