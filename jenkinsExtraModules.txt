@@ -1,1 +1,1 @@
-git@github.com:etendosoftware/com.etendoerp.task.git,git@github.com:etendosoftware/com.etendoerp.etendorx.git,git@github.com:etendosoftware/com.etendoerp.asyncprocess.git
+git@github.com:etendosoftware/com.etendoerp.docker.git,git@github.com:etendosoftware/com.etendoerp.task.git,git@github.com:etendosoftware/com.etendoerp.etendorx.git,git@github.com:etendosoftware/com.etendoerp.asyncprocess.git
