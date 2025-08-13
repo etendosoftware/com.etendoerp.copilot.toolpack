@@ -2,9 +2,9 @@ from typing import Dict, Optional, Type
 
 from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import ToolOutput, ToolWrapper
-from core.toolgen.api_tool_util import token_not_none
-from core.toolgen.openapi_tool_gen import replace_base64_filepaths
-from baseutils.logging_envvar import copilot_debug
+from copilot.core.toolgen.api_tool_util import token_not_none
+from copilot.core.toolgen.openapi_tool_gen import replace_base64_filepaths
+from copilot.baseutils.logging_envvar import copilot_debug
 
 
 class APICallToolInput(ToolInput):
@@ -55,7 +55,7 @@ def do_request(body_params, endpoint: str, method: str, url, token=None):
     import requests
 
     headers = {}
-    token_not_none(headers, token)
+    token_not_none(headers=headers, token=token, url=url, endpoint=endpoint)
 
     # if a value in the body_params, that is a dict, is string and has @BASE64_FILEPATH@,
     # it will be replaced by the content of the file in base64
