@@ -24,6 +24,24 @@ from copilot.core.tool_wrapper import (
 )
 
 
+class WebhookError(Exception):
+    """Custom exception for webhook-related errors"""
+
+    pass
+
+
+class SQLQueryError(Exception):
+    """Custom exception for SQL query execution errors"""
+
+    pass
+
+
+class CSVConversionError(Exception):
+    """Custom exception for CSV conversion errors"""
+
+    pass
+
+
 class EtendoSQLToCSVToolInput(ToolInput):
     """
     Input schema for the EtendoSQLToCSVTool.
@@ -69,7 +87,8 @@ def execute_sql_query(sql_query: str) -> Dict:
         Dict: JSON response from the webhook
 
     Raises:
-        Exception: If the webhook call fails or returns an error
+        WebhookError: If the webhook call fails or returns an error
+        SQLQueryError: If there's an error with the SQL query execution
     """
     try:
         # Get authentication token and Etendo host automatically
@@ -84,12 +103,14 @@ def execute_sql_query(sql_query: str) -> Dict:
 
         # Check if the webhook returned an error
         if isinstance(result, dict) and "error" in result:
-            raise Exception(f"Webhook error: {result['error']}")
+            raise WebhookError(f"Webhook error: {result['error']}")
 
         return result
 
+    except WebhookError:
+        raise
     except Exception as e:
-        raise Exception(f"Failed to execute SQL query: {str(e)}")
+        raise SQLQueryError(f"Failed to execute SQL query: {str(e)}")
 
 
 def convert_json_to_csv(
@@ -116,6 +137,7 @@ def convert_json_to_csv(
     Raises:
         ValueError: If JSON data format is invalid
         IOError: If file writing fails
+        CSVConversionError: If there's an error during CSV conversion
     """
     try:
         # Extract columns and data from the Etendo webhook response format
@@ -165,8 +187,10 @@ def convert_json_to_csv(
         raise IOError(f"Failed to write CSV file: {str(e)}")
     except json.JSONDecodeError as e:
         raise ValueError(f"Failed to parse JSON data: {str(e)}")
+    except (ValueError, IOError):
+        raise
     except Exception as e:
-        raise ValueError(f"Failed to convert JSON to CSV: {str(e)}")
+        raise CSVConversionError(f"Failed to convert JSON to CSV: {str(e)}")
 
 
 def validate_sql_query(sql_query: str) -> bool:
@@ -311,7 +335,7 @@ class EtendoSQLToCSVTool(ToolWrapper):
             # Execute SQL query using the simplified webhook call
             try:
                 json_result = execute_sql_query(sql_query)
-            except Exception as e:
+            except (WebhookError, SQLQueryError) as e:
                 return ToolOutputError(error=f"Failed to execute SQL query: {str(e)}")
 
             # Convert JSON to CSV
@@ -319,7 +343,7 @@ class EtendoSQLToCSVTool(ToolWrapper):
                 csv_file_path = convert_json_to_csv(
                     json_result, output_file, include_headers
                 )
-            except (ValueError, IOError) as e:
+            except (ValueError, IOError, CSVConversionError) as e:
                 return ToolOutputError(
                     error=f"Failed to convert result to CSV: {str(e)}"
                 )
