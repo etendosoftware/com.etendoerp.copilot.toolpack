@@ -11,6 +11,7 @@ Version: 1.0
 import csv
 import json
 import os
+import tempfile
 from typing import Dict, Optional, Type
 
 from copilot.core.etendo_utils import call_webhook, get_etendo_host, get_etendo_token
@@ -324,9 +325,15 @@ class EtendoSQLToCSVTool(ToolWrapper):
 
             # Generate output file path if not provided
             if not output_file:
-                # Create sqlexport directory in /tmp for organized CSV exports
-                export_dir = "/tmp/sqlexport"
-                os.makedirs(export_dir, exist_ok=True)
+                # Create a secure temporary directory for organized CSV exports
+                # Use process ID and user ID for uniqueness and security
+                base_temp_dir = tempfile.gettempdir()
+                export_dir = os.path.join(
+                    base_temp_dir,
+                    f"etendo_sqlexport_{os.getuid() if hasattr(os, 'getuid') else 'user'}_{os.getpid()}",
+                )
+                # Create directory with secure permissions (only readable/writable by owner)
+                os.makedirs(export_dir, mode=0o700, exist_ok=True)
                 output_file = os.path.join(
                     export_dir, f"etendo_query_result_{os.getpid()}.csv"
                 )

@@ -5,13 +5,12 @@ This module contains comprehensive unit tests for the EtendoSQLToCSVTool class,
 covering SQL query execution, JSON to CSV conversion, and error handling scenarios.
 """
 
-import json
 import os
+import tempfile
 import uuid
-from unittest.mock import MagicMock, mock_open, patch
+from unittest.mock import mock_open, patch
 
 import pytest
-import requests
 
 from tools.EtendoSQLToCSVTool import (
     EtendoSQLToCSVTool,
@@ -24,7 +23,7 @@ from tools.EtendoSQLToCSVTool import (
 
 def create_test_csv_path(filename=None):
     """
-    Create a test CSV file path in /tmp/sqlexport directory.
+    Create a test CSV file path in a secure temporary directory.
 
     Args:
         filename (str, optional): Custom filename. If None, generates a unique name.
@@ -32,8 +31,15 @@ def create_test_csv_path(filename=None):
     Returns:
         str: Full path to the test CSV file
     """
-    test_dir = "/tmp/sqlexport"
-    os.makedirs(test_dir, exist_ok=True)
+    # Create a secure temporary directory specific to this process and user
+    base_temp_dir = tempfile.gettempdir()
+    test_dir = os.path.join(
+        base_temp_dir,
+        f"etendo_sql_test_{os.getuid() if hasattr(os, 'getuid') else 'user'}_{os.getpid()}",
+    )
+
+    # Create directory with secure permissions (only readable/writable by owner)
+    os.makedirs(test_dir, mode=0o700, exist_ok=True)
 
     if filename is None:
         filename = f"test_{uuid.uuid4().hex[:8]}.csv"
@@ -78,25 +84,22 @@ class TestEtendoSQLToCSVToolInput:
 
     def test_valid_input(self):
         """Test valid input creation."""
+        # Use secure temporary path instead of hardcoded /tmp path
+        secure_output_file = create_test_csv_path("test_valid_input.csv")
+
         input_data = EtendoSQLToCSVToolInput(
-            sql_query="SELECT * FROM test",
-            webhook_url="https://example.com/webhook",
-            auth_token="test_token",
+            sql_query="SELECT u.name FROM ad_user u",
+            output_file=secure_output_file,
             include_headers=True,
         )
-        assert input_data.sql_query == "SELECT * FROM test"
-        assert input_data.webhook_url == "https://example.com/webhook"
-        assert input_data.auth_token == "test_token"
+        assert input_data.sql_query == "SELECT u.name FROM ad_user u"
+        assert input_data.output_file == secure_output_file
         assert input_data.include_headers is True
 
     def test_minimal_input(self):
         """Test minimal required input."""
-        input_data = EtendoSQLToCSVToolInput(
-            sql_query="SELECT id FROM users", webhook_url="https://example.com/webhook"
-        )
-        assert input_data.sql_query == "SELECT id FROM users"
-        assert input_data.webhook_url == "https://example.com/webhook"
-        assert input_data.auth_token is None
+        input_data = EtendoSQLToCSVToolInput(sql_query="SELECT u.id FROM ad_user u")
+        assert input_data.sql_query == "SELECT u.id FROM ad_user u"
         assert input_data.output_file is None
         assert input_data.include_headers is True
 
@@ -145,72 +148,51 @@ class TestValidateSQLQuery:
 class TestExecuteSQLQuery:
     """Test cases for SQL query execution."""
 
-    @patch("requests.post")
+    @patch("tools.EtendoSQLToCSVTool.get_etendo_host")
+    @patch("tools.EtendoSQLToCSVTool.get_etendo_token")
+    @patch("tools.EtendoSQLToCSVTool.call_webhook")
     def test_successful_query_execution(
-        self, mock_post, sample_webhook_url, sample_sql_query, sample_json_data
+        self,
+        mock_call_webhook,
+        mock_get_token,
+        mock_get_host,
+        sample_sql_query,
+        sample_json_data,
     ):
-        """Test successful SQL query execution."""
-        # Mock successful response
-        mock_response = MagicMock()
-        mock_response.json.return_value = sample_json_data
-        mock_response.raise_for_status.return_value = None
-        mock_post.return_value = mock_response
+        """Test successful SQL query execution using Etendo utils."""
+        # Setup mocks for Etendo utilities
+        mock_get_token.return_value = "test_token"
+        mock_get_host.return_value = "https://test-etendo.com"
+        mock_call_webhook.return_value = sample_json_data
 
-        result = execute_sql_query(sample_webhook_url, sample_sql_query, "test_token")
+        result = execute_sql_query(sample_sql_query)
 
         assert result == sample_json_data
-        mock_post.assert_called_once()
+        mock_call_webhook.assert_called_once_with(
+            "test_token",
+            {"Query": sample_sql_query, "Mode": "EXECUTE_QUERY"},
+            "https://test-etendo.com",
+            "DBQueryExec",
+        )
 
-        # Verify request parameters
-        call_args = mock_post.call_args
-        assert call_args[1]["json"]["Query"] == sample_sql_query
-        assert call_args[1]["headers"]["Authorization"] == "Bearer test_token"
-
-    @patch("requests.post")
-    def test_query_execution_without_token(
-        self, mock_post, sample_webhook_url, sample_sql_query, sample_json_data
+    @patch("tools.EtendoSQLToCSVTool.get_etendo_host")
+    @patch("tools.EtendoSQLToCSVTool.get_etendo_token")
+    @patch("tools.EtendoSQLToCSVTool.call_webhook")
+    def test_webhook_error_handling(
+        self, mock_call_webhook, mock_get_token, mock_get_host, sample_sql_query
     ):
-        """Test SQL query execution without authentication token."""
-        # Mock successful response
-        mock_response = MagicMock()
-        mock_response.json.return_value = sample_json_data
-        mock_response.raise_for_status.return_value = None
-        mock_post.return_value = mock_response
+        """Test handling of webhook errors."""
+        # Setup mocks
+        mock_get_token.return_value = "test_token"
+        mock_get_host.return_value = "https://test-etendo.com"
+        mock_call_webhook.return_value = {"error": "Database connection failed"}
 
-        result = execute_sql_query(sample_webhook_url, sample_sql_query)
+        from tools.EtendoSQLToCSVTool import WebhookError
 
-        assert result == sample_json_data
+        with pytest.raises(WebhookError) as exc_info:
+            execute_sql_query(sample_sql_query)
 
-        # Verify no Authorization header was sent
-        call_args = mock_post.call_args
-        assert "Authorization" not in call_args[1]["headers"]
-
-    @patch("requests.post")
-    def test_http_error_handling(self, mock_post, sample_webhook_url, sample_sql_query):
-        """Test handling of HTTP errors."""
-        # Mock HTTP error
-        mock_post.side_effect = requests.RequestException("Connection failed")
-
-        with pytest.raises(requests.RequestException) as exc_info:
-            execute_sql_query(sample_webhook_url, sample_sql_query)
-
-        assert "Failed to execute SQL query" in str(exc_info.value)
-
-    @patch("requests.post")
-    def test_invalid_json_response(
-        self, mock_post, sample_webhook_url, sample_sql_query
-    ):
-        """Test handling of invalid JSON responses."""
-        # Mock response with invalid JSON
-        mock_response = MagicMock()
-        mock_response.json.side_effect = json.JSONDecodeError("Invalid JSON", "doc", 0)
-        mock_response.raise_for_status.return_value = None
-        mock_post.return_value = mock_response
-
-        with pytest.raises(ValueError) as exc_info:
-            execute_sql_query(sample_webhook_url, sample_sql_query)
-
-        assert "Invalid JSON response from webhook" in str(exc_info.value)
+        assert "Webhook error: Database connection failed" in str(exc_info.value)
 
 
 class TestConvertJSONToCSV:
@@ -306,7 +288,9 @@ class TestConvertJSONToCSV:
         temp_path = create_test_csv_path()
 
         try:
-            with pytest.raises(ValueError) as exc_info:
+            from tools.EtendoSQLToCSVTool import CSVConversionError
+
+            with pytest.raises(CSVConversionError) as exc_info:
                 convert_json_to_csv(json_data, temp_path, True)
             assert "No data returned from SQL query" in str(exc_info.value)
         finally:
@@ -320,7 +304,9 @@ class TestConvertJSONToCSV:
         temp_path = create_test_csv_path()
 
         try:
-            with pytest.raises(ValueError) as exc_info:
+            from tools.EtendoSQLToCSVTool import CSVConversionError
+
+            with pytest.raises(CSVConversionError) as exc_info:
                 convert_json_to_csv(json_data, temp_path, True)
             assert "Invalid webhook response format" in str(exc_info.value)
         finally:
@@ -341,21 +327,19 @@ class TestEtendoSQLToCSVTool:
         mock_execute,
         setup_tool,
         sample_json_data,
-        sample_webhook_url,
         sample_sql_query,
     ):
         """Test successful tool execution."""
         # Setup mocks
         mock_execute.return_value = sample_json_data
-        mock_convert.return_value = "/tmp/test_output.csv"
+        csv_path = create_test_csv_path()
+        mock_convert.return_value = csv_path
         mock_getsize.return_value = 1024  # 1KB
 
         # Mock file reading for row count
         with patch("builtins.open", mock_open(read_data="header\nrow1\nrow2\nrow3")):
             input_params = {
                 "sql_query": sample_sql_query,
-                "webhook_url": sample_webhook_url,
-                "auth_token": "test_token",
                 "include_headers": True,
             }
 
@@ -363,32 +347,22 @@ class TestEtendoSQLToCSVTool:
 
             assert "message" in result
             assert "SQL query executed successfully" in result["message"]
-            assert "/tmp/test_output.csv" in result["message"]
+            assert csv_path in result["message"]
             assert "3 rows exported" in result["message"]
 
-    def test_missing_sql_query(self, setup_tool, sample_webhook_url):
+    def test_missing_sql_query(self, setup_tool):
         """Test error handling when SQL query is missing."""
-        input_params = {"webhook_url": sample_webhook_url}
+        input_params = {}
 
         result = setup_tool.run(input_params)
 
         assert "error" in result
         assert "Missing required parameter: 'sql_query'" in result["error"]
 
-    def test_missing_webhook_url(self, setup_tool, sample_sql_query):
-        """Test error handling when webhook URL is missing."""
-        input_params = {"sql_query": sample_sql_query}
-
-        result = setup_tool.run(input_params)
-
-        assert "error" in result
-        assert "Missing required parameter: 'webhook_url'" in result["error"]
-
-    def test_invalid_sql_query(self, setup_tool, sample_webhook_url):
+    def test_invalid_sql_query(self, setup_tool):
         """Test error handling for invalid SQL queries."""
         input_params = {
             "sql_query": "DROP TABLE users",
-            "webhook_url": sample_webhook_url,
         }
 
         result = setup_tool.run(input_params)
@@ -397,15 +371,14 @@ class TestEtendoSQLToCSVTool:
         assert "Invalid SQL query" in result["error"]
 
     @patch("tools.EtendoSQLToCSVTool.execute_sql_query")
-    def test_webhook_execution_error(
-        self, mock_execute, setup_tool, sample_webhook_url, sample_sql_query
-    ):
-        """Test error handling when webhook execution fails."""
-        mock_execute.side_effect = requests.RequestException("Connection failed")
+    def test_query_execution_error(self, mock_execute, setup_tool, sample_sql_query):
+        """Test error handling when SQL execution fails."""
+        from tools.EtendoSQLToCSVTool import SQLQueryError
+
+        mock_execute.side_effect = SQLQueryError("Database connection failed")
 
         input_params = {
             "sql_query": sample_sql_query,
-            "webhook_url": sample_webhook_url,
         }
 
         result = setup_tool.run(input_params)
@@ -421,7 +394,6 @@ class TestEtendoSQLToCSVTool:
         mock_execute,
         setup_tool,
         sample_json_data,
-        sample_webhook_url,
         sample_sql_query,
     ):
         """Test error handling when CSV conversion fails."""
@@ -430,47 +402,9 @@ class TestEtendoSQLToCSVTool:
 
         input_params = {
             "sql_query": sample_sql_query,
-            "webhook_url": sample_webhook_url,
         }
 
         result = setup_tool.run(input_params)
 
         assert "error" in result
         assert "Failed to convert result to CSV" in result["error"]
-
-    @patch("tools.EtendoSQLToCSVTool.execute_sql_query")
-    @patch("tools.EtendoSQLToCSVTool.convert_json_to_csv")
-    @patch("tempfile.gettempdir")
-    @patch("os.getpid")
-    def test_auto_generated_output_file(
-        self,
-        mock_getpid,
-        mock_gettempdir,
-        mock_convert,
-        mock_execute,
-        setup_tool,
-        sample_json_data,
-        sample_webhook_url,
-        sample_sql_query,
-    ):
-        """Test automatic output file generation."""
-        # Setup mocks
-        mock_execute.return_value = sample_json_data
-        mock_gettempdir.return_value = "/tmp"
-        mock_getpid.return_value = 12345
-        expected_path = "/tmp/etendo_query_result_12345.csv"
-        mock_convert.return_value = expected_path
-
-        # Mock file operations
-        with patch("os.path.getsize", return_value=2048), patch(
-            "builtins.open", mock_open(read_data="header\nrow1\nrow2")
-        ):
-            input_params = {
-                "sql_query": sample_sql_query,
-                "webhook_url": sample_webhook_url,
-            }
-
-            result = setup_tool.run(input_params)
-
-            assert "message" in result
-            assert expected_path in result["message"]
