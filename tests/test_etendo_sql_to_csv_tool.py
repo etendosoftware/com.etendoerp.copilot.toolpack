@@ -7,7 +7,7 @@ covering SQL query execution, JSON to CSV conversion, and error handling scenari
 
 import json
 import os
-import tempfile
+import uuid
 from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
@@ -20,6 +20,25 @@ from tools.EtendoSQLToCSVTool import (
     execute_sql_query,
     validate_sql_query,
 )
+
+
+def create_test_csv_path(filename=None):
+    """
+    Create a test CSV file path in /tmp/sqlexport directory.
+
+    Args:
+        filename (str, optional): Custom filename. If None, generates a unique name.
+
+    Returns:
+        str: Full path to the test CSV file
+    """
+    test_dir = "/tmp/sqlexport"
+    os.makedirs(test_dir, exist_ok=True)
+
+    if filename is None:
+        filename = f"test_{uuid.uuid4().hex[:8]}.csv"
+
+    return os.path.join(test_dir, filename)
 
 
 @pytest.fixture
@@ -199,10 +218,7 @@ class TestConvertJSONToCSV:
 
     def test_successful_conversion_with_data_field(self, sample_json_data):
         """Test successful conversion with Etendo webhook response format."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", delete=False, suffix=".csv"
-        ) as temp_file:
-            temp_path = temp_file.name
+        temp_path = create_test_csv_path()
 
         try:
             result_path = convert_json_to_csv(sample_json_data, temp_path, True)
@@ -215,7 +231,8 @@ class TestConvertJSONToCSV:
                 assert "John Doe" in content
                 assert "jane@example.com" in content
         finally:
-            os.unlink(temp_path)
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
 
     def test_conversion_with_results_field(self):
         """Test conversion with legacy format (not used by Etendo but for compatibility)."""
@@ -227,10 +244,7 @@ class TestConvertJSONToCSV:
             ],
         }
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", delete=False, suffix=".csv"
-        ) as temp_file:
-            temp_path = temp_file.name
+        temp_path = create_test_csv_path()
 
         try:
             result_path = convert_json_to_csv(json_data, temp_path, True)
@@ -242,14 +256,12 @@ class TestConvertJSONToCSV:
                 assert "product,price" in content
                 assert "Laptop" in content
         finally:
-            os.unlink(temp_path)
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
 
     def test_conversion_without_headers(self, sample_json_data):
         """Test CSV conversion without headers."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", delete=False, suffix=".csv"
-        ) as temp_file:
-            temp_path = temp_file.name
+        temp_path = create_test_csv_path()
 
         try:
             convert_json_to_csv(sample_json_data, temp_path, False)
@@ -260,7 +272,8 @@ class TestConvertJSONToCSV:
                 assert not lines[0].startswith("id,name,email")
                 assert "John Doe" in lines[0]
         finally:
-            os.unlink(temp_path)
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
 
     def test_conversion_with_list_data(self):
         """Test conversion when JSON is in direct list format (not supported by Etendo)."""
@@ -272,10 +285,7 @@ class TestConvertJSONToCSV:
             ],
         }
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", delete=False, suffix=".csv"
-        ) as temp_file:
-            temp_path = temp_file.name
+        temp_path = create_test_csv_path()
 
         try:
             convert_json_to_csv(json_data, temp_path, True)
@@ -286,39 +296,36 @@ class TestConvertJSONToCSV:
                 assert "status,count" in content
                 assert "active,5" in content
         finally:
-            os.unlink(temp_path)
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
 
     def test_conversion_empty_data(self):
         """Test conversion with empty data."""
         json_data = {"columns": ["id", "name"], "data": []}
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", delete=False, suffix=".csv"
-        ) as temp_file:
-            temp_path = temp_file.name
+        temp_path = create_test_csv_path()
 
         try:
             with pytest.raises(ValueError) as exc_info:
                 convert_json_to_csv(json_data, temp_path, True)
             assert "No data returned from SQL query" in str(exc_info.value)
         finally:
-            os.unlink(temp_path)
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
 
     def test_conversion_invalid_format(self):
         """Test conversion with invalid JSON format."""
         json_data = {"invalid": "format"}
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", delete=False, suffix=".csv"
-        ) as temp_file:
-            temp_path = temp_file.name
+        temp_path = create_test_csv_path()
 
         try:
             with pytest.raises(ValueError) as exc_info:
                 convert_json_to_csv(json_data, temp_path, True)
             assert "Invalid webhook response format" in str(exc_info.value)
         finally:
-            os.unlink(temp_path)
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
 
 
 class TestEtendoSQLToCSVTool:

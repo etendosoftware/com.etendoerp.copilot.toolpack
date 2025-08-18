@@ -11,7 +11,6 @@ Version: 1.0
 import csv
 import json
 import os
-import tempfile
 from typing import Dict, Optional, Type
 
 from copilot.core.etendo_utils import call_webhook, get_etendo_host, get_etendo_token
@@ -187,8 +186,6 @@ def convert_json_to_csv(
         raise IOError(f"Failed to write CSV file: {str(e)}")
     except json.JSONDecodeError as e:
         raise ValueError(f"Failed to parse JSON data: {str(e)}")
-    except (ValueError, IOError):
-        raise
     except Exception as e:
         raise CSVConversionError(f"Failed to convert JSON to CSV: {str(e)}")
 
@@ -327,9 +324,11 @@ class EtendoSQLToCSVTool(ToolWrapper):
 
             # Generate output file path if not provided
             if not output_file:
-                temp_dir = tempfile.gettempdir()
+                # Create sqlexport directory in /tmp for organized CSV exports
+                export_dir = "/tmp/sqlexport"
+                os.makedirs(export_dir, exist_ok=True)
                 output_file = os.path.join(
-                    temp_dir, f"etendo_query_result_{os.getpid()}.csv"
+                    export_dir, f"etendo_query_result_{os.getpid()}.csv"
                 )
 
             # Execute SQL query using the simplified webhook call
