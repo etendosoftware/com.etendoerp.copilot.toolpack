@@ -27,6 +27,50 @@
 <!--00E862E15C034796B54182C9DEDE295A-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
 <!--00E862E15C034796B54182C9DEDE295A--></ETCOP_TOOL>
 
+<!--0D6969A0549F4812A96A25E8B4F925F4--><ETCOP_TOOL>
+<!--0D6969A0549F4812A96A25E8B4F925F4-->  <ETCOP_TOOL_ID><![CDATA[0D6969A0549F4812A96A25E8B4F925F4]]></ETCOP_TOOL_ID>
+<!--0D6969A0549F4812A96A25E8B4F925F4-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
+<!--0D6969A0549F4812A96A25E8B4F925F4-->  <AD_ORG_ID><![CDATA[0]]></AD_ORG_ID>
+<!--0D6969A0549F4812A96A25E8B4F925F4-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
+<!--0D6969A0549F4812A96A25E8B4F925F4-->  <VALUE><![CDATA[EtendoSQLToCSVTool]]></VALUE>
+<!--0D6969A0549F4812A96A25E8B4F925F4-->  <NAME><![CDATA[Etendo SQL to CSV Downloader Tool]]></NAME>
+<!--0D6969A0549F4812A96A25E8B4F925F4-->  <DESCRIPTION><![CDATA[Tool to execute SQL queries in Etendo using the DBQueryExec webhook and convert results to CSV. This tool connects to Etendo's database through the DBQueryExec webhook, executes SELECT queries, and downloads the JSON result converted to CSV format. REQUIREMENTS: Only SELECT queries are allowed, all tables must have aliases (e.g., 'SELECT u.name FROM ad_user u'), and tables must be accessible to the current user. Security filters are automatically applied by Etendo. Authentication and Etendo host are handled automatically through the copilot context. Parameters: sql_query (required), output_file (optional), include_headers (optional, default: true).]]></DESCRIPTION>
+<!--0D6969A0549F4812A96A25E8B4F925F4-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
+<!--0D6969A0549F4812A96A25E8B4F925F4-->  <JSON_STRUCTURE><![CDATA[{
+  "type": "function",
+  "function": {
+    "name": "EtendoSQLToCSVTool",
+    "description": "Tool to execute SQL queries in Etendo using the DBQueryExec webhook and convert results to CSV. This tool connects to Etendo's database through the DBQueryExec webhook, executes SELECT queries, and downloads the JSON result converted to CSV format. REQUIREMENTS: Only SELECT queries are allowed, all tables must have aliases (e.g., 'SELECT u.name FROM ad_user u'), and tables must be accessible to the current user. Security filters are automatically applied by Etendo. Authentication and Etendo host are handled automatically through the copilot context. Parameters: sql_query (required), output_file (optional), include_headers (optional, default: true).",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "sql_query": {
+          "description": "SQL SELECT query to execute in Etendo database. All tables must have aliases (e.g., 'SELECT u.name FROM ad_user u').",
+          "title": "Sql Query",
+          "type": "string"
+        },
+        "output_file": {
+          "anyOf": [
+            {"type": "string"},
+            {"type": "null"}
+          ],
+          "default": null,
+          "description": "Path where to save the CSV file. If not provided, a temporary file will be created.",
+          "title": "Output File"
+        },
+        "include_headers": {
+          "default": true,
+          "description": "Whether to include column headers in the CSV output.",
+          "title": "Include Headers",
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}]]></JSON_STRUCTURE>
+<!--0D6969A0549F4812A96A25E8B4F925F4-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--0D6969A0549F4812A96A25E8B4F925F4--></ETCOP_TOOL>
+
 <!--206B71E96BF145D480FE535BF7607CD4--><ETCOP_TOOL>
 <!--206B71E96BF145D480FE535BF7607CD4-->  <ETCOP_TOOL_ID><![CDATA[206B71E96BF145D480FE535BF7607CD4]]></ETCOP_TOOL_ID>
 <!--206B71E96BF145D480FE535BF7607CD4-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
@@ -159,7 +203,7 @@
 <!--4F02003167F54F1290A120C45E265860-->  <VALUE><![CDATA[GoogleSpreadsheetsTool]]></VALUE>
 <!--4F02003167F54F1290A120C45E265860-->  <NAME><![CDATA[GoogleSpreadsheetsTool]]></NAME>
 <!--4F02003167F54F1290A120C45E265860-->  <DESCRIPTION><![CDATA[Tool to interact with Google Spreadsheets through Google Drive API. The tool have the following modes: - list: List all accessible spreadsheets.
-- create: Create a new spreadsheet with the specified name.
+- create: Create a new spreadsheet with the specified name. Optionally add headers as the first row.
 - upload: Upload a csv file to Google Drive as a new spreadsheet.
 - read: Read the content of a specified spreadsheet.
 - download: Download a specified spreadsheet as a CSV file.]]></DESCRIPTION>
@@ -168,7 +212,7 @@
   "type": "function",
   "function": {
     "name": "GoogleSpreadsheetsTool",
-    "description": "Tool to interact with Google Spreadsheets through Google Drive API. The tool have the following modes: - list: List all accessible spreadsheets.\n- create: Create a new spreadsheet with the specified name.\n- upload: Upload a csv file to Google Drive as a new spreadsheet.\n- read: Read the content of a specified spreadsheet.\n- download: Download a specified spreadsheet as a CSV file.",
+    "description": "Tool to interact with Google Spreadsheets through Google Drive API. The tool have the following modes: - list: List all accessible spreadsheets.\n- create: Create a new spreadsheet with the specified name. Optionally add headers as the first row.\n- upload: Upload a csv file to Google Drive as a new spreadsheet.\n- read: Read the content of a specified spreadsheet.\n- download: Download a specified spreadsheet as a CSV file.",
     "parameters": {
       "type": "object",
       "properties": {
@@ -217,6 +261,18 @@
           "default": null,
           "description": "Local path to the CSV file to upload (required for upload mode).",
           "title": "File Path"
+        },
+        "headers": {
+          "anyOf": [
+            {
+              "items": {"type": "string"},
+              "type": "array"
+            },
+            {"type": "null"}
+          ],
+          "default": null,
+          "description": "List of headers to add to the spreadsheet (optional, for create mode).",
+          "title": "Headers"
         }
       }
     }
@@ -676,6 +732,68 @@
 }]]></JSON_STRUCTURE>
 <!--C816B0D4763B41D0BACE39A8CDA573BC-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
 <!--C816B0D4763B41D0BACE39A8CDA573BC--></ETCOP_TOOL>
+
+<!--D9BF53C2260449CB90C4E65C50105FE0--><ETCOP_TOOL>
+<!--D9BF53C2260449CB90C4E65C50105FE0-->  <ETCOP_TOOL_ID><![CDATA[D9BF53C2260449CB90C4E65C50105FE0]]></ETCOP_TOOL_ID>
+<!--D9BF53C2260449CB90C4E65C50105FE0-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
+<!--D9BF53C2260449CB90C4E65C50105FE0-->  <AD_ORG_ID><![CDATA[0]]></AD_ORG_ID>
+<!--D9BF53C2260449CB90C4E65C50105FE0-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
+<!--D9BF53C2260449CB90C4E65C50105FE0-->  <VALUE><![CDATA[MemoryTool]]></VALUE>
+<!--D9BF53C2260449CB90C4E65C50105FE0-->  <NAME><![CDATA[Memory Tool]]></NAME>
+<!--D9BF53C2260449CB90C4E65C50105FE0-->  <DESCRIPTION><![CDATA[A comprehensive tool for managing user memories in a vector database. Supports four operation modes: 'add' (requires 'memory' field), 'search' (requires 'query' field, optional 'k' for result limit), 'update' (requires 'memory_id' and 'memory' fields), 'delete' (requires 'memory_id' field). All operations are user-scoped and use memory_id for specific memory identification.]]></DESCRIPTION>
+<!--D9BF53C2260449CB90C4E65C50105FE0-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
+<!--D9BF53C2260449CB90C4E65C50105FE0-->  <JSON_STRUCTURE><![CDATA[{
+  "type": "function",
+  "function": {
+    "name": "MemoryTool",
+    "description": "A comprehensive tool for managing user memories in a vector database. Supports four operation modes: 'add' (requires 'memory' field), 'search' (requires 'query' field, optional 'k' for result limit), 'update' (requires 'memory_id' and 'memory' fields), 'delete' (requires 'memory_id' field). All operations are user-scoped and use memory_id for specific memory identification.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "description": "Operation mode. Must be one of: 'add', 'search', 'update', or 'delete'.",
+          "title": "Mode",
+          "type": "string"
+        },
+        "memory": {
+          "anyOf": [
+            {"type": "string"},
+            {"type": "null"}
+          ],
+          "default": null,
+          "description": "The memory content to store or update. Required for 'add' and 'update' modes.",
+          "title": "Memory"
+        },
+        "query": {
+          "anyOf": [
+            {"type": "string"},
+            {"type": "null"}
+          ],
+          "default": null,
+          "description": "Search query string to find similar memories. Required for 'search' mode.",
+          "title": "Query"
+        },
+        "memory_id": {
+          "anyOf": [
+            {"type": "string"},
+            {"type": "null"}
+          ],
+          "default": null,
+          "description": "Unique identifier of the memory to modify or remove. Required for 'update' and 'delete' modes.",
+          "title": "Memory Id"
+        },
+        "k": {
+          "default": 3,
+          "description": "Maximum number of search results to return. Only used in 'search' mode.",
+          "title": "K",
+          "type": "integer"
+        }
+      }
+    }
+  }
+}]]></JSON_STRUCTURE>
+<!--D9BF53C2260449CB90C4E65C50105FE0-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--D9BF53C2260449CB90C4E65C50105FE0--></ETCOP_TOOL>
 
 <!--DD195D1E832A430E914D36748244B0D6--><ETCOP_TOOL>
 <!--DD195D1E832A430E914D36748244B0D6-->  <ETCOP_TOOL_ID><![CDATA[DD195D1E832A430E914D36748244B0D6]]></ETCOP_TOOL_ID>
