@@ -5,10 +5,9 @@ from typing import Final, Type
 
 from langsmith import traceable
 
-from copilot.core import utils
 from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import ToolWrapper
-from baseutils.logging_envvar import copilot_debug
+from copilot.baseutils.logging_envvar import copilot_debug, read_optional_env_var
 
 GET_JSON_PROMPT: Final[
     str
@@ -163,9 +162,7 @@ class OcrTool(ToolWrapper):
     @traceable
     def run(self, input_params, *args, **kwargs):
         try:
-            openai_model = utils.read_optional_env_var(
-                "COPILOT_OCRTOOL_MODEL", "gpt-4.1"
-            )
+            openai_model = read_optional_env_var("COPILOT_OCRTOOL_MODEL", "gpt-4.1")
             ocr_image_url = get_file_path(input_params)
             mime = read_mime(ocr_image_url)
             checktype(ocr_image_url, mime)

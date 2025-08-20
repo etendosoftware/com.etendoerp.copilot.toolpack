@@ -5,7 +5,7 @@ from typing import Dict, Optional, Type
 from copilot.core.exceptions import ToolException
 from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import ToolOutput, ToolOutputError, ToolWrapper
-from baseutils.logging_envvar import copilot_debug
+from copilot.baseutils.logging_envvar import copilot_debug
 
 
 class XLSToolInput(ToolInput):

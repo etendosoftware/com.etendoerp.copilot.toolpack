@@ -10,7 +10,7 @@ import requests
 
 from copilot.core.exceptions import ToolException
 from copilot.core.threadcontext import ThreadContext
-from copilot.core.utils import copilot_debug_curl
+from copilot.baseutils.logging_envvar import copilot_debug_curl
 
 APPLICATION_JSON = "application/json"
 

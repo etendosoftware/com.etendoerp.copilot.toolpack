@@ -8,7 +8,7 @@ from typing import Dict, List, Optional, Type
 import pandas as pd
 from requests import Response
 
-from core.utils.etendo_utils import (
+from copilot.core.utils.etendo_utils import (
     get_etendo_host,
     get_etendo_token,
     request_to_etendo,
@@ -18,7 +18,7 @@ from copilot.core.exceptions import ToolException
 from copilot.core.threadcontext import ThreadContext
 from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import ToolWrapper
-from baseutils.logging_envvar import is_docker
+from copilot.baseutils.logging_envvar import is_docker
 
 TASK_TYPE_COPILOT = "A83E397389DB42559B2D7719A442168F"
 
