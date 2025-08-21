@@ -1,7 +1,10 @@
 from typing import Dict, Optional, Type
 
-from copilot.core import etendo_utils
-from copilot.core.etendo_utils import get_etendo_host, get_etendo_token
+from copilot.core.utils.etendo_utils import (
+    call_etendo,
+    get_etendo_host,
+    get_etendo_token,
+)
 from copilot.core.exceptions import ToolException
 from copilot.core.threadcontext import ThreadContext
 from copilot.core.tool_input import ToolField, ToolInput
@@ -36,7 +39,7 @@ class LoadOAuthTokenTool(ToolWrapper):
 
         try:
             alias = input_params.get("al", "TOKEN_" + str(uuid.uuid4()))
-            token_oauth = etendo_utils.call_etendo(
+            token_oauth = call_etendo(
                 url=get_etendo_host(),
                 method="POST",
                 endpoint="/webhooks/ReadOAuthToken",
