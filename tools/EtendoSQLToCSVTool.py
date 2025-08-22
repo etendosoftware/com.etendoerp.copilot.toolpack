@@ -14,7 +14,11 @@ import os
 import tempfile
 from typing import Dict, Optional, Type
 
-from copilot.core.etendo_utils import call_webhook, get_etendo_host, get_etendo_token
+from copilot.core.utils.etendo_utils import (
+    call_webhook,
+    get_etendo_host,
+    get_etendo_token,
+)
 from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import (
     ToolOutput,

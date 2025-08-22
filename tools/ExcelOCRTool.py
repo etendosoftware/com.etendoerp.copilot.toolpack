@@ -1,10 +1,10 @@
+from copilot.baseutils.logging_envvar import read_optional_env_var
 from copilot.core.tool_wrapper import ToolWrapper
 from copilot.core.tool_input import ToolInput, ToolField
 from typing import Type, List, Final
 import base64
 import pandas as pd
 from langsmith import traceable
-from copilot.core import utils
 
 class ExcelOCRToolInput(ToolInput):
     path: str = ToolField(description="Path to the Excel file (xls/xlsx/csv)")
@@ -33,7 +33,7 @@ class ExcelOCRTool(ToolWrapper):
             ]}]
 
             from langchain_openai import ChatOpenAI
-            model = utils.read_optional_env_var("COPILOT_OCRTOOL_MODEL", "gpt-4o")
+            model = read_optional_env_var("COPILOT_OCRTOOL_MODEL", "gpt-4.1")
             llm = ChatOpenAI(model=model, temperature=0)
             response = llm.invoke(messages)
             return response.content

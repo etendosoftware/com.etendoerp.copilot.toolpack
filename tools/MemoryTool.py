@@ -16,10 +16,11 @@ from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langsmith import traceable
 
+from copilot.baseutils.logging_envvar import copilot_debug
 from copilot.core.threadcontext import ThreadContext
 from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import ToolWrapper
-from copilot.core.utils import copilot_debug
+
 from copilot.core.vectordb_utils import (
     get_chroma_settings,
     get_embedding,
