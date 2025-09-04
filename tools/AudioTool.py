@@ -4,9 +4,10 @@ from typing import Type
 
 from langsmith import traceable
 
+from copilot.baseutils.logging_envvar import copilot_debug
 from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import ToolWrapper
-from copilot.baseutils.logging_envvar import copilot_debug
+from copilot.core.utils.models import get_openai_client
 
 
 class AudioToolInput(ToolInput):
@@ -24,7 +25,7 @@ def get_file_path(input_params):
     if not Path(audio_path).exists():
         audio_path = rel_path
     if not Path(audio_path).is_file():
-        raise Exception(f"Filename {audio_path} doesn't exist")
+        raise FileNotFoundError(f"Filename {audio_path} doesn't exist")
     return audio_path
 
 
@@ -41,9 +42,8 @@ class AudioTool(ToolWrapper):
     def run(self, input_params, *args, **kwargs):
         try:
             file_path = get_file_path(input_params)
-            from openai import OpenAI
 
-            client = OpenAI()
+            client = get_openai_client()
 
             audio_file = open(file_path, "rb")
             transcription = client.audio.transcriptions.create(
