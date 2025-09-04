@@ -3,11 +3,13 @@ import os
 from pathlib import Path
 from typing import Final, Type
 
+from langchain.chat_models import init_chat_model
 from langsmith import traceable
 
 from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import ToolWrapper
 from copilot.baseutils.logging_envvar import copilot_debug, read_optional_env_var
+from copilot.core.utils.models import get_proxy_url
 
 GET_JSON_PROMPT: Final[
     str
@@ -193,14 +195,13 @@ class OcrTool(ToolWrapper):
                 {"role": "user", "content": msg},
             ]
 
-            from langchain_openai import ChatOpenAI
-
-            llm = ChatOpenAI(
+            llm = init_chat_model(
                 model=openai_model,
                 temperature=0,
                 max_tokens=None,
                 timeout=None,
                 max_retries=2,
+                base_url=get_proxy_url(),
             )
             response_llm = llm.invoke(messages)
         except Exception as e:
