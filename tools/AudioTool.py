@@ -7,6 +7,7 @@ from langsmith import traceable
 from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import ToolWrapper
 from copilot.core.utils import copilot_debug
+from copilot.core.utils import get_openai_client
 
 
 class AudioToolInput(ToolInput):
@@ -41,9 +42,8 @@ class AudioTool(ToolWrapper):
     def run(self, input_params, *args, **kwargs):
         try:
             file_path = get_file_path(input_params)
-            from openai import OpenAI
 
-            client = OpenAI()
+            client = get_openai_client()
 
             audio_file = open(file_path, "rb")
             transcription = client.audio.transcriptions.create(
