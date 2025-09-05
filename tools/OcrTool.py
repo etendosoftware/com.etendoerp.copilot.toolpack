@@ -9,6 +9,7 @@ from copilot.core import utils
 from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import ToolWrapper
 from copilot.core.utils import copilot_debug
+from copilot.core.utils import get_proxy_url
 
 GET_JSON_PROMPT: Final[
     str
@@ -204,6 +205,7 @@ class OcrTool(ToolWrapper):
                 max_tokens=None,
                 timeout=None,
                 max_retries=2,
+                base_url=get_proxy_url(),
             )
             response_llm = llm.invoke(messages)
         except Exception as e:
