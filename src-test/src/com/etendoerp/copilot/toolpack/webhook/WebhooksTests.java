@@ -3,6 +3,7 @@ package com.etendoerp.copilot.toolpack.webhook;
 import static org.junit.Assert.*;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -258,7 +259,11 @@ public class WebhooksTests extends WeldBaseTest {
     assertEquals("Hello World", content);
 
     // Clean up
-    tempFile.delete();
+    try {
+      java.nio.file.Files.delete(tempFile.toPath());
+    } catch (IOException e) {
+      // Ignore cleanup errors in test
+    }
 
 
 
@@ -296,7 +301,11 @@ public class WebhooksTests extends WeldBaseTest {
     }
 
     // Clean up
-    testFile.delete();
+    try {
+      java.nio.file.Files.delete(testFile.toPath());
+    } catch (IOException e) {
+      // Ignore cleanup errors in test
+    }
   }
 
   /**
