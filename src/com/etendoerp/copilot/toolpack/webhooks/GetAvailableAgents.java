@@ -30,7 +30,8 @@ public class GetAvailableAgents extends BaseWebhookService {
       responseVars.put(AGENTS, RestServiceUtil.handleAssistants().toString());
     } catch (Exception e) {
       LOG.error("Error fetching available agents", e);
-      responseVars.put("error", String.format(OBMessageUtils.messageBD("ETCOPTP_GetAvailAgentErr"), e.getMessage()));
+
+      responseVars.put("error", OBMessageUtils.messageBD("ETCOPTP_GetAvailAgentErr"));
     }
   }
 }
