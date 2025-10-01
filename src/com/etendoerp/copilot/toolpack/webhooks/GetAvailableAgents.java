@@ -4,6 +4,7 @@ import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.openbravo.erpCommon.utility.OBMessageUtils;
 
 import com.etendoerp.copilot.rest.RestServiceUtil;
 import com.etendoerp.webhookevents.services.BaseWebhookService;
@@ -29,7 +30,7 @@ public class GetAvailableAgents extends BaseWebhookService {
       responseVars.put(AGENTS, RestServiceUtil.handleAssistants().toString());
     } catch (Exception e) {
       LOG.error("Error fetching available agents", e);
-      responseVars.put("error", e.getMessage());
+      responseVars.put("error", String.format(OBMessageUtils.messageBD("ETCOPTP_GetAvailAgentErr"), e.getMessage()));
     }
   }
 }
