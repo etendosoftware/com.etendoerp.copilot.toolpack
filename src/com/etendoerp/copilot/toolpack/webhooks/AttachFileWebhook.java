@@ -45,21 +45,33 @@ public class AttachFileWebhook extends BaseWebhookService {
     }
   }
 
-  private File storeBase64ToTempFile(String fileContent, String fileName) {
+  public File storeBase64ToTempFile(String fileContent, String fileName) {
+    if (fileContent == null || fileName == null) {
+      return null;
+    }
     File tempFile = null;
     try {
       tempFile = Files.createTempFile(null, fileName).toFile();
       try (FileOutputStream fos = new FileOutputStream(tempFile)) {
-        byte[] fileBytes = javax.xml.bind.DatatypeConverter.parseBase64Binary(fileContent);
+        byte[] fileBytes = java.util.Base64.getDecoder().decode(fileContent);
         fos.write(fileBytes);
       }
     } catch (Exception e) {
       log.error("Error storing base64 content to temp file", e);
+      // Clean up the temp file if it was created but writing failed
+      if (tempFile != null && tempFile.exists()) {
+        try {
+          Files.delete(tempFile.toPath());
+        } catch (Exception deleteE) {
+          log.error("Error deleting temp file", deleteE);
+        }
+      }
+      tempFile = null;
     }
     return tempFile;
   }
 
-  private void createAttachment(String adTabId, String recordId, String fileName, File file) {
+  public void createAttachment(String adTabId, String recordId, String fileName, File file) {
     try {
       AttachImplementationManager aim = WeldUtils.getInstanceFromStaticBeanManager(
           AttachImplementationManager.class);
