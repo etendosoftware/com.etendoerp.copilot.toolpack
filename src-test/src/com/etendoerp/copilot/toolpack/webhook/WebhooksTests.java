@@ -1,11 +1,22 @@
 package com.etendoerp.copilot.toolpack.webhook;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jettison.json.JSONArray;
@@ -22,10 +33,10 @@ import org.openbravo.dal.core.OBContext;
 import org.openbravo.dal.service.OBDal;
 import org.openbravo.test.base.TestConstants;
 
-import com.etendoerp.copilot.toolpack.webhooks.ExecSQL;
-import com.etendoerp.copilot.toolpack.webhooks.SimSearch;
-import com.etendoerp.copilot.toolpack.webhooks.GetAvailableAgents;
 import com.etendoerp.copilot.toolpack.webhooks.AttachFileWebhook;
+import com.etendoerp.copilot.toolpack.webhooks.ExecSQL;
+import com.etendoerp.copilot.toolpack.webhooks.GetAvailableAgents;
+import com.etendoerp.copilot.toolpack.webhooks.SimSearch;
 
 /**
  * Unit tests for the Webhooks in the Copilot Toolpack.
@@ -266,7 +277,6 @@ public class WebhooksTests extends WeldBaseTest {
     }
 
 
-
     // Test null parameters
     assertNull(afw.storeBase64ToTempFile(null, fileName));
     assertNull(afw.storeBase64ToTempFile(validBase64, null));
@@ -286,9 +296,17 @@ public class WebhooksTests extends WeldBaseTest {
   public void createAttachment() throws Exception {
     AttachFileWebhook afw = new AttachFileWebhook();
 
-    // Create a test file
-    File testFile = java.nio.file.Files.createTempFile("test", ".txt").toFile();
-    java.nio.file.Files.write(testFile.toPath(), "Test content".getBytes());
+    // Create a secure temporary directory with owner-only permissions and a temp file inside it
+    FileAttribute<Set<PosixFilePermission>> dirAttr =
+        PosixFilePermissions.asFileAttribute(
+            PosixFilePermissions.fromString("rwx------"));
+    Path secureTempDir = Files.createTempDirectory("testDir", dirAttr);
+    FileAttribute<Set<PosixFilePermission>> fileAttr =
+        PosixFilePermissions.asFileAttribute(
+            PosixFilePermissions.fromString("rw-------"));
+    Path testFilePath = Files.createTempFile(secureTempDir, "test", ".txt", fileAttr);
+    File testFile = testFilePath.toFile();
+    Files.write(testFile.toPath(), "Test content".getBytes());
 
     // Test with invalid parameters (should throw exception)
     try {
@@ -302,7 +320,9 @@ public class WebhooksTests extends WeldBaseTest {
 
     // Clean up
     try {
-      java.nio.file.Files.delete(testFile.toPath());
+      Files.delete(testFile.toPath());
+      // also attempt to delete the temporary directory
+      Files.delete(secureTempDir);
     } catch (IOException e) {
       // Ignore cleanup errors in test
     }
