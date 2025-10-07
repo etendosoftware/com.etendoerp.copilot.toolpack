@@ -3,9 +3,11 @@ import os
 from pathlib import Path
 from typing import Final, Type
 
+from langchain.chat_models import init_chat_model
 from langsmith import traceable
 
 from copilot.core import utils
+from copilot.core.threadcontextutils import read_accum_usage_data
 from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import ToolWrapper
 from copilot.core.utils import copilot_debug
@@ -197,17 +199,19 @@ class OcrTool(ToolWrapper):
                 {"role": "user", "content": msg},
             ]
 
-            from langchain_openai import ChatOpenAI
-
-            llm = ChatOpenAI(
+            llm = init_chat_model(
+                model_provider="openai",
                 model=openai_model,
                 temperature=0,
                 max_tokens=None,
                 timeout=None,
                 max_retries=2,
                 base_url=get_proxy_url(),
+                streaming=True,
+                model_kwargs={"stream_options": {"include_usage": True}},
             )
             response_llm = llm.invoke(messages)
+            read_accum_usage_data(response_llm)
         except Exception as e:
             errmsg = f"An error occurred: {e}"
             copilot_debug(errmsg)
