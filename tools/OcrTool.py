@@ -6,9 +6,10 @@ from typing import Final, Type
 from langchain.chat_models import init_chat_model
 from langsmith import traceable
 
+from copilot.baseutils.logging_envvar import copilot_debug, read_optional_env_var
+from copilot.core.threadcontextutils import read_accum_usage_data
 from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import ToolWrapper
-from copilot.baseutils.logging_envvar import copilot_debug, read_optional_env_var
 from copilot.core.utils.models import get_proxy_url
 
 GET_JSON_PROMPT: Final[
@@ -202,8 +203,11 @@ class OcrTool(ToolWrapper):
                 timeout=None,
                 max_retries=2,
                 base_url=get_proxy_url(),
+                streaming=True,
+                model_kwargs={"stream_options": {"include_usage": True}},
             )
             response_llm = llm.invoke(messages)
+            read_accum_usage_data(response_llm)
         except Exception as e:
             errmsg = f"An error occurred: {e}"
             copilot_debug(errmsg)
