@@ -19,8 +19,7 @@ from copilot.core.tool_wrapper import (
 class LoadOAuthTokenInput(ToolInput):
     al: Optional[str] = ToolField(
         default=None,
-        description="Alias of the OAuth token to load. If not provided, the default "
-        "alias will be used.",
+        description="Alias of the OAuth token to load. If not provided, the default alias will be used. Only set if you want to use a specific alias.",
     )
 
 
@@ -38,7 +37,9 @@ class LoadOAuthTokenTool(ToolWrapper):
         import uuid
 
         try:
-            alias = input_params.get("al", "TOKEN_" + str(uuid.uuid4()))
+            alias = input_params.get("al", None)
+            if alias is None:
+                alias = "TOKEN_" + str(uuid.uuid4())
             token_oauth = call_etendo(
                 url=get_etendo_host(),
                 method="POST",
