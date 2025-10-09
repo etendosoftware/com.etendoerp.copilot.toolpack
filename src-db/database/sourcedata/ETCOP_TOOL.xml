@@ -519,13 +519,13 @@
 <!--7B9D485A48F94CA181841E31A9D21B5F-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
 <!--7B9D485A48F94CA181841E31A9D21B5F-->  <VALUE><![CDATA[LoadOAuthTokenTool]]></VALUE>
 <!--7B9D485A48F94CA181841E31A9D21B5F-->  <NAME><![CDATA[LoadOAuthTokenTool]]></NAME>
-<!--7B9D485A48F94CA181841E31A9D21B5F-->  <DESCRIPTION><![CDATA[This tool loads an OAuth token and returns a message indicating the alias wich was used to load the token.]]></DESCRIPTION>
+<!--7B9D485A48F94CA181841E31A9D21B5F-->  <DESCRIPTION><![CDATA[This tool loads an OAuth token and returns a message indicating the alias which was used to load the token.]]></DESCRIPTION>
 <!--7B9D485A48F94CA181841E31A9D21B5F-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
 <!--7B9D485A48F94CA181841E31A9D21B5F-->  <JSON_STRUCTURE><![CDATA[{
   "type": "function",
   "function": {
     "name": "LoadOAuthTokenTool",
-    "description": "This tool loads an OAuth token and returns a message indicating the alias wich was used to load the token.",
+    "description": "This tool loads an OAuth token and returns a message indicating the alias which was used to load the token.",
     "parameters": {
       "type": "object",
       "properties": {"al": {
@@ -534,7 +534,7 @@
           {"type": "null"}
         ],
         "default": null,
-        "description": "Alias of the OAuth token to load. If not provided, the default alias will be used.",
+        "description": "Alias of the OAuth token to load. If not provided, the default alias will be used. Only set if you want to use a specific alias.",
         "title": "Al"
       }}
     }

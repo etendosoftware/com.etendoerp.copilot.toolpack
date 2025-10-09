@@ -119,6 +119,7 @@ class GoogleServiceUtil:
         )
         if response.status_code != 200:
             raise ToolException(f"Error getting files: {response.status_code}")
+        copilot_debug_curl(response.request)
         return response.json().get("files", [])
 
     @staticmethod
@@ -136,6 +137,7 @@ class GoogleServiceUtil:
             raise ToolException("Unauthorized Operation - Refresh the token.")
         if response.status_code != 200:
             raise ToolException(f"Failed to create file: HTTP {response.status_code}")
+        copilot_debug_curl(response.request)
         return response.json()
 
     @staticmethod
@@ -202,6 +204,7 @@ class GoogleServiceUtil:
             raise ToolException(
                 f"Upload failed: {response.status_code} - {response.text}"
             )
+        copilot_debug_curl(response.request)
 
         return response.json()
 
