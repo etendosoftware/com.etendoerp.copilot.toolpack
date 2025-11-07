@@ -20,9 +20,10 @@ requests = "*"
 "requests" = "*"
 
 [OcrTool]
-filetype = "==1.2.0"
+filetype = "*"
 pypdfium2 = '*'
 "pillow|PIL" = "*"
+sentence-transformers = '*'
 
 [CodbarTool]
 pyzbar = '*'
@@ -44,4 +45,3 @@ google-auth-oauthlib = ">=1.2.2"
 
 [ExcelOCRTool]
 matplotlib = "*"
-
