@@ -95,9 +95,10 @@ def read_mime(ocr_image_url):
     import filetype
 
     try:
-        mime = filetype.guess(ocr_image_url).mime
+        guess_result = filetype.guess(ocr_image_url)
+        mime = guess_result.mime if guess_result else None
     except Exception as e:
-        print(e)
+        copilot_debug(f"Error reading mime type: {e}")
         mime = None
     return mime
 
@@ -142,7 +143,13 @@ def recopile_files(
             )
             # delete the file if it exists
             filenames_to_delete.append(page_image_filename)
-            pil_image.save(page_image_filename)
+            # Set secure file permissions (owner read/write only)
+            old_umask = os.umask(0o077)
+            try:
+                pil_image.save(page_image_filename)
+                os.chmod(page_image_filename, 0o600)
+            finally:
+                os.umask(old_umask)
             base64_images.append(image_to_base64(page_image_filename))
     elif mime not in [SUPPORTED_MIME_FORMATS["JPEG"], SUPPORTED_MIME_FORMATS["JPG"]]:
         # Convert to jpeg and get the base64
@@ -153,7 +160,13 @@ def recopile_files(
         converted_image_filename = (
             f"{folder_of_appended_file}/{os.urandom(16).hex()}converted_img.jpeg"
         )
-        img.save(converted_image_filename)
+        # Set secure file permissions (owner read/write only)
+        old_umask = os.umask(0o077)
+        try:
+            img.save(converted_image_filename)
+            os.chmod(converted_image_filename, 0o600)
+        finally:
+            os.umask(old_umask)
         base64_images.append(image_to_base64(converted_image_filename))
         filenames_to_delete.append(converted_image_filename)
     else:
@@ -289,6 +302,7 @@ class OCRAdvancedTool(ToolWrapper):
     args_schema: Type[ToolInput] = OCRAdvancedToolInput
 
     def run(self, input_params, *args, **kwargs):
+        filenames_to_delete = []
         try:
             # Validate agent_id is available
             if not self.agent_id:
@@ -337,9 +351,6 @@ class OCRAdvancedTool(ToolWrapper):
                     first_image_for_search, self.agent_id
                 )
 
-            # Clean up temporary files
-            cleanup_temp_files(filenames_to_delete)
-
             # Determine which prompt to use
             if reference_image_path or reference_image_base64:
                 default_prompt = GET_JSON_WITH_REFERENCE_PROMPT
@@ -364,3 +375,6 @@ class OCRAdvancedTool(ToolWrapper):
             errmsg = f"An error occurred: {e}"
             copilot_debug(errmsg)
             return {"error": errmsg}
+        finally:
+            # Ensure temporary files are always cleaned up, even if an exception occurs
+            cleanup_temp_files(filenames_to_delete)
