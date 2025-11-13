@@ -196,6 +196,40 @@
 <!--3D54E50D0F8C4EA1B88B4A831811CF42-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
 <!--3D54E50D0F8C4EA1B88B4A831811CF42--></ETCOP_TOOL>
 
+<!--411DAEEBBE7C41FAA146BFB66EC8C0B6--><ETCOP_TOOL>
+<!--411DAEEBBE7C41FAA146BFB66EC8C0B6-->  <ETCOP_TOOL_ID><![CDATA[411DAEEBBE7C41FAA146BFB66EC8C0B6]]></ETCOP_TOOL_ID>
+<!--411DAEEBBE7C41FAA146BFB66EC8C0B6-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
+<!--411DAEEBBE7C41FAA146BFB66EC8C0B6-->  <AD_ORG_ID><![CDATA[0]]></AD_ORG_ID>
+<!--411DAEEBBE7C41FAA146BFB66EC8C0B6-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
+<!--411DAEEBBE7C41FAA146BFB66EC8C0B6-->  <VALUE><![CDATA[OCRAdvancedTool]]></VALUE>
+<!--411DAEEBBE7C41FAA146BFB66EC8C0B6-->  <NAME><![CDATA[OCR Advanced Tool]]></NAME>
+<!--411DAEEBBE7C41FAA146BFB66EC8C0B6-->  <DESCRIPTION><![CDATA[Advanced OCR tool that extracts data from local images or PDF files and returns structured JSON. The tool automatically searches for similar reference templates in a vector database (ChromaDB) using the collection 'KB_TOOL_411DAEEBBE7C41FAA146BFB66EC8C0B6'. If a similar reference is found (with red-highlighted areas indicating important data), it uses that template to guide the extraction process. This is particularly useful for invoices, forms, and structured documents with consistent layouts. The file must be in the local file system.]]></DESCRIPTION>
+<!--411DAEEBBE7C41FAA146BFB66EC8C0B6-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
+<!--411DAEEBBE7C41FAA146BFB66EC8C0B6-->  <JSON_STRUCTURE><![CDATA[{
+  "type": "function",
+  "function": {
+    "name": "OCRAdvancedTool",
+    "description": "Advanced OCR tool that extracts data from local images or PDF files and returns structured JSON. The tool automatically searches for similar reference templates in a vector database (ChromaDB) using the collection 'KB_TOOL_411DAEEBBE7C41FAA146BFB66EC8C0B6'. If a similar reference is found (with red-highlighted areas indicating important data), it uses that template to guide the extraction process. This is particularly useful for invoices, forms, and structured documents with consistent layouts. The file must be in the local file system.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "description": "path of the image to be processed",
+          "title": "Path",
+          "type": "string"
+        },
+        "question": {
+          "description": "Contextual question to be asked to the model, where is specified the information to be extracted from the image. This is mandatory and very important to get precise results.",
+          "title": "Question",
+          "type": "string"
+        }
+      }
+    }
+  }
+}]]></JSON_STRUCTURE>
+<!--411DAEEBBE7C41FAA146BFB66EC8C0B6-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--411DAEEBBE7C41FAA146BFB66EC8C0B6--></ETCOP_TOOL>
+
 <!--438B5A5EB8B1405BABE39F9EEE34F44F--><ETCOP_TOOL>
 <!--438B5A5EB8B1405BABE39F9EEE34F44F-->  <ETCOP_TOOL_ID><![CDATA[438B5A5EB8B1405BABE39F9EEE34F44F]]></ETCOP_TOOL_ID>
 <!--438B5A5EB8B1405BABE39F9EEE34F44F-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
