@@ -626,6 +626,33 @@
 <!--9154462E3B9F427496F00FA5C136F357-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
 <!--9154462E3B9F427496F00FA5C136F357--></ETCOP_TOOL>
 
+<!--98FA05E9EFFF4798A8988BAB5339C1D1--><ETCOP_TOOL>
+<!--98FA05E9EFFF4798A8988BAB5339C1D1-->  <ETCOP_TOOL_ID><![CDATA[98FA05E9EFFF4798A8988BAB5339C1D1]]></ETCOP_TOOL_ID>
+<!--98FA05E9EFFF4798A8988BAB5339C1D1-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
+<!--98FA05E9EFFF4798A8988BAB5339C1D1-->  <AD_ORG_ID><![CDATA[0]]></AD_ORG_ID>
+<!--98FA05E9EFFF4798A8988BAB5339C1D1-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
+<!--98FA05E9EFFF4798A8988BAB5339C1D1-->  <VALUE><![CDATA[OCRExampleCreatorTool]]></VALUE>
+<!--98FA05E9EFFF4798A8988BAB5339C1D1-->  <NAME><![CDATA[OCR Example Creator Tool]]></NAME>
+<!--98FA05E9EFFF4798A8988BAB5339C1D1-->  <DESCRIPTION><![CDATA[Extracts the first page from a PDF or converts an image to JPEG format, saving it to a temporary file. Use this to create reference images for OCR extraction. For PDFs, extracts and saves the first page as JPEG. For images, converts to JPEG format. Returns the path to the temporary file. Best practice: add visual markers (red boxes) to highlight important fields before processing. Supports: JPEG, PNG, WebP, GIF, and PDF files.]]></DESCRIPTION>
+<!--98FA05E9EFFF4798A8988BAB5339C1D1-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
+<!--98FA05E9EFFF4798A8988BAB5339C1D1-->  <JSON_STRUCTURE><![CDATA[{
+  "type": "function",
+  "function": {
+    "name": "OCRExampleCreatorTool",
+    "description": "Extracts the first page from a PDF or converts an image to JPEG format, saving it to a temporary file. Use this to create reference images for OCR extraction. For PDFs, extracts and saves the first page as JPEG. For images, converts to JPEG format. Returns the path to the temporary file. Best practice: add visual markers (red boxes) to highlight important fields before processing. Supports: JPEG, PNG, WebP, GIF, and PDF files.",
+    "parameters": {
+      "type": "object",
+      "properties": {"path": {
+        "description": "Absolute or relative path to the image or PDF file to use as reference. For PDFs, only the first page will be used. The file must exist in the local file system.",
+        "title": "Path",
+        "type": "string"
+      }}
+    }
+  }
+}]]></JSON_STRUCTURE>
+<!--98FA05E9EFFF4798A8988BAB5339C1D1-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--98FA05E9EFFF4798A8988BAB5339C1D1--></ETCOP_TOOL>
+
 <!--9B93E3F0B846482A8640368F7C11E5A5--><ETCOP_TOOL>
 <!--9B93E3F0B846482A8640368F7C11E5A5-->  <ETCOP_TOOL_ID><![CDATA[9B93E3F0B846482A8640368F7C11E5A5]]></ETCOP_TOOL_ID>
 <!--9B93E3F0B846482A8640368F7C11E5A5-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
