@@ -222,7 +222,7 @@
           "description": "Specific instructions or question describing what information to extract from the document. Be precise about the data fields needed (e.g., 'Extract invoice number, date, total amount, and vendor name'). Clear instructions improve extraction accuracy.",
           "title": "Question",
           "type": "string"
-},
+        },
         "structured_output": {
           "default": null,
           "description": "Optional. Specify a schema name to use structured output format (e.g., 'Invoice'). Available schemas are loaded from tools\/schemas\/ directory. When specified, the response will follow the predefined schema structure. Leave empty or None for unstructured JSON extraction.",
@@ -928,6 +928,17 @@
           "title": "Group ID",
           "type": "string"
         },
+        "groupby": {
+          "anyOf": [
+            {
+              "items": {"type": "string"},
+              "type": "array"
+            },
+            {"type": "null"}
+          ],
+          "description": "Optional list of column names to group rows by when processing CSV\/XLS files. If provided, rows that share the same values for these columns will be sent as a single task (the task item will be a JSON array string with all rows in the group). Accepts a list or a comma-separated string.",
+          "title": "Group By"
+        },
         "task_type_id": {
           "anyOf": [
             {"type": "string"},
@@ -951,6 +962,14 @@
           ],
           "description": "ID of the agent to which the task is assigned. This agent will be who processes the task. If not provided, the tool will use the current main assistant's ID.",
           "title": "Agent ID"
+        },
+        "preview": {
+          "anyOf": [
+            {"type": "boolean"},
+            {"type": "null"}
+          ],
+          "description": "If true, the tool will return the column names (or file contents for ZIP) instead of creating tasks.",
+          "title": "Preview"
         }
       }
     }
