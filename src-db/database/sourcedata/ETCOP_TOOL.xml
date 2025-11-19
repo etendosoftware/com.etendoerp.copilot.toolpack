@@ -229,6 +229,12 @@
           "title": "Structured Output",
           "type": "string"
         },
+        "force_structured_output_compat": {
+          "default": false,
+          "description": "Optional. When True, do not use the LLM's structured-output wrapper. Instead the tool will request structured output by adding the literal string \"Expected output: JSON-OF-SO-\" into the system prompt to preserve compatibility with older agents.",
+          "title": "Force Structured Output Compat",
+          "type": "boolean"
+        },
         "disable_threshold_filter": {
           "default": false,
           "description": "Optional. When True, ignore the configured similarity threshold and return the most similar reference found in the agent database (disables threshold filtering). Default: False.",

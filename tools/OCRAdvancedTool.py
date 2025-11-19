@@ -1,7 +1,8 @@
 import base64
+import json
 import os
 from pathlib import Path
-from typing import Final, Type
+from typing import Final, Type, Optional
 
 from langchain.chat_models import init_chat_model
 from pydantic import BaseModel
@@ -17,6 +18,9 @@ from copilot.core.utils.models import get_proxy_url
 
 # Import schema loader
 from tools.schemas import list_available_schemas, load_schema
+
+# DEFAULT_MODEL = "gpt-4.1"
+DEFAULT_MODEL = "gpt-5-mini"
 
 GET_JSON_PROMPT: Final[
     str
@@ -65,6 +69,14 @@ class OCRAdvancedToolInput(ToolInput):
         "Available schemas are loaded from tools/schemas/ directory. "
         "When specified, the response will follow the predefined schema structure. "
         "Leave empty or None for unstructured JSON extraction.",
+    )
+    force_structured_output_compat: bool = ToolField(
+        default=False,
+        description=(
+            "Optional. When True, do not use the LLM's structured-output wrapper. "
+            "Instead the tool will request structured output by adding the literal string "
+            '"Expected output: JSON-OF-SO-" into the system prompt to preserve compatibility with older agents.'
+        ),
     )
     disable_threshold_filter: bool = ToolField(
         default=False,
@@ -288,7 +300,12 @@ def cleanup_temp_files(filenames_to_delete):
             copilot_debug(f"Error deleting file {filename_del}: {e}")
 
 
-def build_messages(base64_images, question, reference_image_base64=None):
+def build_messages(
+    base64_images,
+    question,
+    reference_image_base64=None,
+    extra_system_content: Optional[str] = None,
+):
     """Builds the message payload for the vision model.
 
     Sends images and reference as separate messages:
@@ -309,15 +326,20 @@ def build_messages(base64_images, question, reference_image_base64=None):
     mime = SUPPORTED_MIME_FORMATS["JPEG"]
     messages = []
     # Add message for system prompt
+    sys_content = (
+        "You are an agent specializing in OCR. You may receive "
+        "\u201creference images\u201d with sectors marked in color (usually red) with "
+        "labels to indicate relevant sectors."
+        " Use them in real cases to prioritize content."
+    )
+    if extra_system_content:
+        # Append extra system instructions (compatibility markers, etc.)
+        sys_content = sys_content + "\n" + extra_system_content
+
     messages.append(
         {
             "role": "system",
-            "content": (
-                "You are an agent specializing in OCR. You may receive "
-                "“reference images” with sectors marked in color (usually red) with "
-                "labels to indicate relevant sectors."
-                " Use them in real cases to prioritize content."
-            ),
+            "content": sys_content,
         }
     )
 
@@ -376,7 +398,9 @@ def build_messages(base64_images, question, reference_image_base64=None):
     return messages
 
 
-def get_vision_model_response(messages, model_name, structured_schema=None):
+def get_vision_model_response(
+    messages, model_name, structured_schema=None, force_compat: bool = False
+):
     """Invokes the vision model and returns the response.
 
     Args:
@@ -399,20 +423,33 @@ def get_vision_model_response(messages, model_name, structured_schema=None):
         model_kwargs={"stream_options": {"include_usage": True}},
     )
 
-    # Use structured output if schema is provided
-    if structured_schema:
-        llm_structured = llm.with_structured_output(structured_schema, include_raw=True)
-        response_llm = llm_structured.invoke(messages)
-        read_accum_usage_data(response_llm)
-        # Convert Pydantic model to dict
-        if isinstance(response_llm, BaseModel):
-            return response_llm.model_dump()
-        return response_llm
+    # If caller explicitly requests compatibility-mode, skip the structured
+    # wrapper and perform an unstructured invocation. The caller is expected
+    # to have added the compatibility marker into the system prompt when
+    # calling in this mode.
+    if structured_schema and not force_compat:
+        try:
+            llm_structured = llm.with_structured_output(
+                structured_schema, include_raw=True
+            )
+            response_llm = llm_structured.invoke(messages)
+            read_accum_usage_data(response_llm)
+            # Convert Pydantic model to dict
+            if isinstance(response_llm, BaseModel):
+                return response_llm.model_dump()
+            return response_llm
+        except Exception:
+            # If structured wrapper fails for any reason, fall back to unstructured
+            # invocation and return raw content.
+            copilot_debug(
+                "Structured wrapper failed, falling back to unstructured invocation"
+            )
 
     # Default unstructured response
     response_llm = llm.invoke(messages)
     read_accum_usage_data(response_llm)
-    return response_llm.content
+    # If the response object has 'content', return it; otherwise return as-is
+    return getattr(response_llm, "content", response_llm)
 
 
 class OCRAdvancedTool(ToolWrapper):
@@ -463,7 +500,7 @@ class OCRAdvancedTool(ToolWrapper):
 
             # Get configuration and validate file
             openai_model = read_optional_env_var(
-                "COPILOT_OCRADVANCEDTOOL_MODEL", "gpt-4.1"
+                "COPILOT_OCRADVANCEDTOOL_MODEL", DEFAULT_MODEL
             )
             ocr_image_url = get_file_path(input_params)
             mime = read_mime(ocr_image_url)
@@ -534,9 +571,37 @@ class OCRAdvancedTool(ToolWrapper):
                     )
 
             # Build messages and get response from vision model
-            messages = build_messages(base64_images, question, reference_image_base64)
+            # Determine if compatibility mode is requested
+            force_compat = input_params.get("force_structured_output_compat", False)
+            extra_system = None
+            if force_compat and structured_schema:
+                # Build a JSON representation of the structured schema and pass
+                # it in the system prompt so older agents receive the expected
+                # structured-output example.
+                try:
+                    if hasattr(structured_schema, "model_json_schema"):
+                        schema_json = structured_schema.model_json_schema()
+                    elif hasattr(structured_schema, "schema"):
+                        schema_json = structured_schema.schema()
+                    else:
+                        schema_json = {}
+                except Exception as e:
+                    copilot_debug(f"Error generating schema JSON: {e}")
+                    schema_json = {}
+
+                extra_system = (
+                    "Expected output JSON schema for structured output: "
+                    + json.dumps(schema_json, ensure_ascii=False, indent=2)
+                )
+                copilot_debug(
+                    "Structured output compatibility mode enabled: adding structured schema JSON to system prompt"
+                )
+
+            messages = build_messages(
+                base64_images, question, reference_image_base64, extra_system
+            )
             response_content = get_vision_model_response(
-                messages, openai_model, structured_schema
+                messages, openai_model, structured_schema, force_compat
             )
 
             copilot_debug(f"Tool OCRAdvancedTool output: {response_content}")
