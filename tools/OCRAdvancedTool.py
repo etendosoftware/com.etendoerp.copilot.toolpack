@@ -66,6 +66,13 @@ class OCRAdvancedToolInput(ToolInput):
         "When specified, the response will follow the predefined schema structure. "
         "Leave empty or None for unstructured JSON extraction.",
     )
+    disable_threshold_filter: bool = ToolField(
+        default=False,
+        description=(
+            "Optional. When True, ignore the configured similarity threshold and return the most similar "
+            "reference found in the agent database (disables threshold filtering). Default: False."
+        ),
+    )
 
 
 def convert_to_pil_img(bitmap):
@@ -456,12 +463,17 @@ class OCRAdvancedTool(ToolWrapper):
 
             reference_image_path = None
             reference_image_base64 = None
+            disable_threshold = input_params.get("disable_threshold_filter", False)
             if first_image_for_search and Path(first_image_for_search).exists():
                 # Import from vectordb_utils instead of local function
                 from copilot.core.vectordb_utils import find_similar_reference
 
+                # When disable_threshold is True we request the most similar reference
+                # ignoring any configured similarity threshold.
                 reference_image_path, reference_image_base64 = find_similar_reference(
-                    first_image_for_search, self.agent_id
+                    first_image_for_search,
+                    self.agent_id,
+                    ignore_env_threshold=disable_threshold,
                 )
 
             # Determine which prompt to use

@@ -228,6 +228,12 @@
           "description": "Optional. Specify a schema name to use structured output format (e.g., 'Invoice'). Available schemas are loaded from tools\/schemas\/ directory. When specified, the response will follow the predefined schema structure. Leave empty or None for unstructured JSON extraction.",
           "title": "Structured Output",
           "type": "string"
+        },
+        "disable_threshold_filter": {
+          "default": false,
+          "description": "Optional. When True, ignore the configured similarity threshold and return the most similar reference found in the agent database (disables threshold filtering). Default: False.",
+          "title": "Disable Threshold Filter",
+          "type": "boolean"
         }
       }
     }
