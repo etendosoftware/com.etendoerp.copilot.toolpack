@@ -141,18 +141,22 @@ class TestOCRAdvancedTool(unittest.TestCase):
 
         messages = build_messages(base64_images, question)
 
-        # Should have 2 image messages + 1 question message
-        self.assertEqual(len(messages), 3)
+        # Should have: 1 system message + 1 question message + 2 image messages = 4
+        self.assertEqual(len(messages), 4)
 
-        # Check image messages
-        for i in range(2):
+        # Check system message
+        self.assertEqual(messages[0]["role"], "system")
+        self.assertIn("OCR", messages[0]["content"])
+
+        # Check question message
+        self.assertEqual(messages[1]["role"], "user")
+        self.assertEqual(messages[1]["content"], question)
+
+        # Check image messages (come after the question)
+        for i in range(2, 4):
             self.assertEqual(messages[i]["role"], "user")
             self.assertIsInstance(messages[i]["content"], list)
             self.assertEqual(messages[i]["content"][0]["type"], "image_url")
-
-        # Check question message
-        self.assertEqual(messages[2]["role"], "user")
-        self.assertEqual(messages[2]["content"], question)
 
     @unit
     def test_build_messages_with_reference(self):
@@ -163,24 +167,30 @@ class TestOCRAdvancedTool(unittest.TestCase):
 
         messages = build_messages(base64_images, question, reference_b64)
 
-        # Should have: 1 reference image + 1 reference text + 1 real image + 1 question = 4
-        self.assertEqual(len(messages), 4)
+        # Should have: 1 system + 1 ref explanation + 1 ref image + 1 assistant response + 1 question + 1 real image = 6
+        self.assertEqual(len(messages), 6)
 
-        # Check reference image
-        self.assertEqual(messages[0]["role"], "user")
-        self.assertIsInstance(messages[0]["content"], list)
+        # Check system message
+        self.assertEqual(messages[0]["role"], "system")
 
         # Check reference explanation text
         self.assertEqual(messages[1]["role"], "user")
         self.assertIn("REFERENCE", messages[1]["content"])
 
-        # Check real image
+        # Check reference image
         self.assertEqual(messages[2]["role"], "user")
         self.assertIsInstance(messages[2]["content"], list)
 
+        # Check assistant acknowledgment
+        self.assertEqual(messages[3]["role"], "assistant")
+
         # Check question
-        self.assertEqual(messages[3]["role"], "user")
-        self.assertEqual(messages[3]["content"], question)
+        self.assertEqual(messages[4]["role"], "user")
+        self.assertEqual(messages[4]["content"], question)
+
+        # Check real image
+        self.assertEqual(messages[5]["role"], "user")
+        self.assertIsInstance(messages[5]["content"], list)
 
     @unit
     def test_cleanup_temp_files(self):
