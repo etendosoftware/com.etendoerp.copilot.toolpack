@@ -16,7 +16,7 @@ from copilot.core.tool_wrapper import ToolWrapper
 from copilot.core.utils.models import get_proxy_url
 
 # Import schema loader
-from tools.schemas import load_schema, list_available_schemas
+from tools.schemas import list_available_schemas, load_schema
 
 GET_JSON_PROMPT: Final[
     str
@@ -308,6 +308,18 @@ def build_messages(base64_images, question, reference_image_base64=None):
     """
     mime = SUPPORTED_MIME_FORMATS["JPEG"]
     messages = []
+    # Add message for system prompt
+    messages.append(
+        {
+            "role": "system",
+            "content": (
+                "You are an agent specializing in OCR. You may receive "
+                "“reference images” with sectors marked in color (usually red) with "
+                "labels to indicate relevant sectors."
+                " Use them in real cases to prioritize content."
+            ),
+        }
+    )
 
     # If reference image provided, add it as a separate message and a short
     # explanatory text message to tell the model this is the reference with
@@ -320,20 +332,35 @@ def build_messages(base64_images, question, reference_image_base64=None):
 
             ref_payload = get_image_payload_item(reference_b64, mime)
             # Wrap payload in a list for Langchain/Pydantic validation
-            messages.append({"role": "user", "content": [ref_payload]})
+
             messages.append(
                 {
                     "role": "user",
                     "content": (
-                        "This first image is a REFERENCE example with visual markers "
-                        "(red boxes) indicating the positions of the data to extract. "
-                        "Use it only as a template to know which areas are important."
+                        "I will send you an image as an example of a REFERENCE with "
+                        "visual markers (red borders) indicating the positions/sections"
+                        " where the most relevant data on the invoice is located."
+                        " Next to the box is a label for the section. "
+                        "Use it only as a template to know which areas are important "
+                        "in real images."
+                    ),
+                }
+            )
+            messages.append({"role": "user", "content": [ref_payload]})
+            messages.append(
+                {
+                    "role": "assistant",
+                    "content": (
+                        "Understood. Now please send me the real images and specify "
+                        "the information you need me to extract."
                     ),
                 }
             )
             copilot_debug("Added reference image as a separate message")
         except Exception as e:
             copilot_debug(f"Error adding reference image as separate message: {e}")
+
+    messages.append({"role": "user", "content": question})
 
     # Add each real image as a separate message
     for b64 in base64_images:
@@ -345,7 +372,6 @@ def build_messages(base64_images, question, reference_image_base64=None):
             copilot_debug(f"Error adding image payload as separate message: {e}")
 
     # Finally add the textual question/prompt as the last message
-    messages.append({"role": "user", "content": question})
 
     return messages
 
@@ -375,7 +401,7 @@ def get_vision_model_response(messages, model_name, structured_schema=None):
 
     # Use structured output if schema is provided
     if structured_schema:
-        llm_structured = llm.with_structured_output(structured_schema)
+        llm_structured = llm.with_structured_output(structured_schema, include_raw=True)
         response_llm = llm_structured.invoke(messages)
         read_accum_usage_data(response_llm)
         # Convert Pydantic model to dict
@@ -437,7 +463,7 @@ class OCRAdvancedTool(ToolWrapper):
 
             # Get configuration and validate file
             openai_model = read_optional_env_var(
-                "COPILOT_OCRADVANCEDTOOL_MODEL", "gpt-5-mini"
+                "COPILOT_OCRADVANCEDTOOL_MODEL", "gpt-4.1"
             )
             ocr_image_url = get_file_path(input_params)
             mime = read_mime(ocr_image_url)
@@ -517,6 +543,12 @@ class OCRAdvancedTool(ToolWrapper):
             return response_content
 
         except Exception as e:
+            # log stack trace of exception for debugging
+            import traceback
+
+            traceback_str = traceback.format_exc()
+            copilot_debug(f"Stack trace: {traceback_str}")
+
             errmsg = f"An error occurred: {e}"
             copilot_debug(errmsg)
             return {"error": errmsg}
