@@ -465,62 +465,6 @@
 <!--6CE408BCFCF84D2F9DA6F4FE276C9A70-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
 <!--6CE408BCFCF84D2F9DA6F4FE276C9A70--></ETCOP_TOOL>
 
-<!--743F30FC7DD44C4F8ADD98034885B5CB--><ETCOP_TOOL>
-<!--743F30FC7DD44C4F8ADD98034885B5CB-->  <ETCOP_TOOL_ID><![CDATA[743F30FC7DD44C4F8ADD98034885B5CB]]></ETCOP_TOOL_ID>
-<!--743F30FC7DD44C4F8ADD98034885B5CB-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
-<!--743F30FC7DD44C4F8ADD98034885B5CB-->  <AD_ORG_ID><![CDATA[0]]></AD_ORG_ID>
-<!--743F30FC7DD44C4F8ADD98034885B5CB-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
-<!--743F30FC7DD44C4F8ADD98034885B5CB-->  <VALUE><![CDATA[SalesInvoiceCreationTool]]></VALUE>
-<!--743F30FC7DD44C4F8ADD98034885B5CB-->  <NAME><![CDATA[Sales Invoice Creation]]></NAME>
-<!--743F30FC7DD44C4F8ADD98034885B5CB-->  <DESCRIPTION><![CDATA[Creates a sales invoice in Etendo from structured invoice data.
-    Handles business partner detection/creation, address management, and invoice line processing.
-    Requires invoice data following the InvoiceSchema structure.]]></DESCRIPTION>
-<!--743F30FC7DD44C4F8ADD98034885B5CB-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
-<!--743F30FC7DD44C4F8ADD98034885B5CB-->  <JSON_STRUCTURE><![CDATA[{
-  "type": "function",
-  "function": {
-    "name": "SalesInvoiceCreationTool",
-    "description": "Creates a sales invoice in Etendo from structured invoice data.\n    Handles business partner detection\/creation, address management, and invoice line processing.\n    Requires invoice data following the InvoiceSchema structure.",
-    "parameters": {
-      "type": "object",
-      "properties": {
-        "BusinessPartner": {
-          "description": "Business Partner name (REQUIRED for invoice creation)",
-          "title": "Businesspartner",
-          "type": "string"
-        },
-        "cif": {
-          "description": "Tax identification number - CIF\/NIF\/VAT (REQUIRED for creating new BP)",
-          "title": "Cif",
-          "type": "string"
-        },
-        "documentno": {
-          "description": "Invoice number, reference, or unique identifier (REQUIRED)",
-          "title": "Documentno",
-          "type": "string"
-        },
-        "date": {
-          "description": "Invoice date in ISO format YYYY-MM-DD (REQUIRED for invoice creation)",
-          "title": "Date",
-          "type": "string"
-        },
-        "address": {
-          "$ref": "#\/$defs\/InvoiceAddress",
-          "description": "Address information for the business partner (REQUIRED, will be created as billing address)"
-        },
-        "lines": {
-          "description": "List of invoice line items",
-          "items": {"$ref": "#\/$defs\/InvoiceLine"},
-          "title": "Lines",
-          "type": "array"
-        }
-      }
-    }
-  }
-}]]></JSON_STRUCTURE>
-<!--743F30FC7DD44C4F8ADD98034885B5CB-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
-<!--743F30FC7DD44C4F8ADD98034885B5CB--></ETCOP_TOOL>
-
 <!--7ACB63A4A83B4CF18FBDBF7F4129DC93--><ETCOP_TOOL>
 <!--7ACB63A4A83B4CF18FBDBF7F4129DC93-->  <ETCOP_TOOL_ID><![CDATA[7ACB63A4A83B4CF18FBDBF7F4129DC93]]></ETCOP_TOOL_ID>
 <!--7ACB63A4A83B4CF18FBDBF7F4129DC93-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
