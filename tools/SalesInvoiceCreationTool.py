@@ -192,38 +192,43 @@ class SalesInvoiceCreationTool(ToolWrapper):
         print("\n--- Processing Business Partner ---")
         log = []
 
-        # First try to search by CIF if available
-        if invoice.cif:
-            log.append(f"  🔍 Searching by CIF: {invoice.cif}")
-            bp_id = self._search_bp_by_cif(invoice.cif, etendo_url, token)
+        # Normalize CIF value - treat "NULL" string and empty strings as None
+        cif_value = invoice.cif
+        if cif_value and isinstance(cif_value, str):
+            cif_value = cif_value.strip()
+            if cif_value.upper() == "NULL" or cif_value == "":
+                cif_value = None
+
+        # Search by CIF if available
+        if cif_value:
+            log.append(f"  🔍 Searching by CIF: {cif_value}")
+            bp_id = self._search_bp_by_cif(cif_value, etendo_url, token)
             if bp_id:
                 print(f"Business Partner found by CIF: {bp_id}")
                 log.append(f"  ✓ Found by CIF: {bp_id}")
                 return (bp_id, log)
             else:
                 log.append("  ✗ Not found by CIF")
-
-        # If not found by CIF, try SimSearch by name
-        if invoice.businesspartner:
-            log.append(f"  🔍 Searching by name (SimSearch): {invoice.businesspartner}")
-            bp_id = self._search_bp_by_simsearch(
-                invoice.businesspartner, etendo_url, token
-            )
-            if bp_id:
-                print(f"Business Partner found by SimSearch: {bp_id}")
-                log.append(f"  ✓ Found by SimSearch: {bp_id}")
-                return (bp_id, log)
-            else:
-                log.append("  ✗ Not found by SimSearch")
+        else:
+            if invoice.cif:
+                log.append(f"  ⚠ Invalid CIF value ('{invoice.cif}'), skipping CIF search")
 
         # If not found, create new BP
         print("Business Partner not found. Creating new one...")
         log.append("  ➕ Creating new Business Partner...")
-        bp_id = self._create_businesspartner(invoice, etendo_url, token)
+        
+        # For creation, use the normalized CIF value
+        invoice_copy = invoice.model_copy()
+        invoice_copy.cif = cif_value
+        
+        bp_id = self._create_businesspartner(invoice_copy, etendo_url, token)
         print(f"Business Partner created: {bp_id}")
         log.append(f"  ✓ Created: {bp_id}")
         log.append(f"     - Name: {invoice.businesspartner}")
-        log.append(f"     - CIF: {invoice.cif}")
+        if cif_value:
+            log.append(f"     - CIF: {cif_value}")
+        else:
+            log.append("     - CIF: (not provided)")
         return (bp_id, log)
 
     def _search_bp_by_cif(self, cif: str, etendo_url: str, token: str) -> Optional[str]:
@@ -253,47 +258,6 @@ class SalesInvoiceCreationTool(ToolWrapper):
 
         except Exception as e:
             copilot_debug(f"Error searching BP by CIF: {str(e)}")
-            return None
-
-    def _search_bp_by_simsearch(
-        self, name: str, etendo_url: str, token: str
-    ) -> Optional[str]:
-        """Search Business Partner by name using SimSearch webhook."""
-        print(f"Searching BP by name using SimSearch: {name}")
-
-        try:
-            endpoint = SIMSEARCH_ENDPOINT
-            payload = {
-                "entityName": "BusinessPartner",
-                "items": [name],
-                "minSimPercent": 70,
-                "qtyResults": 1,
-            }
-
-            data = call_etendo(
-                url=etendo_url,
-                method="POST",
-                endpoint=endpoint,
-                access_token=token,
-                body_params=payload,
-            )
-
-            # SimSearch returns results in message field as JSON string
-            if data and data.get("message"):
-                import json
-
-                message_data = json.loads(data["message"])
-                # Results are in item_0, item_1, etc.
-                if "item_0" in message_data:
-                    items = message_data["item_0"].get("data", [])
-                    if items and len(items) > 0:
-                        best_match = items[0]
-                        return best_match.get("id")
-
-            return None
-
-        except Exception as e:
-            copilot_debug(f"Error in SimSearch for BP: {str(e)}")
             return None
 
     def _create_businesspartner(
@@ -338,7 +302,14 @@ class SalesInvoiceCreationTool(ToolWrapper):
             if data:
                 bp_data = data.get("response", {}).get("data", [{}])[0]
                 bp_id = bp_data.get("id")
+
+                # Configure BP as customer with price list, payment method, etc.
+                self._configure_bp_customer(bp_id, etendo_url, token)
+
                 print(f"Business Partner created successfully: {bp_id}")
+                
+                
+                
                 return bp_id
             else:
                 raise ToolException(
@@ -350,6 +321,54 @@ class SalesInvoiceCreationTool(ToolWrapper):
         except Exception as e:
             copilot_debug(f"Error creating Business Partner: {str(e)}")
             raise ToolException(f"Failed to create Business Partner: {str(e)}")
+
+    def _configure_bp_customer(
+        self, bp_id: str, etendo_url: str, token: str
+    ) -> None:
+        """
+        Configure Business Partner as customer with price list, payment method, and payment terms.
+        Uses BPCustomer endpoint to update the BP with customer-specific fields.
+        
+        Args:
+            bp_id: Business Partner ID
+            etendo_url: Etendo URL
+            token: Access token
+        """
+        print(f"Configuring Business Partner as customer: {bp_id}")
+        
+        try:
+            # BPCustomer endpoint updates the BusinessPartner with customer fields
+            # Use PUT method with the BP ID in the URL
+            endpoint = f"/sws/com.etendoerp.etendorx.datasource/BPCustomer/{bp_id}"
+            
+            # Prepare payload with customer configuration
+            payload = {
+                "priceList": "AEE66281A08F42B6BC509B8A80A33C29",
+                "paymentMethod": "47506D4260BA4996B92768FF609E6665",
+                "paymentTerms": "A8EB69EF071A43DDBFF1A796B59E5B1D",
+            }
+            
+            copilot_debug(f"Updating BPCustomer with payload: {json.dumps(payload, indent=2)}")
+            
+            data = call_etendo(
+                url=etendo_url,
+                method="PUT",
+                endpoint=endpoint,
+                access_token=token,
+                body_params=payload,
+            )
+            
+            if data:
+                print(f"BP Customer configuration updated successfully")
+            else:
+                # Log warning but don't fail the entire process
+                print("Warning: Failed to configure BP Customer, but continuing...")
+                copilot_debug("Failed to configure BP Customer: no response data")
+                
+        except Exception as e:
+            # Log error but don't fail the entire BP creation process
+            print(f"Warning: Could not configure BP Customer: {str(e)}")
+            copilot_debug(f"Error configuring BP Customer: {str(e)}")
 
     def _create_address(
         self, bp_id: str, address: Optional[InvoiceAddress], etendo_url: str, token: str
