@@ -23,7 +23,6 @@ requests = "*"
 filetype = "*"
 pypdfium2 = '*'
 "pillow|PIL" = "*"
-sentence-transformers = '*'
 
 [CodbarTool]
 pyzbar = '*'
