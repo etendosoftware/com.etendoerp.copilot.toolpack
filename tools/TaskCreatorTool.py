@@ -44,6 +44,15 @@ class TaskCreatorToolInput(ToolInput):
         "tool will "
         "create it.",
     )
+    groupby: Optional[List[str]] = ToolField(
+        title="Group By",
+        description=(
+            "Optional list of column names to group rows by when processing CSV/XLS files. "
+            "If provided, rows that share the same values for these columns will be sent "
+            "as a single task (the task item will be a JSON array string with all rows in the group). "
+            "Accepts a list or a comma-separated string."
+        ),
+    )
     task_type_id: Optional[str] = ToolField(
         title="Task Type",
         description="ID of the task type. If not provided, the tool use the Copilot's "
@@ -60,11 +69,30 @@ class TaskCreatorToolInput(ToolInput):
         " who processes the task. If not provided, the tool will use the current main "
         "assistant's ID.",
     )
+    preview: Optional[bool] = ToolField(
+        title="Preview",
+        description="If true, the tool will return the column names (or file contents for ZIP) instead of creating tasks.",
+    )
 
 
 def send_taskapi_request(
     q: str, task_type, status, agent, group_id, item, host, token
 ) -> Response:
+    """Sends a request to the Etendo API to create a new task with the provided parameters.
+
+    Args:
+        q (str): The question or description for the task.
+        task_type: The type of the task.
+        status: The status of the task.
+        agent: The agent assigned to the task.
+        group_id: The group ID for the task.
+        item: The item data for the task.
+        host: The Etendo host URL.
+        token: The authentication token.
+
+    Returns:
+        Response: The response from the Etendo API.
+    """
     payload = {
         "taskType": task_type,
         "status": status,
@@ -80,6 +108,14 @@ def send_taskapi_request(
 
 
 def process_zip(zip_path: str) -> List[str]:
+    """Processes a ZIP file by extracting its contents and returning a list of file paths.
+
+    Args:
+        zip_path (str): The path to the ZIP file to process.
+
+    Returns:
+        List[str]: A list of paths to the extracted files.
+    """
     try:
         result = []
 
@@ -107,6 +143,15 @@ def process_zip(zip_path: str) -> List[str]:
 
 
 def process_csv(csv_path: str) -> List[str]:
+    """Processes a CSV file and returns a list of string representations of each row as a dictionary.
+
+    Args:
+        csv_path (str): The path to the CSV file to process.
+
+    Returns:
+        List[str]: A list of string representations of rows.
+    """
+    # Backwards compatible CSV processing without grouping
     try:
         final_result = []
         with open(csv_path, newline="", encoding="utf-8") as csvfile:
@@ -116,12 +161,20 @@ def process_csv(csv_path: str) -> List[str]:
                 row_data = dict(zip(headers, row))
                 final_result.append(str(row_data))
         return final_result
-
     except Exception as e:
         raise ToolException(f"Error processing CSV file {csv_path}: {str(e)}")
 
 
 def process_xls(xls_path: str) -> List[str]:
+    """Processes an Excel file and returns a list of string representations of each row as a dictionary.
+
+    Args:
+        xls_path (str): The path to the Excel file to process.
+
+    Returns:
+        List[str]: A list of string representations of rows.
+    """
+    # Backwards compatible Excel processing without grouping
     try:
         result = []
         df = pd.read_excel(xls_path)
@@ -130,34 +183,183 @@ def process_xls(xls_path: str) -> List[str]:
             row_data = dict(zip(headers, row))
             result.append(str(row_data))
         return result
-
     except Exception as e:
         raise ToolException(f"Error processing Excel file {xls_path}: {str(e)}")
 
 
-def process_file(file_path: str) -> List[str]:
-    if not os.path.exists(file_path):
+def process_csv_grouped(csv_path: str, groupby: List[str]) -> List[str]:
+    """Process CSV and group rows by groupby columns. Returns list of JSON-like strings (one per group).
+
+    Args:
+        csv_path (str): The path to the CSV file to process.
+        groupby (List[str]): List of column names to group by.
+
+    Returns:
+        List[str]: A list of JSON strings, each representing a group of rows.
+    """
+    try:
+        import json
+
+        with open(csv_path, newline="", encoding="utf-8") as csvfile:
+            reader = csv.DictReader(csvfile)
+            headers = reader.fieldnames or []
+            # Validate groupby columns exist
+            for col in groupby:
+                if col not in headers:
+                    raise ToolException(
+                        f"Group by column '{col}' not found in CSV headers: {headers}"
+                    )
+
+            groups = {}
+            for row in reader:
+                key = tuple(row.get(col, "") for col in groupby)
+                groups.setdefault(key, []).append(row)
+
+        # Convert each group to a single item (JSON string)
+        result = [json.dumps(rows, ensure_ascii=False) for rows in groups.values()]
+        return result
+    except ToolException:
+        raise
+    except Exception as e:
+        raise ToolException(
+            f"Error processing CSV file {csv_path} with grouping {groupby}: {str(e)}"
+        )
+
+
+def process_xls_grouped(xls_path: str, groupby: List[str]) -> List[str]:
+    """Process Excel and group rows by groupby columns. Returns list of JSON-like strings (one per group).
+
+    Args:
+        xls_path (str): The path to the Excel file to process.
+        groupby (List[str]): List of column names to group by.
+
+    Returns:
+        List[str]: A list of JSON strings, each representing a group of rows.
+    """
+    try:
+        import json
+
+        df = pd.read_excel(xls_path, dtype=str)
+        df.fillna("", inplace=True)
+        headers = list(df.columns)
+        for col in groupby:
+            if col not in headers:
+                raise ToolException(
+                    f"Group by column '{col}' not found in Excel headers: {headers}"
+                )
+
+        grouped = df.groupby(groupby, dropna=False)
+        result = []
+        for _, group_df in grouped:
+            # Convert group rows to list of dicts
+            rows = group_df.to_dict(orient="records")
+            result.append(json.dumps(rows, ensure_ascii=False))
+        return result
+    except ToolException:
+        raise
+    except Exception as e:
+        raise ToolException(
+            f"Error processing Excel file {xls_path} with grouping {groupby}: {str(e)}"
+        )
+
+
+def process_file(file_path: str, groupby: Optional[List[str]] = None) -> List[str]:
+    """Processes a file based on its type (ZIP, CSV, XLS/XLSX) and returns a list of items for task creation.
+
+    Args:
+        file_path (str): The path to the file to process.
+        groupby (Optional[List[str]]): Optional list of columns to group by for CSV/Excel files.
+
+    Returns:
+        List[str]: A list of items (file paths or row strings) for task creation.
+    """
+    if not file_path or not os.path.exists(file_path):
         raise ToolException(f"File not found: {file_path}")
+
     if file_path.endswith(".zip"):
         items = process_zip(file_path)
     elif file_path.endswith(".csv"):
-        items = process_csv(file_path)
+        if groupby:
+            items = process_csv_grouped(file_path, groupby)
+        else:
+            items = process_csv(file_path)
     elif file_path.endswith((".xls", ".xlsx")):
-        items = process_xls(file_path)
+        if groupby:
+            items = process_xls_grouped(file_path, groupby)
+        else:
+            items = process_xls(file_path)
     else:
         items = [file_path]
     return items
 
 
+def preview_file(file_path: str) -> Dict:
+    """Return a preview of the file: for CSV/XLSX returns list of columns; for ZIP returns list of contained files; otherwise returns file info.
+
+    Args:
+        file_path (str): The path to the file to preview.
+
+    Returns:
+        Dict: A dictionary containing preview information (type, columns/files, etc.).
+    """
+    if not file_path or not os.path.exists(file_path):
+        raise ToolException(f"File not found: {file_path}")
+
+    if file_path.endswith(".zip"):
+        try:
+            with zipfile.ZipFile(file_path, "r") as z:
+                members = [m for m in z.namelist() if not m.startswith("__MACOSX/")]
+            return {"type": "zip", "files": members}
+        except Exception as e:
+            raise ToolException(f"Error previewing ZIP file {file_path}: {str(e)}")
+    elif file_path.endswith(".csv"):
+        try:
+            with open(file_path, newline="", encoding="utf-8") as csvfile:
+                reader = csv.reader(csvfile)
+                headers = next(reader)
+            return {"type": "csv", "columns": headers}
+        except Exception as e:
+            raise ToolException(f"Error previewing CSV file {file_path}: {str(e)}")
+    elif file_path.endswith((".xls", ".xlsx")):
+        try:
+            df = pd.read_excel(file_path, nrows=0)
+            return {"type": "excel", "columns": list(df.columns)}
+        except Exception as e:
+            raise ToolException(f"Error previewing Excel file {file_path}: {str(e)}")
+    else:
+        return {"type": "file", "name": os.path.basename(file_path)}
+
+
 def read_record(task_types):
+    """Extracts the records from the task types response data.
+
+    Args:
+        task_types: The response data containing task types.
+
+    Returns:
+        list: A list of records from the response.
+    """
     try:
-        records_arr = task_types.get("response").get("data")
-        return records_arr
+        if not task_types:
+            return []
+        response = task_types.get("response")
+        if not response:
+            return []
+        records_arr = response.get("data")
+        return records_arr or []
     except Exception:
-        return None
+        return []
 
 
 def get_or_create_task_type(name):
+    """Retrieves or creates a task type with the given name in the Etendo system.
+
+    Args:
+        name: The name of the task type to retrieve or create.
+
+    Returns:
+        str: The ID of the task type.
+    """
     response = simple_request_to_etendo(
         "GET",
         {},
@@ -185,6 +387,14 @@ def get_or_create_task_type(name):
 
 
 def get_or_create_status(param):
+    """Retrieves or creates a task status with the given name in the Etendo system.
+
+    Args:
+        param: The name of the status to retrieve or create.
+
+    Returns:
+        str: The ID of the task status.
+    """
     response = simple_request_to_etendo(
         "GET",
         {},
@@ -204,6 +414,30 @@ def get_or_create_status(param):
     return status_id
 
 
+def read_groupby_param_values(groupby_param):
+    """Normalizes the groupby parameter into a list of column names.
+
+    Args:
+        groupby_param: The groupby parameter, can be a list or comma-separated string.
+
+    Returns:
+        list or None: A list of column names or None if not provided.
+    """
+    # Normalize groupby: accept list or comma-separated string
+    groupby = None
+    if groupby_param:
+        if isinstance(groupby_param, list):
+            groupby = [str(c).strip() for c in groupby_param if str(c).strip()]
+        elif isinstance(groupby_param, str):
+            groupby = [c.strip() for c in groupby_param.split(",") if c.strip()]
+        else:
+            # Unexpected type
+            raise ToolException(
+                "Invalid 'groupby' parameter. Provide a list or a comma-separated string of column names."
+            )
+    return groupby
+
+
 class TaskCreatorTool(ToolWrapper):
     name: str = "TaskCreatorTool"  # SearchKey must match the class name.
     description: str = (
@@ -215,6 +449,16 @@ class TaskCreatorTool(ToolWrapper):
     args_schema: Type[ToolInput] = TaskCreatorToolInput
 
     def run(self, input_params: Dict, *args, **kwargs) -> Dict:
+        """Executes the task creation process based on the input parameters.
+
+        Args:
+            input_params (Dict): The input parameters for task creation.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Dict: A dictionary containing the result of the task creation process.
+        """
         try:
             # Retrieve parameters from the input.
             question = input_params.get("question")
@@ -223,6 +467,10 @@ class TaskCreatorTool(ToolWrapper):
             status = input_params.get("status_id")
             group_id = input_params.get("group_id")
             agent = input_params.get("agent_id")
+            groupby_param = input_params.get("groupby")
+            preview_param = input_params.get("preview")
+
+            groupby = read_groupby_param_values(groupby_param)
 
             if not task_type or task_type == "":
                 task_type = TASK_TYPE_COPILOT
@@ -232,7 +480,18 @@ class TaskCreatorTool(ToolWrapper):
                 group_id = ThreadContext.get_data("conversation_id")
             if not agent or agent == "":
                 agent = ThreadContext.get_data("assistant_id")
-            items = process_file(file_path)
+            if not file_path:
+                raise ToolException("'file_path' parameter is required.")
+
+            # Ensure question is a string
+            question = str(question) if question is not None else ""
+
+            # If preview requested, return columns or zip contents instead of creating tasks
+            if preview_param:
+                preview_result = preview_file(file_path)
+                return {"preview": preview_result}
+
+            items = process_file(file_path, groupby)
             responses = []
 
             import concurrent.futures
