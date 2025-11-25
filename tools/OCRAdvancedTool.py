@@ -19,7 +19,6 @@ from copilot.core.utils.models import get_proxy_url
 # Import schema loader
 from tools.schemas import list_available_schemas, load_schema
 
-# DEFAULT_MODEL = "gpt-4.1"
 DEFAULT_MODEL = "gpt-5-mini"
 
 GET_JSON_PROMPT: Final[
@@ -541,14 +540,9 @@ class OCRAdvancedTool(ToolWrapper):
                 )
 
             # Determine which prompt to use
-            if reference_image_path or reference_image_base64:
-                default_prompt = GET_JSON_WITH_REFERENCE_PROMPT
-                copilot_debug(
-                    f"Using reference-based extraction with reference: {reference_image_path}"
-                )
-            else:
-                default_prompt = GET_JSON_PROMPT
-                copilot_debug("No reference found, using standard extraction")
+            default_prompt = self.get_prompt(
+                reference_image_base64, reference_image_path
+            )
 
             # Get question or use appropriate default prompt
             question = input_params.get("question", default_prompt)
@@ -580,28 +574,9 @@ class OCRAdvancedTool(ToolWrapper):
                 )
             force_compat = force_compat or model_requires_compat
             extra_system = None
-            if force_compat and structured_schema:
-                # Build a JSON representation of the structured schema and pass
-                # it in the system prompt so older agents receive the expected
-                # structured-output example.
-                try:
-                    if hasattr(structured_schema, "model_json_schema"):
-                        schema_json = structured_schema.model_json_schema()
-                    elif hasattr(structured_schema, "schema"):
-                        schema_json = structured_schema.schema()
-                    else:
-                        schema_json = {}
-                except Exception as e:
-                    copilot_debug(f"Error generating schema JSON: {e}")
-                    schema_json = {}
-
-                extra_system = (
-                    "Expected output JSON schema for structured output: "
-                    + json.dumps(schema_json, ensure_ascii=False, indent=2)
-                )
-                copilot_debug(
-                    "Structured output compatibility mode enabled: adding structured schema JSON to system prompt"
-                )
+            extra_system = self.read_structured_output(
+                extra_system, force_compat, structured_schema
+            )
 
             messages = build_messages(
                 base64_images, question, reference_image_base64, extra_system
@@ -626,3 +601,74 @@ class OCRAdvancedTool(ToolWrapper):
         finally:
             # Ensure temporary files are always cleaned up, even if an exception occurs
             cleanup_temp_files(filenames_to_delete)
+
+    def read_structured_output(self, extra_system, force_compat, structured_schema):
+        """Prepare structured-output compatibility instructions for the system prompt.
+
+        When compatibility mode is enabled (either explicitly requested or required by the
+        selected model) and a Pydantic structured schema is provided, this method will
+        produce a JSON representation of the schema and return it as a string suitable
+        for inclusion in the system prompt. This helps older agents (or models that do
+        not support the structured-output wrapper) to understand the expected output
+        format.
+
+        Args:
+            extra_system (str or None): Existing extra system prompt content. If a
+                schema JSON is generated it will replace or extend this value.
+            force_compat (bool): Whether to force compatibility/legacy mode.
+            structured_schema (Optional[Type[BaseModel]]): Pydantic model class used to
+                generate the expected output schema.
+
+        Returns:
+            str or None: The updated extra system prompt containing the schema JSON when
+            compatibility mode is active and a schema is available, otherwise returns
+            the unchanged `extra_system` value.
+        """
+        if force_compat and structured_schema:
+            # Build a JSON representation of the structured schema and pass
+            # it in the system prompt so older agents receive the expected
+            # structured-output example.
+            try:
+                if hasattr(structured_schema, "model_json_schema"):
+                    schema_json = structured_schema.model_json_schema()
+                elif hasattr(structured_schema, "schema"):
+                    schema_json = structured_schema.schema()
+                else:
+                    schema_json = {}
+            except Exception as e:
+                copilot_debug(f"Error generating schema JSON: {e}")
+                schema_json = {}
+
+            extra_system = (
+                "Expected output JSON schema for structured output: "
+                + json.dumps(schema_json, ensure_ascii=False, indent=2)
+            )
+            copilot_debug(
+                "Structured output compatibility mode enabled: adding structured schema JSON to system prompt"
+            )
+        return extra_system
+
+    def get_prompt(self, reference_image_base64, reference_image_path):
+        """Return the default extraction prompt depending on reference availability.
+
+        If a reference image (either as a base64 string or a filesystem path) is
+        available, prefer the reference-based prompt that instructs the model to use
+        the reference image as template guidance. Otherwise return the generic
+        extraction prompt.
+
+        Args:
+            reference_image_base64 (Optional[str]): Base64-encoded reference image (if any).
+            reference_image_path (Optional[str]): Filesystem path to a matched reference image.
+
+        Returns:
+            str: The selected prompt string to use as the default question for OCR.
+        """
+        if reference_image_path or reference_image_base64:
+            default_prompt = GET_JSON_WITH_REFERENCE_PROMPT
+            copilot_debug(
+                f"Using reference-based extraction with reference: {reference_image_path}"
+            )
+        else:
+            default_prompt = GET_JSON_PROMPT
+            copilot_debug("No reference found, using standard extraction")
+        return default_prompt
