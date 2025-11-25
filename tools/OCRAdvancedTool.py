@@ -73,9 +73,9 @@ class OCRAdvancedToolInput(ToolInput):
     force_structured_output_compat: bool = ToolField(
         default=False,
         description=(
-            "Optional. When True, do not use the LLM's structured-output wrapper. "
-            "Instead the tool will request structured output by adding the literal string "
-            '"Expected output: JSON-OF-SO-" into the system prompt to preserve compatibility with older agents.'
+            "Optional. When True (or when the selected model starts with 'gpt-5'), do not use the LLM's "
+            "structured-output wrapper. Instead the tool will request structured output by embedding the schema "
+            "JSON directly into the system prompt for compatibility with older agents."
         ),
     )
     disable_threshold_filter: bool = ToolField(
@@ -502,6 +502,7 @@ class OCRAdvancedTool(ToolWrapper):
             openai_model = read_optional_env_var(
                 "COPILOT_OCRADVANCEDTOOL_MODEL", DEFAULT_MODEL
             )
+            model_requires_compat = openai_model.startswith("gpt-5")
             ocr_image_url = get_file_path(input_params)
             mime = read_mime(ocr_image_url)
             checktype(ocr_image_url, mime)
@@ -573,6 +574,11 @@ class OCRAdvancedTool(ToolWrapper):
             # Build messages and get response from vision model
             # Determine if compatibility mode is requested
             force_compat = input_params.get("force_structured_output_compat", False)
+            if model_requires_compat and not force_compat:
+                copilot_debug(
+                    f"Model '{openai_model}' requires structured-output compatibility mode; enabling automatically"
+                )
+            force_compat = force_compat or model_requires_compat
             extra_system = None
             if force_compat and structured_schema:
                 # Build a JSON representation of the structured schema and pass
