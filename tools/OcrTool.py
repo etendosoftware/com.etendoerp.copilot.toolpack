@@ -437,7 +437,14 @@ def get_vision_model_response(
     Returns:
         Response content (string for unstructured, dict for structured)
     """
-    provider = "openai" if model_name.startswith("gpt-") else "gemini" if model_name.startswith("gemini") else None
+    # Determine provider based on model name prefix
+    if model_name.startswith("gpt-"):
+        provider = "openai"
+    elif model_name.startswith("gemini"):
+        provider = "gemini"
+    else:
+        provider = None
+
     copilot_debug(f"Using model: {model_name}, provider: {provider}")
     
     llm = get_llm(provider=provider, model=model_name, temperature=0)

@@ -1,5 +1,6 @@
 import base64
 import os
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -273,13 +274,12 @@ class TestOcrTool(unittest.TestCase):
     @unit
     def test_cleanup_temp_files(self):
         """Test temporary file cleanup"""
-        # Create temporary test files
-        temp_dir = "/tmp"
+        # Create temporary test files using tempfile module for safety
         test_files = []
         for i in range(2):
-            temp_file = os.path.join(temp_dir, f"test_cleanup_{i}_{os.getpid()}.txt")
-            with open(temp_file, "w") as f:
-                f.write("test")
+            fd, temp_file = tempfile.mkstemp(suffix=f"_test_cleanup_{i}.txt")
+            os.write(fd, b"test")
+            os.close(fd)
             test_files.append(temp_file)
 
         # Verify files exist
@@ -298,7 +298,8 @@ class TestOcrTool(unittest.TestCase):
     @unit
     def test_recopile_files_jpeg(self, mock_dirname, mock_img_to_b64):
         """Test recopile_files with JPEG image"""
-        mock_dirname.return_value = "/tmp"
+        temp_dir = tempfile.gettempdir()
+        mock_dirname.return_value = temp_dir
         mock_img_to_b64.return_value = "base64_data"
 
         base64_images = []
@@ -306,7 +307,7 @@ class TestOcrTool(unittest.TestCase):
         mime = SUPPORTED_MIME_FORMATS["JPEG"]
 
         recopile_files(
-            base64_images, filenames_to_delete, "/tmp", mime, "/tmp/test.jpg"
+            base64_images, filenames_to_delete, temp_dir, mime, os.path.join(temp_dir, "test.jpg")
         )
 
         # Should add one base64 image
@@ -322,6 +323,8 @@ class TestOcrTool(unittest.TestCase):
     def test_recopile_files_pdf(self, mock_convert, mock_pil_to_b64, mock_pdf_doc):
         """Test recopile_files with PDF file"""
         from PIL import Image
+
+        temp_dir = tempfile.gettempdir()
 
         # Mock PDF with 2 pages
         mock_pdf = MagicMock()
@@ -342,7 +345,7 @@ class TestOcrTool(unittest.TestCase):
         mime = SUPPORTED_MIME_FORMATS["PDF"]
 
         recopile_files(
-            base64_images, filenames_to_delete, "/tmp", mime, "/tmp/test.pdf"
+            base64_images, filenames_to_delete, temp_dir, mime, os.path.join(temp_dir, "test.pdf")
         )
 
         # Should have 2 pages
@@ -356,8 +359,9 @@ class TestOcrTool(unittest.TestCase):
         """Test prepare_images_for_ocr function"""
         mock_recopile.side_effect = lambda imgs, files, folder, mime, url: imgs.append("base64_data")
         
+        temp_dir = tempfile.gettempdir()
         base64_images, filenames_to_delete = prepare_images_for_ocr(
-            "/tmp/test.jpg", IMAGE_JPEG
+            os.path.join(temp_dir, "test.jpg"), IMAGE_JPEG
         )
         
         self.assertEqual(len(base64_images), 1)
@@ -370,8 +374,6 @@ class TestOcrTool(unittest.TestCase):
     def test_recopile_files_non_jpeg_image(self, mock_pil_to_b64):
         """Test recopile_files with non-JPEG image (e.g., PNG) converts to JPEG in memory"""
         from PIL import Image
-        import tempfile
-        import os
         
         mock_pil_to_b64.return_value = "base64_converted"
         
@@ -385,9 +387,10 @@ class TestOcrTool(unittest.TestCase):
             base64_images = []
             filenames_to_delete = []
             mime = SUPPORTED_MIME_FORMATS["PNG"]
+            temp_dir = tempfile.gettempdir()
             
             recopile_files(
-                base64_images, filenames_to_delete, "/tmp", mime, tmp_path
+                base64_images, filenames_to_delete, temp_dir, mime, tmp_path
             )
             
             # Should have 1 converted image
@@ -475,7 +478,8 @@ class TestOcrTool(unittest.TestCase):
         mock_path.return_value = mock_path_instance
 
         # Setup mocks
-        mock_get_file_path.return_value = "/tmp/test.png"
+        temp_dir = tempfile.gettempdir()
+        mock_get_file_path.return_value = os.path.join(temp_dir, "test.png")
         mock_read_mime.return_value = IMAGE_JPEG
         mock_prepare_images.return_value = (["base64_image"], [])
         mock_find_ref.return_value = ("/path/to/reference.png", "ref_base64")
@@ -524,7 +528,8 @@ class TestOcrTool(unittest.TestCase):
         mock_path.return_value = mock_path_instance
 
         # Setup mocks
-        mock_get_file_path.return_value = "/tmp/test.png"
+        temp_dir = tempfile.gettempdir()
+        mock_get_file_path.return_value = os.path.join(temp_dir, "test.png")
         mock_read_mime.return_value = IMAGE_JPEG
         mock_prepare_images.return_value = (["base64_image"], [])
         mock_find_ref.return_value = (None, None)  # No reference found
@@ -569,7 +574,8 @@ class TestOcrTool(unittest.TestCase):
         tool = OcrTool()
         tool.agent_id = "test_agent_123"
 
-        mock_get_file_path.return_value = "/tmp/test.tiff"
+        temp_dir = tempfile.gettempdir()
+        mock_get_file_path.return_value = os.path.join(temp_dir, "test.tiff")
         mock_read_mime.return_value = "image/tiff"
         mock_checktype.side_effect = ValueError("Invalid format")
 
@@ -758,7 +764,8 @@ class TestOcrTool(unittest.TestCase):
         mock_path_instance.exists.return_value = True
         mock_path.return_value = mock_path_instance
 
-        mock_get_file_path.return_value = "/tmp/test.png"
+        temp_dir = tempfile.gettempdir()
+        mock_get_file_path.return_value = os.path.join(temp_dir, "test.png")
         mock_read_mime.return_value = IMAGE_JPEG
         mock_prepare_images.return_value = (["base64_image"], [])
         mock_find_ref.return_value = (None, None)
@@ -804,7 +811,8 @@ class TestOcrTool(unittest.TestCase):
         mock_path_instance.exists.return_value = True
         mock_path.return_value = mock_path_instance
 
-        mock_get_file_path.return_value = "/tmp/test.png"
+        temp_dir = tempfile.gettempdir()
+        mock_get_file_path.return_value = os.path.join(temp_dir, "test.png")
         mock_read_mime.return_value = IMAGE_JPEG
         mock_prepare_images.return_value = (["base64_image"], [])
         mock_find_ref.return_value = ("/path/to/reference.png", "ref_base64")
