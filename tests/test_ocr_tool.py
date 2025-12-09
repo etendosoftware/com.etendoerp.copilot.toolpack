@@ -820,8 +820,15 @@ class TestOcrTool(unittest.TestCase):
 
         input_params = {
             "path": "/test/image.png",
+            "question": "Extract data",
             "disable_threshold_filter": True,
         }
+
+        result = tool.run(input_params)
+
+        # Verify result
+        self.assertIsInstance(result, str)
+        self.assertIn("data", result)
 
         # Verify find_similar_reference was called with ignore_env_threshold=True
         mock_find_ref.assert_called_once()
