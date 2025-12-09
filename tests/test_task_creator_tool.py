@@ -149,7 +149,8 @@ def test_send_taskapi_request_builds_payload(monkeypatch):
 
 def test_task_creator_tool_run_creates_tasks(monkeypatch):
     # Patch heavy operations: file processing and network calls
-    monkeypatch.setattr(tc, "process_file", lambda p: ["i1", "i2"])
+    # Note: process_file now takes 2 parameters: path and groupby
+    monkeypatch.setattr(tc, "process_file", lambda p, g=None: ["i1", "i2"])
     monkeypatch.setattr(
         tc, "send_taskapi_request", lambda *a, **k: FakeResp(200, {"ok": True})
     )

@@ -1,9 +1,11 @@
 import base64
+import json
 import os
 from pathlib import Path
-from typing import Final, Type
+from typing import Final, Type, Optional
 
 from langchain.chat_models import init_chat_model
+from pydantic import BaseModel
 
 from copilot.baseutils.logging_envvar import (
     copilot_debug,
@@ -13,6 +15,11 @@ from copilot.core.threadcontextutils import read_accum_usage_data
 from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import ToolWrapper
 from copilot.core.utils.models import get_proxy_url
+
+# Import schema loader
+from tools.schemas import list_available_schemas, load_schema
+
+DEFAULT_MODEL = "gpt-5-mini"
 
 GET_JSON_PROMPT: Final[
     str
@@ -55,9 +62,39 @@ class OCRAdvancedToolInput(ToolInput):
         "Be precise about the data fields needed (e.g., 'Extract invoice number, date, total amount, and vendor name'). "
         "Clear instructions improve extraction accuracy."
     )
+    structured_output: str = ToolField(
+        default=None,
+        description="Optional. Specify a schema name to use structured output format (e.g., 'Invoice'). "
+        "Available schemas are loaded from tools/schemas/ directory. "
+        "When specified, the response will follow the predefined schema structure. "
+        "Leave empty or None for unstructured JSON extraction.",
+    )
+    force_structured_output_compat: bool = ToolField(
+        default=False,
+        description=(
+            "Optional. When True (or when the selected model starts with 'gpt-5'), do not use the LLM's "
+            "structured-output wrapper. Instead the tool will request structured output by embedding the schema "
+            "JSON directly into the system prompt for compatibility with older agents."
+        ),
+    )
+    disable_threshold_filter: bool = ToolField(
+        default=False,
+        description=(
+            "Optional. When True, ignore the configured similarity threshold and return the most similar "
+            "reference found in the agent database (disables threshold filtering). Default: False."
+        ),
+    )
 
 
 def convert_to_pil_img(bitmap):
+    """Converts a pypdfium2 bitmap to a PIL Image.
+
+    Args:
+        bitmap: The pypdfium2 bitmap object to convert.
+
+    Returns:
+        PIL.Image: The converted PIL Image object.
+    """
     import pypdfium2.internal as pdfium_i
 
     dest_mode = pdfium_i.BitmapTypeToStrReverse[bitmap.format]
@@ -78,6 +115,15 @@ def convert_to_pil_img(bitmap):
 
 
 def get_image_payload_item(img_b64, mime):
+    """Creates an image payload item for the vision model.
+
+    Args:
+        img_b64 (str): Base64 encoded image data.
+        mime (str): MIME type of the image.
+
+    Returns:
+        dict: A dictionary representing the image payload item.
+    """
     return {
         "type": "image_url",
         "image_url": {"url": f"data:{mime};base64,{img_b64}", "detail": "high"},
@@ -85,6 +131,15 @@ def get_image_payload_item(img_b64, mime):
 
 
 def checktype(ocr_image_url, mime):
+    """Checks if the MIME type is supported for OCR processing.
+
+    Args:
+        ocr_image_url (str): The path to the image file.
+        mime (str): The MIME type of the file.
+
+    Raises:
+        ValueError: If the MIME type is not supported.
+    """
     if mime not in SUPPORTED_MIME_FORMATS.values():
         raise ValueError(
             f"File {ocr_image_url} invalid file format with mime {mime}. Supported formats: {SUPPORTED_MIME_FORMATS}."
@@ -92,6 +147,14 @@ def checktype(ocr_image_url, mime):
 
 
 def read_mime(ocr_image_url):
+    """Reads the MIME type of a file.
+
+    Args:
+        ocr_image_url (str): The path to the file.
+
+    Returns:
+        str or None: The MIME type of the file, or None if unable to determine.
+    """
     import filetype
 
     try:
@@ -104,6 +167,14 @@ def read_mime(ocr_image_url):
 
 
 def get_file_path(input_params):
+    """Resolves the file path from input parameters.
+
+    Args:
+        input_params (dict): The input parameters containing the path.
+
+    Returns:
+        str: The resolved absolute file path.
+    """
     rel_path = input_params.get("path")
     ocr_image_url = "/app" + rel_path
     copilot_debug(f"Tool OCRAdvancedTool input: {ocr_image_url}")
@@ -118,6 +189,14 @@ def get_file_path(input_params):
 
 
 def image_to_base64(image_path):
+    """Converts an image file to base64 encoded string.
+
+    Args:
+        image_path (str): The path to the image file.
+
+    Returns:
+        str: The base64 encoded string of the image.
+    """
     with open(image_path, "rb") as image_file:
         image_binary_data = image_file.read()
         base64_encoded = base64.b64encode(image_binary_data).decode("utf-8")
@@ -127,6 +206,15 @@ def image_to_base64(image_path):
 def recopile_files(
     base64_images, filenames_to_delete, folder_of_appended_file, mime, ocr_image_url
 ):
+    """Processes files and converts them to base64 images, handling PDFs and other formats.
+
+    Args:
+        base64_images (list): List to append base64 encoded images to.
+        filenames_to_delete (list): List to append temporary filenames to for cleanup.
+        folder_of_appended_file (str): Folder path for temporary files.
+        mime (str): MIME type of the file.
+        ocr_image_url (str): Path to the original file.
+    """
     import pypdfium2 as pdfium
 
     if mime == SUPPORTED_MIME_FORMATS["PDF"]:
@@ -174,7 +262,15 @@ def recopile_files(
 
 
 def prepare_images_for_ocr(ocr_image_url, mime):
-    """Prepares images for OCR by converting them to base64 and handling PDFs."""
+    """Prepares images for OCR by converting them to base64 and handling PDFs.
+
+    Args:
+        ocr_image_url (str): Path to the image or PDF file.
+        mime (str): MIME type of the file.
+
+    Returns:
+        tuple: A tuple containing (base64_images list, filenames_to_delete list).
+    """
     filenames_to_delete = []
     base64_images = []
     folder_of_appended_file = os.path.dirname(ocr_image_url)
@@ -191,7 +287,11 @@ def prepare_images_for_ocr(ocr_image_url, mime):
 
 
 def cleanup_temp_files(filenames_to_delete):
-    """Removes temporary files created during image processing."""
+    """Removes temporary files created during image processing.
+
+    Args:
+        filenames_to_delete (list): List of file paths to delete.
+    """
     for filename_del in filenames_to_delete:
         try:
             os.remove(filename_del)
@@ -199,7 +299,12 @@ def cleanup_temp_files(filenames_to_delete):
             copilot_debug(f"Error deleting file {filename_del}: {e}")
 
 
-def build_messages(base64_images, question, reference_image_base64=None):
+def build_messages(
+    base64_images,
+    question,
+    reference_image_base64=None,
+    extra_system_content: Optional[str] = None,
+):
     """Builds the message payload for the vision model.
 
     Sends images and reference as separate messages:
@@ -219,6 +324,23 @@ def build_messages(base64_images, question, reference_image_base64=None):
     """
     mime = SUPPORTED_MIME_FORMATS["JPEG"]
     messages = []
+    # Add message for system prompt
+    sys_content = (
+        "You are an agent specializing in OCR. You may receive "
+        "\u201creference images\u201d with sectors marked in color (usually red) with "
+        "labels to indicate relevant sectors."
+        " Use them in real cases to prioritize content."
+    )
+    if extra_system_content:
+        # Append extra system instructions (compatibility markers, etc.)
+        sys_content = sys_content + "\n" + extra_system_content
+
+    messages.append(
+        {
+            "role": "system",
+            "content": sys_content,
+        }
+    )
 
     # If reference image provided, add it as a separate message and a short
     # explanatory text message to tell the model this is the reference with
@@ -231,20 +353,35 @@ def build_messages(base64_images, question, reference_image_base64=None):
 
             ref_payload = get_image_payload_item(reference_b64, mime)
             # Wrap payload in a list for Langchain/Pydantic validation
-            messages.append({"role": "user", "content": [ref_payload]})
+
             messages.append(
                 {
                     "role": "user",
                     "content": (
-                        "This first image is a REFERENCE example with visual markers "
-                        "(red boxes) indicating the positions of the data to extract. "
-                        "Use it only as a template to know which areas are important."
+                        "I will send you an image as an example of a REFERENCE with "
+                        "visual markers (red borders) indicating the positions/sections"
+                        " where the most relevant data on the invoice is located."
+                        " Next to the box is a label for the section. "
+                        "Use it only as a template to know which areas are important "
+                        "in real images."
+                    ),
+                }
+            )
+            messages.append({"role": "user", "content": [ref_payload]})
+            messages.append(
+                {
+                    "role": "assistant",
+                    "content": (
+                        "Understood. Now please send me the real images and specify "
+                        "the information you need me to extract."
                     ),
                 }
             )
             copilot_debug("Added reference image as a separate message")
         except Exception as e:
             copilot_debug(f"Error adding reference image as separate message: {e}")
+
+    messages.append({"role": "user", "content": question})
 
     # Add each real image as a separate message
     for b64 in base64_images:
@@ -256,13 +393,23 @@ def build_messages(base64_images, question, reference_image_base64=None):
             copilot_debug(f"Error adding image payload as separate message: {e}")
 
     # Finally add the textual question/prompt as the last message
-    messages.append({"role": "user", "content": question})
 
     return messages
 
 
-def get_vision_model_response(messages, model_name):
-    """Invokes the vision model and returns the response."""
+def get_vision_model_response(
+    messages, model_name, structured_schema=None, force_compat: bool = False
+):
+    """Invokes the vision model and returns the response.
+
+    Args:
+        messages: List of messages for the model
+        model_name: Name of the vision model to use
+        structured_schema: Optional Pydantic BaseModel class for structured output
+
+    Returns:
+        Response content (string for unstructured, dict for structured)
+    """
     llm = init_chat_model(
         model=model_name,
         model_provider="openai" if model_name.startswith("gpt-") else None,
@@ -274,10 +421,34 @@ def get_vision_model_response(messages, model_name):
         streaming=True,
         model_kwargs={"stream_options": {"include_usage": True}},
     )
+
+    # If caller explicitly requests compatibility-mode, skip the structured
+    # wrapper and perform an unstructured invocation. The caller is expected
+    # to have added the compatibility marker into the system prompt when
+    # calling in this mode.
+    if structured_schema and not force_compat:
+        try:
+            llm_structured = llm.with_structured_output(
+                structured_schema, include_raw=True
+            )
+            response_llm = llm_structured.invoke(messages)
+            read_accum_usage_data(response_llm)
+            # Convert Pydantic model to dict
+            if isinstance(response_llm, BaseModel):
+                return response_llm.model_dump()
+            return response_llm
+        except Exception:
+            # If structured wrapper fails for any reason, fall back to unstructured
+            # invocation and return raw content.
+            copilot_debug(
+                "Structured wrapper failed, falling back to unstructured invocation"
+            )
+
+    # Default unstructured response
     response_llm = llm.invoke(messages)
     read_accum_usage_data(response_llm)
-
-    return response_llm.content
+    # If the response object has 'content', return it; otherwise return as-is
+    return getattr(response_llm, "content", response_llm)
 
 
 class OCRAdvancedTool(ToolWrapper):
@@ -296,12 +467,23 @@ class OCRAdvancedTool(ToolWrapper):
         "Best for: invoices, receipts, forms, contracts, and any structured document with consistent layouts. "
         "Reference images must be uploaded to the agent's database using the /addToVectorDB endpoint. "
         "Supports: JPEG, PNG, WebP, GIF, and multi-page PDF files. "
+        "Supports extensible structured output schemas - add new schemas in tools/schemas/ directory. "
         "File must be accessible in the local file system."
     )
 
     args_schema: Type[ToolInput] = OCRAdvancedToolInput
 
     def run(self, input_params, *args, **kwargs):
+        """Executes the OCR advanced tool to extract data from images or PDFs.
+
+        Args:
+            input_params (dict): The input parameters for the tool.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            dict or str: The extracted data in JSON format, or an error dictionary.
+        """
         filenames_to_delete = []
         try:
             # Validate agent_id is available
@@ -317,8 +499,9 @@ class OCRAdvancedTool(ToolWrapper):
 
             # Get configuration and validate file
             openai_model = read_optional_env_var(
-                "COPILOT_OCRADVANCEDTOOL_MODEL", "gpt-5-mini"
+                "COPILOT_OCRADVANCEDTOOL_MODEL", DEFAULT_MODEL
             )
+            model_requires_compat = openai_model.startswith("gpt-5")
             ocr_image_url = get_file_path(input_params)
             mime = read_mime(ocr_image_url)
             checktype(ocr_image_url, mime)
@@ -343,38 +526,149 @@ class OCRAdvancedTool(ToolWrapper):
 
             reference_image_path = None
             reference_image_base64 = None
+            disable_threshold = input_params.get("disable_threshold_filter", False)
             if first_image_for_search and Path(first_image_for_search).exists():
                 # Import from vectordb_utils instead of local function
                 from copilot.core.vectordb_utils import find_similar_reference
 
+                # When disable_threshold is True we request the most similar reference
+                # ignoring any configured similarity threshold.
                 reference_image_path, reference_image_base64 = find_similar_reference(
-                    first_image_for_search, self.agent_id
+                    first_image_for_search,
+                    self.agent_id,
+                    ignore_env_threshold=disable_threshold,
                 )
 
             # Determine which prompt to use
-            if reference_image_path or reference_image_base64:
-                default_prompt = GET_JSON_WITH_REFERENCE_PROMPT
-                copilot_debug(
-                    f"Using reference-based extraction with reference: {reference_image_path}"
-                )
-            else:
-                default_prompt = GET_JSON_PROMPT
-                copilot_debug("No reference found, using standard extraction")
+            default_prompt = self.get_prompt(
+                reference_image_base64, reference_image_path
+            )
 
             # Get question or use appropriate default prompt
             question = input_params.get("question", default_prompt)
 
+            # Determine if structured output is requested
+            structured_output_type = input_params.get("structured_output")
+            structured_schema = None
+
+            if structured_output_type:
+                # Dynamically load the schema from ocr_schemas directory
+                structured_schema = load_schema(structured_output_type)
+                if structured_schema:
+                    copilot_debug(
+                        f"Using '{structured_output_type}' structured output schema"
+                    )
+                else:
+                    available = list_available_schemas()
+                    copilot_debug(
+                        f"Schema '{structured_output_type}' not found. "
+                        f"Available schemas: {available}"
+                    )
+
             # Build messages and get response from vision model
-            messages = build_messages(base64_images, question, reference_image_base64)
-            response_content = get_vision_model_response(messages, openai_model)
+            # Determine if compatibility mode is requested
+            force_compat = input_params.get("force_structured_output_compat", False)
+            if model_requires_compat and not force_compat:
+                copilot_debug(
+                    f"Model '{openai_model}' requires structured-output compatibility mode; enabling automatically"
+                )
+            force_compat = force_compat or model_requires_compat
+            extra_system = None
+            extra_system = self.read_structured_output(
+                extra_system, force_compat, structured_schema
+            )
+
+            messages = build_messages(
+                base64_images, question, reference_image_base64, extra_system
+            )
+            response_content = get_vision_model_response(
+                messages, openai_model, structured_schema, force_compat
+            )
 
             copilot_debug(f"Tool OCRAdvancedTool output: {response_content}")
             return response_content
 
         except Exception as e:
+            # log stack trace of exception for debugging
+            import traceback
+
+            traceback_str = traceback.format_exc()
+            copilot_debug(f"Stack trace: {traceback_str}")
+
             errmsg = f"An error occurred: {e}"
             copilot_debug(errmsg)
             return {"error": errmsg}
         finally:
             # Ensure temporary files are always cleaned up, even if an exception occurs
             cleanup_temp_files(filenames_to_delete)
+
+    def read_structured_output(self, extra_system, force_compat, structured_schema):
+        """Prepare structured-output compatibility instructions for the system prompt.
+
+        When compatibility mode is enabled (either explicitly requested or required by the
+        selected model) and a Pydantic structured schema is provided, this method will
+        produce a JSON representation of the schema and return it as a string suitable
+        for inclusion in the system prompt. This helps older agents (or models that do
+        not support the structured-output wrapper) to understand the expected output
+        format.
+
+        Args:
+            extra_system (str or None): Existing extra system prompt content. If a
+                schema JSON is generated it will replace or extend this value.
+            force_compat (bool): Whether to force compatibility/legacy mode.
+            structured_schema (Optional[Type[BaseModel]]): Pydantic model class used to
+                generate the expected output schema.
+
+        Returns:
+            str or None: The updated extra system prompt containing the schema JSON when
+            compatibility mode is active and a schema is available, otherwise returns
+            the unchanged `extra_system` value.
+        """
+        if force_compat and structured_schema:
+            # Build a JSON representation of the structured schema and pass
+            # it in the system prompt so older agents receive the expected
+            # structured-output example.
+            try:
+                if hasattr(structured_schema, "model_json_schema"):
+                    schema_json = structured_schema.model_json_schema()
+                elif hasattr(structured_schema, "schema"):
+                    schema_json = structured_schema.schema()
+                else:
+                    schema_json = {}
+            except Exception as e:
+                copilot_debug(f"Error generating schema JSON: {e}")
+                schema_json = {}
+
+            extra_system = (
+                "Expected output JSON schema for structured output: "
+                + json.dumps(schema_json, ensure_ascii=False, indent=2)
+            )
+            copilot_debug(
+                "Structured output compatibility mode enabled: adding structured schema JSON to system prompt"
+            )
+        return extra_system
+
+    def get_prompt(self, reference_image_base64, reference_image_path):
+        """Return the default extraction prompt depending on reference availability.
+
+        If a reference image (either as a base64 string or a filesystem path) is
+        available, prefer the reference-based prompt that instructs the model to use
+        the reference image as template guidance. Otherwise return the generic
+        extraction prompt.
+
+        Args:
+            reference_image_base64 (Optional[str]): Base64-encoded reference image (if any).
+            reference_image_path (Optional[str]): Filesystem path to a matched reference image.
+
+        Returns:
+            str: The selected prompt string to use as the default question for OCR.
+        """
+        if reference_image_path or reference_image_base64:
+            default_prompt = GET_JSON_WITH_REFERENCE_PROMPT
+            copilot_debug(
+                f"Using reference-based extraction with reference: {reference_image_path}"
+            )
+        else:
+            default_prompt = GET_JSON_PROMPT
+            copilot_debug("No reference found, using standard extraction")
+        return default_prompt
