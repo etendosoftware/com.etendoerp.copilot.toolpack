@@ -445,9 +445,15 @@ def get_vision_model_response(
     else:
         provider = None
 
-    copilot_debug(f"Using model: {model_name}, provider: {provider}")
+    # GPT-5 models only support temperature=1
+    if model_name.startswith("gpt-5"):
+        temperature = 1
+    else:
+        temperature = 0
+
+    copilot_debug(f"Using model: {model_name}, provider: {provider}, temperature: {temperature}")
     
-    llm = get_llm(provider=provider, model=model_name, temperature=0)
+    llm = get_llm(provider=provider, model=model_name, temperature=temperature)
 
     # If caller explicitly requests compatibility-mode, skip the structured
     # wrapper and perform an unstructured invocation. The caller is expected
