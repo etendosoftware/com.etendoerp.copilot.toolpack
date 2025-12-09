@@ -133,7 +133,8 @@ class TestExcelOCRTool(unittest.TestCase):
         tool = ExcelOCRTool()
 
         # Setup mocks
-        mock_render.return_value = ["/tmp/sheet_0.jpeg"]  # type: ignore[list-item]
+        temp_dir = tempfile.gettempdir()
+        mock_render.return_value = [os.path.join(temp_dir, "sheet_0.jpeg")]
         mock_img_to_b64.return_value = "base64_image_data"
 
         mock_llm = MagicMock()
@@ -160,7 +161,8 @@ class TestExcelOCRTool(unittest.TestCase):
         """Test ExcelOCRTool.run uses default prompt when question not provided"""
         tool = ExcelOCRTool()
 
-        mock_render.return_value = ["/tmp/sheet_0.jpeg"]  # type: ignore[list-item]
+        temp_dir = tempfile.gettempdir()
+        mock_render.return_value = [os.path.join(temp_dir, "sheet_0.jpeg")]
         mock_img_to_b64.return_value = "base64_data"
 
         mock_llm = MagicMock()
@@ -190,9 +192,10 @@ class TestExcelOCRTool(unittest.TestCase):
         tool = ExcelOCRTool()
 
         # Multiple sheets = multiple images
+        temp_dir = tempfile.gettempdir()
         mock_render.return_value = [
-            "/tmp/sheet_0.jpeg",  # type: ignore[list-item]
-            "/tmp/sheet_1.jpeg",  # type: ignore[list-item]
+            os.path.join(temp_dir, "sheet_0.jpeg"),
+            os.path.join(temp_dir, "sheet_1.jpeg"),
         ]
         mock_img_to_b64.side_effect = ["base64_sheet1", "base64_sheet2"]
 
@@ -242,7 +245,11 @@ class TestExcelOCRTool(unittest.TestCase):
         """Test ExcelOCRTool.run cleans up temporary image files"""
         tool = ExcelOCRTool()
 
-        temp_files = ["/tmp/sheet_0.jpeg", "/tmp/sheet_1.jpeg"]
+        temp_dir = tempfile.gettempdir()
+        temp_files = [
+            os.path.join(temp_dir, "sheet_0.jpeg"),
+            os.path.join(temp_dir, "sheet_1.jpeg"),
+        ]
         mock_render.return_value = temp_files
         mock_img_to_b64.return_value = "base64_data"
         mock_exists.return_value = True
@@ -270,7 +277,9 @@ class TestExcelOCRTool(unittest.TestCase):
         """Test ExcelOCRTool.run cleans up temp files even on error"""
         tool = ExcelOCRTool()
 
-        temp_files = ["/tmp/sheet_0.jpeg"]
+        temp_dir = tempfile.gettempdir()
+        temp_file = os.path.join(temp_dir, "sheet_0.jpeg")
+        temp_files = [temp_file]
         mock_render.return_value = temp_files
         mock_exists.return_value = True
         mock_img_to_b64.side_effect = Exception("Read error")
@@ -280,7 +289,7 @@ class TestExcelOCRTool(unittest.TestCase):
 
         self.assertIn("error", result)
         # Cleanup should still happen
-        mock_unlink.assert_called_once_with("/tmp/sheet_0.jpeg")
+        mock_unlink.assert_called_once_with(temp_file)
 
     @patch("tools.ExcelOCRTool.read_optional_env_var")
     @patch("tools.ExcelOCRTool.init_chat_model")
@@ -293,7 +302,8 @@ class TestExcelOCRTool(unittest.TestCase):
         """Test ExcelOCRTool.run uses model from environment variable"""
         tool = ExcelOCRTool()
 
-        mock_render.return_value = ["/tmp/sheet_0.jpeg"]  # type: ignore[list-item]
+        temp_dir = tempfile.gettempdir()
+        mock_render.return_value = [os.path.join(temp_dir, "sheet_0.jpeg")]
         mock_img_to_b64.return_value = "base64_data"
         mock_read_env.return_value = "gpt-4o-mini"
 
@@ -324,7 +334,8 @@ class TestExcelOCRTool(unittest.TestCase):
         """Test ExcelOCRTool.run builds correct message format"""
         tool = ExcelOCRTool()
 
-        mock_render.return_value = ["/tmp/sheet_0.jpeg"]  # type: ignore[list-item]
+        temp_dir = tempfile.gettempdir()
+        mock_render.return_value = [os.path.join(temp_dir, "sheet_0.jpeg")]
         mock_img_to_b64.return_value = "test_base64"
 
         mock_llm = MagicMock()
