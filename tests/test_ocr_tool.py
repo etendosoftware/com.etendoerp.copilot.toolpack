@@ -615,15 +615,15 @@ class TestOcrTool(unittest.TestCase):
         tool = OcrTool()
         
         # Test with reference image base64
-        prompt = tool.get_prompt(reference_image_base64="base64_data", reference_image_path=None)
+        prompt = tool.get_prompt(reference_image_base64="base64_data", reference_image_path=None)  # type: ignore[arg-type]
         self.assertEqual(prompt, GET_JSON_WITH_REFERENCE_PROMPT)
         
         # Test with reference image path
-        prompt = tool.get_prompt(reference_image_base64=None, reference_image_path="/path/to/ref.png")
+        prompt = tool.get_prompt(reference_image_base64=None, reference_image_path="/path/to/ref.png")  # type: ignore[arg-type]
         self.assertEqual(prompt, GET_JSON_WITH_REFERENCE_PROMPT)
         
         # Test with both
-        prompt = tool.get_prompt(reference_image_base64="base64_data", reference_image_path="/path/to/ref.png")
+        prompt = tool.get_prompt(reference_image_base64="base64_data", reference_image_path="/path/to/ref.png")  # type: ignore[arg-type]
         self.assertEqual(prompt, GET_JSON_WITH_REFERENCE_PROMPT)
 
     @unit
@@ -631,7 +631,7 @@ class TestOcrTool(unittest.TestCase):
         """Test get_prompt method returns standard prompt when no reference"""
         tool = OcrTool()
         
-        prompt = tool.get_prompt(reference_image_base64=None, reference_image_path=None)
+        prompt = tool.get_prompt(reference_image_base64=None, reference_image_path=None)  # type: ignore[arg-type]
         self.assertEqual(prompt, GET_JSON_PROMPT)
 
     @unit
@@ -646,7 +646,7 @@ class TestOcrTool(unittest.TestCase):
         tool = OcrTool()
         
         # Test with force_compat=True and schema
-        result = tool.read_structured_output(None, force_compat=True, structured_schema=TestSchema)
+        result = tool.read_structured_output(None, force_compat=True, structured_schema=TestSchema)  # type: ignore[arg-type]
         
         self.assertIsNotNone(result)
         self.assertIn("Expected output JSON schema", result)
@@ -664,7 +664,7 @@ class TestOcrTool(unittest.TestCase):
         tool = OcrTool()
         
         # Test with force_compat=False
-        result = tool.read_structured_output(None, force_compat=False, structured_schema=TestSchema)
+        result = tool.read_structured_output(None, force_compat=False, structured_schema=TestSchema)  # type: ignore[arg-type]
         self.assertIsNone(result)
 
     @unit
@@ -672,7 +672,7 @@ class TestOcrTool(unittest.TestCase):
         """Test read_structured_output returns None when no schema provided"""
         tool = OcrTool()
         
-        result = tool.read_structured_output(None, force_compat=True, structured_schema=None)
+        result = tool.read_structured_output(None, force_compat=True, structured_schema=None)  # type: ignore[arg-type]
         self.assertIsNone(result)
 
     @patch("tools.OcrTool.get_llm")
@@ -708,7 +708,7 @@ class TestOcrTool(unittest.TestCase):
         mock_get_llm.return_value = mock_llm
         
         messages = [{"role": "user", "content": "test"}]
-        result = get_vision_model_response(messages, "gpt-4o", structured_schema=TestSchema)
+        result = get_vision_model_response(messages, "gpt-4o", structured_schema=TestSchema)  # type: ignore[arg-type]
         
         self.assertEqual(result, {"data": "extracted"})
         mock_llm.with_structured_output.assert_called_once()
@@ -730,7 +730,7 @@ class TestOcrTool(unittest.TestCase):
         
         messages = [{"role": "user", "content": "test"}]
         # With force_compat=True, should not use with_structured_output
-        result = get_vision_model_response(messages, "gpt-5-mini", structured_schema=TestSchema, force_compat=True)
+        result = get_vision_model_response(messages, "gpt-5-mini", structured_schema=TestSchema, force_compat=True)  # type: ignore[arg-type]
         
         self.assertEqual(result, '{"data": "extracted"}')
         # Should NOT have called with_structured_output
