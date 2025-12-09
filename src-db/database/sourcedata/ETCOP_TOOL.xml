@@ -1034,25 +1034,43 @@
 <!--EB58EEA0AA804C219C4D64260550745A-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
 <!--EB58EEA0AA804C219C4D64260550745A-->  <VALUE><![CDATA[OcrTool]]></VALUE>
 <!--EB58EEA0AA804C219C4D64260550745A-->  <NAME><![CDATA[OCR Tool]]></NAME>
-<!--EB58EEA0AA804C219C4D64260550745A-->  <DESCRIPTION><![CDATA[This is a OCR tool implementation that returns an appropriate JSON object for the data in a local file (image or pdf). Its important to note that the file should be in the local file system. Is the best way to extract the data/information from a image or pdf file.]]></DESCRIPTION>
+<!--EB58EEA0AA804C219C4D64260550745A-->  <DESCRIPTION><![CDATA[Extracts structured data from images and PDF documents and returns JSON. Automatically finds and uses similar reference templates from the agent's vector database to guide extraction. Reference templates contain visual markers (red boxes) highlighting which data fields to extract. Best for: invoices, receipts, forms, contracts, and any structured document with consistent layouts. Reference images must be uploaded to the agent's database using the /addToVectorDB endpoint. Supports: JPEG, PNG, WebP, GIF, and multi-page PDF files. Supports extensible structured output schemas - add new schemas in tools/schemas/ directory. File must be accessible in the local file system.]]></DESCRIPTION>
 <!--EB58EEA0AA804C219C4D64260550745A-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
 <!--EB58EEA0AA804C219C4D64260550745A-->  <JSON_STRUCTURE><![CDATA[{
   "type": "function",
   "function": {
     "name": "OcrTool",
-    "description": "This is a OCR tool implementation that returns an appropriate JSON object for the data in a local file (image or pdf). Its important to note that the file should be in the local file system. Is the best way to extract the data\/information from a image or pdf file.",
+    "description": "Extracts structured data from images and PDF documents and returns JSON. Automatically finds and uses similar reference templates from the agent's vector database to guide extraction. Reference templates contain visual markers (red boxes) highlighting which data fields to extract. Best for: invoices, receipts, forms, contracts, and any structured document with consistent layouts. Reference images must be uploaded to the agent's database using the \/addToVectorDB endpoint. Supports: JPEG, PNG, WebP, GIF, and multi-page PDF files. Supports extensible structured output schemas - add new schemas in tools\/schemas\/ directory. File must be accessible in the local file system.",
     "parameters": {
       "type": "object",
       "properties": {
         "path": {
-          "description": "path of the image to be processed",
+          "description": "Absolute or relative path to the image or PDF file to be processed. The file must exist in the local file system.",
           "title": "Path",
           "type": "string"
         },
         "question": {
-          "description": "Contextual question to be asked to the model, where is specified the information to be extracted from the image",
+          "description": "Specific instructions or question describing what information to extract from the document. Be precise about the data fields needed (e.g., 'Extract invoice number, date, total amount, and vendor name'). Clear instructions improve extraction accuracy.",
           "title": "Question",
           "type": "string"
+        },
+        "structured_output": {
+          "default": null,
+          "description": "Optional. Specify a schema name to use structured output format (e.g., 'Invoice'). Available schemas are loaded from tools\/schemas\/ directory. When specified, the response will follow the predefined schema structure. Leave empty or None for unstructured JSON extraction.",
+          "title": "Structured Output",
+          "type": "string"
+        },
+        "force_structured_output_compat": {
+          "default": false,
+          "description": "Optional. When True (or when the selected model starts with 'gpt-5'), do not use the LLM's structured-output wrapper. Instead the tool will request structured output by embedding the schema JSON directly into the system prompt for compatibility with older agents.",
+          "title": "Force Structured Output Compat",
+          "type": "boolean"
+        },
+        "disable_threshold_filter": {
+          "default": false,
+          "description": "Optional. When True, ignore the configured similarity threshold and return the most similar reference found in the agent database (disables threshold filtering). Default: False.",
+          "title": "Disable Threshold Filter",
+          "type": "boolean"
         }
       }
     }
