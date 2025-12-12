@@ -19,6 +19,7 @@ from tools.OcrTool import (
     convert_to_pil_img,
     get_file_path,
     get_image_payload_item,
+    get_llm_model,
     get_vision_model_response,
     image_to_base64,
     pil_image_to_base64,
@@ -59,9 +60,11 @@ class TestOcrTool(unittest.TestCase):
             "type": "image_url",
             "image_url": {"url": f"data:{mime};base64,{img_b64}", "detail": "high"},
         }
-        self.assertEqual(get_image_payload_item(img_b64, mime), expected_output)
         self.assertEqual(
-            get_image_payload_item(img_b64, mime, is_gemini=False), expected_output
+            get_image_payload_item(img_b64, mime, provider="openai"), expected_output
+        )
+        self.assertEqual(
+            get_image_payload_item(img_b64, mime, provider="openai"), expected_output
         )
 
     @unit
@@ -74,7 +77,7 @@ class TestOcrTool(unittest.TestCase):
             "image_url": {"url": f"data:{mime};base64,{img_b64}"},
         }
         self.assertEqual(
-            get_image_payload_item(img_b64, mime, is_gemini=True), expected_output
+            get_image_payload_item(img_b64, mime, provider="gemini"), expected_output
         )
 
     @unit
@@ -235,7 +238,7 @@ class TestOcrTool(unittest.TestCase):
         base64_images = ["base64_image1"]
         question = "Extract data"
 
-        messages = build_messages(base64_images, question, is_gemini=True)
+        messages = build_messages(base64_images, question, provider="gemini")
 
         # Check that image payload doesn't have detail field (Gemini format)
         image_message = messages[2]  # After system and question
@@ -856,6 +859,221 @@ class TestOcrTool(unittest.TestCase):
             call_kwargs[1].get("ignore_env_threshold", False)
             or (len(call_kwargs[0]) >= 3 and call_kwargs[0][2] is True)
         )
+
+
+class TestGetLlmModel(unittest.TestCase):
+    """Test suite for get_llm_model function"""
+
+    @unit
+    @patch("tools.OcrTool.read_optional_env_var")
+    def test_get_llm_model_with_env_var_openai(self, mock_env_var):
+        """Test get_llm_model when COPILOT_OCRTOOL_MODEL env var is set with OpenAI model"""
+        mock_env_var.return_value = "gpt-4o"
+
+        model, provider = get_llm_model("test-agent-id")
+
+        self.assertEqual(model, "gpt-4o")
+        self.assertEqual(provider, "openai")
+        mock_env_var.assert_called_once_with("COPILOT_OCRTOOL_MODEL", None)
+
+    @unit
+    @patch("tools.OcrTool.read_optional_env_var")
+    def test_get_llm_model_with_env_var_gemini(self, mock_env_var):
+        """Test get_llm_model when COPILOT_OCRTOOL_MODEL env var is set with Gemini model"""
+        mock_env_var.return_value = "gemini-2.5-pro"
+
+        model, provider = get_llm_model("test-agent-id")
+
+        self.assertEqual(model, "gemini-2.5-pro")
+        self.assertEqual(provider, "gemini")
+        mock_env_var.assert_called_once_with("COPILOT_OCRTOOL_MODEL", None)
+
+    @unit
+    @patch("tools.OcrTool.get_extra_info")
+    @patch("tools.OcrTool.read_optional_env_var")
+    def test_get_llm_model_from_extra_info(self, mock_env_var, mock_extra_info):
+        """Test get_llm_model retrieves model from ThreadContext extra_info"""
+        mock_env_var.return_value = None
+        mock_extra_info.return_value = {
+            "tool_config": {
+                "agent-123": {
+                    "EB58EEA0AA804C219C4D64260550745A": {  # OCR_TOOL_ID
+                        "model": "claude-3-5-sonnet",
+                        "provider": "anthropic",
+                    }
+                }
+            }
+        }
+
+        model, provider = get_llm_model("agent-123")
+
+        self.assertEqual(model, "claude-3-5-sonnet")
+        self.assertEqual(provider, "anthropic")
+
+    @unit
+    @patch("tools.OcrTool.get_extra_info")
+    @patch("tools.OcrTool.read_optional_env_var")
+    def test_get_llm_model_from_extra_info_different_agent(
+        self, mock_env_var, mock_extra_info
+    ):
+        """Test get_llm_model with multiple agents in extra_info"""
+        mock_env_var.return_value = None
+        mock_extra_info.return_value = {
+            "tool_config": {
+                "agent-123": {
+                    "EB58EEA0AA804C219C4D64260550745A": {
+                        "model": "gpt-4-turbo",
+                        "provider": "openai",
+                    }
+                },
+                "agent-456": {
+                    "EB58EEA0AA804C219C4D64260550745A": {
+                        "model": "gemini-1.5-flash",
+                        "provider": "gemini",
+                    }
+                },
+            }
+        }
+
+        model, provider = get_llm_model("agent-456")
+
+        self.assertEqual(model, "gemini-1.5-flash")
+        self.assertEqual(provider, "gemini")
+
+    @unit
+    @patch("tools.OcrTool.get_extra_info")
+    @patch("tools.OcrTool.read_optional_env_var")
+    def test_get_llm_model_defaults_when_no_config(self, mock_env_var, mock_extra_info):
+        """Test get_llm_model returns defaults when no configuration is available"""
+        mock_env_var.return_value = None
+        mock_extra_info.return_value = None
+
+        model, provider = get_llm_model("test-agent-id")
+
+        self.assertEqual(model, "gpt-5-mini")  # DEFAULT_MODEL
+        self.assertEqual(provider, "openai")  # DEFAULT_PROVIDER
+
+    @unit
+    @patch("tools.OcrTool.get_extra_info")
+    @patch("tools.OcrTool.read_optional_env_var")
+    def test_get_llm_model_defaults_when_agent_not_in_config(
+        self, mock_env_var, mock_extra_info
+    ):
+        """Test get_llm_model returns defaults when agent is not in tool_config"""
+        mock_env_var.return_value = None
+        mock_extra_info.return_value = {
+            "tool_config": {
+                "different-agent": {
+                    "EB58EEA0AA804C219C4D64260550745A": {
+                        "model": "gpt-4",
+                        "provider": "openai",
+                    }
+                }
+            }
+        }
+
+        model, provider = get_llm_model("test-agent-id")
+
+        self.assertEqual(model, "gpt-5-mini")
+        self.assertEqual(provider, "openai")
+
+    @unit
+    @patch("tools.OcrTool.get_extra_info")
+    @patch("tools.OcrTool.read_optional_env_var")
+    def test_get_llm_model_defaults_when_tool_not_in_config(
+        self, mock_env_var, mock_extra_info
+    ):
+        """Test get_llm_model returns defaults when OCR tool is not configured for agent"""
+        mock_env_var.return_value = None
+        mock_extra_info.return_value = {
+            "tool_config": {
+                "test-agent-id": {
+                    "DIFFERENT_TOOL_ID": {"model": "gpt-4", "provider": "openai"}
+                }
+            }
+        }
+
+        model, provider = get_llm_model("test-agent-id")
+
+        self.assertEqual(model, "gpt-5-mini")
+        self.assertEqual(provider, "openai")
+
+    @unit
+    @patch("tools.OcrTool.get_extra_info")
+    @patch("tools.OcrTool.read_optional_env_var")
+    @patch("tools.OcrTool.copilot_error")
+    def test_get_llm_model_handles_exception_in_extra_info(
+        self, mock_error, mock_env_var, mock_extra_info
+    ):
+        """Test get_llm_model handles exceptions when reading extra_info gracefully"""
+        mock_env_var.return_value = None
+        mock_extra_info.side_effect = Exception("Connection error")
+
+        model, provider = get_llm_model("test-agent-id")
+
+        # Should return defaults even when exception occurs
+        self.assertEqual(model, "gpt-5-mini")
+        self.assertEqual(provider, "openai")
+        # Should log the error
+        mock_error.assert_called_once()
+        self.assertIn(
+            "Error reading ThreadContext extra_info", str(mock_error.call_args)
+        )
+
+    @unit
+    @patch("tools.OcrTool.get_extra_info")
+    @patch("tools.OcrTool.read_optional_env_var")
+    def test_get_llm_model_handles_malformed_extra_info(
+        self, mock_env_var, mock_extra_info
+    ):
+        """Test get_llm_model handles malformed extra_info structure"""
+        mock_env_var.return_value = None
+        # Missing nested keys
+        mock_extra_info.return_value = {"tool_config": {}}
+
+        model, provider = get_llm_model("test-agent-id")
+
+        self.assertEqual(model, "gpt-5-mini")
+        self.assertEqual(provider, "openai")
+
+    @unit
+    @patch("tools.OcrTool.get_extra_info")
+    @patch("tools.OcrTool.read_optional_env_var")
+    def test_get_llm_model_env_var_overrides_extra_info(
+        self, mock_env_var, mock_extra_info
+    ):
+        """Test that environment variable takes precedence over extra_info"""
+        mock_env_var.return_value = "gpt-4o-mini"
+        mock_extra_info.return_value = {
+            "tool_config": {
+                "test-agent-id": {
+                    "EB58EEA0AA804C219C4D64260550745A": {
+                        "model": "claude-3-opus",
+                        "provider": "anthropic",
+                    }
+                }
+            }
+        }
+
+        model, provider = get_llm_model("test-agent-id")
+
+        # Should use env var, not extra_info
+        self.assertEqual(model, "gpt-4o-mini")
+        self.assertEqual(provider, "openai")
+        # extra_info should not even be called
+        mock_extra_info.assert_not_called()
+
+    @unit
+    @patch("tools.OcrTool.read_optional_env_var")
+    def test_get_llm_model_with_env_var_other_providers(self, mock_env_var):
+        """Test get_llm_model correctly identifies non-gemini/openai providers as openai"""
+        # Anthropic model should default to openai provider
+        mock_env_var.return_value = "claude-3-5-sonnet"
+
+        model, provider = get_llm_model("test-agent-id")
+
+        self.assertEqual(model, "claude-3-5-sonnet")
+        self.assertEqual(provider, "openai")  # Defaults to openai for non-gemini
 
 
 if __name__ == "__main__":

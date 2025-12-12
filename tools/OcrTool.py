@@ -2,10 +2,11 @@ import base64
 import json
 import os
 from pathlib import Path
-from typing import Final, Type, Optional
+from typing import Final, Optional, Type
 
 from pydantic import BaseModel
 
+from baseutils.logging_envvar import copilot_error
 from copilot.baseutils.logging_envvar import (
     copilot_debug,
     read_optional_env_var,
@@ -14,11 +15,13 @@ from copilot.core.threadcontextutils import read_accum_usage_data
 from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import ToolWrapper
 from copilot.core.utils.agent import get_llm
+from core.utils.etendo_utils import get_extra_info
 
 # Import schema loader
 from tools.schemas import list_available_schemas, load_schema
 
 DEFAULT_MODEL = "gpt-5-mini"
+DEFAULT_PROVIDER = "openai"
 # Default PDF rendering scale (3.0 = ~300 DPI, 4.0 = ~400 DPI)
 # Higher values = better quality but larger file size and slower processing
 DEFAULT_PDF_RENDER_SCALE = 2.0
@@ -52,6 +55,7 @@ SUPPORTED_MIME_FORMATS = {
     "GIF": "image/gif",
     "PDF": "application/pdf",
 }
+OCR_TOOL_ID = "EB58EEA0AA804C219C4D64260550745A"  # OCR Tool ID in Etendo Classic
 
 
 class OcrToolInput(ToolInput):
@@ -124,7 +128,7 @@ def convert_to_pil_img(bitmap):
     return image
 
 
-def get_image_payload_item(img_b64, mime, is_gemini=False):
+def get_image_payload_item(img_b64, mime, provider):
     """Creates an image payload item for the vision model.
 
     Args:
@@ -135,7 +139,7 @@ def get_image_payload_item(img_b64, mime, is_gemini=False):
     Returns:
         dict: A dictionary representing the image payload item.
     """
-    if is_gemini:
+    if provider == "gemini":
         # Gemini format - no "detail" field
         return {
             "type": "image_url",
@@ -343,7 +347,7 @@ def build_messages(
     question,
     reference_image_base64=None,
     extra_system_content: Optional[str] = None,
-    is_gemini: bool = False,
+    provider: str = "openai",
 ):
     """Builds the message payload for the vision model.
 
@@ -392,7 +396,7 @@ def build_messages(
             reference_b64 = reference_image_base64
             copilot_debug("Using reference image from ChromaDB (base64)")
 
-            ref_payload = get_image_payload_item(reference_b64, mime, is_gemini)
+            ref_payload = get_image_payload_item(reference_b64, mime, provider)
             # Wrap payload in a list for Langchain/Pydantic validation
 
             messages.append(
@@ -427,7 +431,7 @@ def build_messages(
     # Add each real image as a separate message
     for b64 in base64_images:
         try:
-            img_payload = get_image_payload_item(b64, mime, is_gemini)
+            img_payload = get_image_payload_item(b64, mime, provider)
             # Wrap payload in a list for Langchain/Pydantic validation
             messages.append({"role": "user", "content": [img_payload]})
         except Exception as e:
@@ -500,6 +504,32 @@ def get_vision_model_response(
     return getattr(response_llm, "content", response_llm)
 
 
+def get_llm_model(agent_id: str):
+    # if COPILOT_OCRTOOL_MODEL is set override the default model
+    env_ocr_model = read_optional_env_var("COPILOT_OCRTOOL_MODEL", None)
+    if env_ocr_model:
+        provider = "gemini" if env_ocr_model.startswith("gemini") else "openai"
+        return env_ocr_model, provider
+    # Get model from ThreadContext extra_info if available
+    model_name = None
+    provider = None
+    try:
+        extra_info = get_extra_info()
+        if extra_info:
+            tools_config = extra_info.get("tool_config").get(agent_id).get(OCR_TOOL_ID)
+            if tools_config:
+                model_name = tools_config.get("model")
+                provider = tools_config.get("provider")
+    except Exception as e:
+        copilot_error(f"Error reading ThreadContext extra_info: {e}")
+
+    if model_name is None:
+        model_name = DEFAULT_MODEL
+        provider = DEFAULT_PROVIDER
+
+    return model_name, provider
+
+
 class OcrTool(ToolWrapper):
     """Advanced OCR tool with automatic reference template matching.
 
@@ -546,8 +576,9 @@ class OcrTool(ToolWrapper):
 
             copilot_debug(f"OcrTool called by agent: {self.agent_id}")
 
-            # Get configuration and validate file
-            openai_model = read_optional_env_var("COPILOT_OCRTOOL_MODEL", DEFAULT_MODEL)
+            # Get configuration from extra_info or default
+            openai_model, provider = get_llm_model(self.agent_id)
+
             copilot_debug(f"OcrTool using model from config: {openai_model}")
             model_requires_compat = openai_model.startswith("gpt-5")
             ocr_image_url = get_file_path(input_params)
@@ -641,11 +672,8 @@ class OcrTool(ToolWrapper):
                 extra_system, force_compat, structured_schema
             )
 
-            # Determine if using Gemini model
-            is_gemini = openai_model.startswith("gemini")
-
             messages = build_messages(
-                base64_images, question, reference_image_base64, extra_system, is_gemini
+                base64_images, question, reference_image_base64, extra_system, provider
             )
             response_content = get_vision_model_response(
                 messages, openai_model, structured_schema, force_compat
