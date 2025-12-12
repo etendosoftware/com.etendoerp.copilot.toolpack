@@ -15,7 +15,8 @@ from copilot.core.threadcontextutils import read_accum_usage_data
 from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import ToolWrapper
 from copilot.core.utils.agent import get_llm
-from core.utils.etendo_utils import get_extra_info
+from copilot.core.utils.etendo_utils import get_extra_info
+
 
 # Import schema loader
 from tools.schemas import list_available_schemas, load_schema
