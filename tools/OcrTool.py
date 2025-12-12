@@ -6,7 +6,7 @@ from typing import Final, Optional, Type
 
 from pydantic import BaseModel
 
-from baseutils.logging_envvar import copilot_error
+from copilot.baseutils.logging_envvar import copilot_error
 from copilot.baseutils.logging_envvar import (
     copilot_debug,
     read_optional_env_var,
