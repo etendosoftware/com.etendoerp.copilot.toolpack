@@ -2,10 +2,11 @@ import base64
 import json
 import os
 from pathlib import Path
-from typing import Final, Type, Optional
+from typing import Final, Optional, Type
 
 from pydantic import BaseModel
 
+from copilot.baseutils.logging_envvar import copilot_error
 from copilot.baseutils.logging_envvar import (
     copilot_debug,
     read_optional_env_var,
@@ -14,11 +15,14 @@ from copilot.core.threadcontextutils import read_accum_usage_data
 from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import ToolWrapper
 from copilot.core.utils.agent import get_llm
+from copilot.core.utils.etendo_utils import get_extra_info
+
 
 # Import schema loader
 from tools.schemas import list_available_schemas, load_schema
 
 DEFAULT_MODEL = "gpt-5-mini"
+DEFAULT_PROVIDER = "openai"
 # Default PDF rendering scale (3.0 = ~300 DPI, 4.0 = ~400 DPI)
 # Higher values = better quality but larger file size and slower processing
 DEFAULT_PDF_RENDER_SCALE = 2.0
@@ -52,6 +56,7 @@ SUPPORTED_MIME_FORMATS = {
     "GIF": "image/gif",
     "PDF": "application/pdf",
 }
+OCR_TOOL_ID = "EB58EEA0AA804C219C4D64260550745A"  # OCR Tool ID in Etendo Classic
 
 
 class OcrToolInput(ToolInput):
@@ -66,10 +71,10 @@ class OcrToolInput(ToolInput):
     )
     structured_output: str = ToolField(
         default=None,
-        description="Optional. Specify a schema name to use structured output format (e.g., 'Invoice'). "
+        description="Specify a schema name to use structured output format (e.g., 'Invoice'). "
         "Available schemas are loaded from tools/schemas/ directory. "
         "When specified, the response will follow the predefined schema structure. "
-        "Leave empty or None for unstructured JSON extraction.",
+        "Leave None for unstructured JSON extraction.",
     )
     force_structured_output_compat: bool = ToolField(
         default=False,
@@ -84,6 +89,14 @@ class OcrToolInput(ToolInput):
         description=(
             "Optional. When True, ignore the configured similarity threshold and return the most similar "
             "reference found in the agent database (disables threshold filtering). Default: False."
+        ),
+    )
+    scale: float = ToolField(
+        default=DEFAULT_PDF_RENDER_SCALE,
+        description=(
+            "PDF render scale factor (e.g., 2.0 = ~200 DPI, 3.0 = ~300 DPI). "
+            "Higher values yield better quality but larger size and slower processing. "
+            f"Default: {DEFAULT_PDF_RENDER_SCALE}."
         ),
     )
 
@@ -116,7 +129,7 @@ def convert_to_pil_img(bitmap):
     return image
 
 
-def get_image_payload_item(img_b64, mime, is_gemini=False):
+def get_image_payload_item(img_b64, mime, provider):
     """Creates an image payload item for the vision model.
 
     Args:
@@ -127,7 +140,7 @@ def get_image_payload_item(img_b64, mime, is_gemini=False):
     Returns:
         dict: A dictionary representing the image payload item.
     """
-    if is_gemini:
+    if provider == "gemini":
         # Gemini format - no "detail" field
         return {
             "type": "image_url",
@@ -216,19 +229,19 @@ def image_to_base64(image_path):
 
 def pil_image_to_base64(pil_image, format="JPEG", quality=85):
     """Converts a PIL Image directly to base64 without saving to disk.
-    
+
     This is much faster than saving to disk and reading back.
-    
+
     Args:
         pil_image: PIL Image object
         format: Image format (JPEG, PNG, etc.)
         quality: JPEG quality (1-100)
-    
+
     Returns:
         str: Base64 encoded string of the image
     """
     import io
-    
+
     buffer = io.BytesIO()
     pil_image.save(buffer, format=format, quality=quality, optimize=True)
     buffer.seek(0)
@@ -238,7 +251,12 @@ def pil_image_to_base64(pil_image, format="JPEG", quality=85):
 
 
 def recopile_files(
-    base64_images, filenames_to_delete, folder_of_appended_file, mime, ocr_image_url
+    base64_images,
+    filenames_to_delete,
+    folder_of_appended_file,
+    mime,
+    ocr_image_url,
+    scale,
 ):
     """Processes files and converts them to base64 images, handling PDFs and other formats.
 
@@ -254,13 +272,13 @@ def recopile_files(
     if mime == SUPPORTED_MIME_FORMATS["PDF"]:
         pdf = pdfium.PdfDocument(ocr_image_url)
         n_pages = len(pdf)
-        
+
         # Get PDF render scale from environment or use default
-        render_scale = float(
-            read_optional_env_var("COPILOT_OCRTOOL_PDF_SCALE", str(DEFAULT_PDF_RENDER_SCALE))
+        render_scale = scale
+        copilot_debug(
+            f"Rendering PDF at scale {render_scale}x (~{render_scale * 96:.0f} DPI)"
         )
-        copilot_debug(f"Rendering PDF at scale {render_scale}x (~{render_scale * 96:.0f} DPI)")
-        
+
         for page_number in range(n_pages):
             page = pdf.get_page(page_number)
             # Render at configured resolution
@@ -271,14 +289,14 @@ def recopile_files(
             # This is much faster than saving to disk and reading back
             base64_str = pil_image_to_base64(pil_image, format="JPEG", quality=85)
             base64_images.append(base64_str)
-            
+
     elif mime not in [SUPPORTED_MIME_FORMATS["JPEG"], SUPPORTED_MIME_FORMATS["JPG"]]:
         # Convert to jpeg and get the base64
         from PIL import Image
 
         img = Image.open(ocr_image_url)
         img = img.convert("RGB")
-        
+
         # OPTIMIZATION: Convert directly to base64 in memory without disk I/O
         base64_str = pil_image_to_base64(img, format="JPEG", quality=85)
         base64_images.append(base64_str)
@@ -286,7 +304,7 @@ def recopile_files(
         base64_images.append(image_to_base64(ocr_image_url))
 
 
-def prepare_images_for_ocr(ocr_image_url, mime):
+def prepare_images_for_ocr(ocr_image_url, mime, scale):
     """Prepares images for OCR by converting them to base64 and handling PDFs.
 
     Args:
@@ -306,6 +324,7 @@ def prepare_images_for_ocr(ocr_image_url, mime):
         folder_of_appended_file,
         mime,
         ocr_image_url,
+        scale,
     )
 
     return base64_images, filenames_to_delete
@@ -329,7 +348,7 @@ def build_messages(
     question,
     reference_image_base64=None,
     extra_system_content: Optional[str] = None,
-    is_gemini: bool = False,
+    provider: str = "openai",
 ):
     """Builds the message payload for the vision model.
 
@@ -378,7 +397,7 @@ def build_messages(
             reference_b64 = reference_image_base64
             copilot_debug("Using reference image from ChromaDB (base64)")
 
-            ref_payload = get_image_payload_item(reference_b64, mime, is_gemini)
+            ref_payload = get_image_payload_item(reference_b64, mime, provider)
             # Wrap payload in a list for Langchain/Pydantic validation
 
             messages.append(
@@ -413,7 +432,7 @@ def build_messages(
     # Add each real image as a separate message
     for b64 in base64_images:
         try:
-            img_payload = get_image_payload_item(b64, mime, is_gemini)
+            img_payload = get_image_payload_item(b64, mime, provider)
             # Wrap payload in a list for Langchain/Pydantic validation
             messages.append({"role": "user", "content": [img_payload]})
         except Exception as e:
@@ -451,8 +470,10 @@ def get_vision_model_response(
     else:
         temperature = 0
 
-    copilot_debug(f"Using model: {model_name}, provider: {provider}, temperature: {temperature}")
-    
+    copilot_debug(
+        f"Using model: {model_name}, provider: {provider}, temperature: {temperature}"
+    )
+
     llm = get_llm(provider=provider, model=model_name, temperature=temperature)
 
     # If caller explicitly requests compatibility-mode, skip the structured
@@ -482,6 +503,32 @@ def get_vision_model_response(
     read_accum_usage_data(response_llm)
     # If the response object has 'content', return it; otherwise return as-is
     return getattr(response_llm, "content", response_llm)
+
+
+def get_llm_model(agent_id: str):
+    # if COPILOT_OCRTOOL_MODEL is set override the default model
+    env_ocr_model = read_optional_env_var("COPILOT_OCRTOOL_MODEL", None)
+    if env_ocr_model:
+        provider = "gemini" if env_ocr_model.startswith("gemini") else "openai"
+        return env_ocr_model, provider
+    # Get model from ThreadContext extra_info if available
+    model_name = None
+    provider = None
+    try:
+        extra_info = get_extra_info()
+        if extra_info:
+            tools_config = extra_info.get("tool_config").get(agent_id).get(OCR_TOOL_ID)
+            if tools_config:
+                model_name = tools_config.get("model")
+                provider = tools_config.get("provider")
+    except Exception as e:
+        copilot_error(f"Error reading ThreadContext extra_info: {e}")
+
+    if model_name is None:
+        model_name = DEFAULT_MODEL
+        provider = DEFAULT_PROVIDER
+
+    return model_name, provider
 
 
 class OcrTool(ToolWrapper):
@@ -530,26 +577,25 @@ class OcrTool(ToolWrapper):
 
             copilot_debug(f"OcrTool called by agent: {self.agent_id}")
 
-            # Get configuration and validate file
-            openai_model = read_optional_env_var(
-                "COPILOT_OCRTOOL_MODEL", DEFAULT_MODEL
-            )
+            # Get configuration from extra_info or default
+            openai_model, provider = get_llm_model(self.agent_id)
+
             copilot_debug(f"OcrTool using model from config: {openai_model}")
             model_requires_compat = openai_model.startswith("gpt-5")
             ocr_image_url = get_file_path(input_params)
             mime = read_mime(ocr_image_url)
             checktype(ocr_image_url, mime)
-
+            scale = input_params.get("scale", DEFAULT_PDF_RENDER_SCALE)
             # Prepare images for OCR
             base64_images, filenames_to_delete = prepare_images_for_ocr(
-                ocr_image_url, mime
+                ocr_image_url, mime, scale
             )
 
             # Search for similar reference using agent_id
             copilot_debug("Searching for similar reference image...")
             reference_image_path = None
             reference_image_base64 = None
-            
+
             # Get the path to the first image for similarity search
             # For PDFs and converted images, we need to save a temp file for the search
             first_image_for_search = None
@@ -559,10 +605,12 @@ class OcrTool(ToolWrapper):
                 # Create just one temp file for the first page
                 import io
                 from PIL import Image
-                
+
                 uuid = os.urandom(16).hex()
-                temp_search_file = f"{os.path.dirname(ocr_image_url)}/{uuid}_search.jpeg"
-                
+                temp_search_file = (
+                    f"{os.path.dirname(ocr_image_url)}/{uuid}_search.jpeg"
+                )
+
                 # Decode base64 back to image just for search
                 img_data = base64.b64decode(base64_images[0])
                 img = Image.open(io.BytesIO(img_data))
@@ -625,11 +673,8 @@ class OcrTool(ToolWrapper):
                 extra_system, force_compat, structured_schema
             )
 
-            # Determine if using Gemini model
-            is_gemini = openai_model.startswith("gemini")
-
             messages = build_messages(
-                base64_images, question, reference_image_base64, extra_system, is_gemini
+                base64_images, question, reference_image_base64, extra_system, provider
             )
             response_content = get_vision_model_response(
                 messages, openai_model, structured_schema, force_compat
