@@ -6,7 +6,7 @@
 <!--19F20BEA6BBA420C8AE9E179E2863755-->  <AD_ORG_ID><![CDATA[0]]></AD_ORG_ID>
 <!--19F20BEA6BBA420C8AE9E179E2863755-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
 <!--19F20BEA6BBA420C8AE9E179E2863755-->  <NAME><![CDATA[SimSearch]]></NAME>
-<!--19F20BEA6BBA420C8AE9E179E2863755-->  <DESCRIPTION><![CDATA[Performs a similarity search in Etendo. Expects a single request containing an array of items to search. Each item will be compared against known entities, and results will be returned in a single response. Avoid sending multiple single-item arrays; instead, group all items into one array for optimal performance and correct behavior.]]></DESCRIPTION>
+<!--19F20BEA6BBA420C8AE9E179E2863755-->  <DESCRIPTION><![CDATA[Performs a similarity search in Etendo. Expects a single request containing an array of items to search. Each item will be compared against known entities, and results will be returned in a single response. Avoid sending multiple single-item arrays; instead, group all items into one array for optimal performance and correct behavior. Request must be a valid JSON Object, not a JSON Array. Only search for one entity per request.]]></DESCRIPTION>
 <!--19F20BEA6BBA420C8AE9E179E2863755-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
 <!--19F20BEA6BBA420C8AE9E179E2863755-->  <EVENT_CLASS><![CDATA[JAVA]]></EVENT_CLASS>
 <!--19F20BEA6BBA420C8AE9E179E2863755-->  <JAVA_CLASS><![CDATA[com.etendoerp.copilot.toolpack.webhooks.SimSearch]]></JAVA_CLASS>

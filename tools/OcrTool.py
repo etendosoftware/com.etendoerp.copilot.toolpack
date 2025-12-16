@@ -21,7 +21,7 @@ from tools.schemas import list_available_schemas, load_schema
 DEFAULT_MODEL = "gpt-5-mini"
 # Default PDF rendering scale (3.0 = ~300 DPI, 4.0 = ~400 DPI)
 # Higher values = better quality but larger file size and slower processing
-DEFAULT_PDF_RENDER_SCALE = 2.0
+DEFAULT_PDF_RENDER_SCALE = 3.0
 
 GET_JSON_PROMPT: Final[
     str
@@ -444,16 +444,8 @@ def get_vision_model_response(
         provider = "gemini"
     else:
         provider = None
-
-    # GPT-5 models only support temperature=1
-    if model_name.startswith("gpt-5"):
-        temperature = 1
-    else:
-        temperature = 0
-
-    copilot_debug(f"Using model: {model_name}, provider: {provider}, temperature: {temperature}")
     
-    llm = get_llm(provider=provider, model=model_name, temperature=temperature)
+    llm = get_llm(provider=provider, model=model_name, temperature=1)
 
     # If caller explicitly requests compatibility-mode, skip the structured
     # wrapper and perform an unstructured invocation. The caller is expected
