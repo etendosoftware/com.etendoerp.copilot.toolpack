@@ -434,7 +434,7 @@ class TestOcrTool(unittest.TestCase):
         self.assertIsNone(valid_input.structured_output)
         self.assertFalse(valid_input.force_structured_output_compat)
         self.assertFalse(valid_input.disable_threshold_filter)
-        self.assertEqual(valid_input.scale, 2.0)
+        self.assertEqual(valid_input.scale, 3.0)
 
     @patch("tools.OcrTool.copilot_debug")
     @unit
