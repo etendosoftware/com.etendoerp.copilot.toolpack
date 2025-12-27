@@ -25,6 +25,7 @@
   }
 }]]></JSON_STRUCTURE>
 <!--00E862E15C034796B54182C9DEDE295A-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--00E862E15C034796B54182C9DEDE295A-->  <USE_MODEL><![CDATA[N]]></USE_MODEL>
 <!--00E862E15C034796B54182C9DEDE295A--></ETCOP_TOOL>
 
 <!--0D6969A0549F4812A96A25E8B4F925F4--><ETCOP_TOOL>
@@ -69,6 +70,7 @@
   }
 }]]></JSON_STRUCTURE>
 <!--0D6969A0549F4812A96A25E8B4F925F4-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--0D6969A0549F4812A96A25E8B4F925F4-->  <USE_MODEL><![CDATA[N]]></USE_MODEL>
 <!--0D6969A0549F4812A96A25E8B4F925F4--></ETCOP_TOOL>
 
 <!--206B71E96BF145D480FE535BF7607CD4--><ETCOP_TOOL>
@@ -95,6 +97,7 @@
     }
   }
 }]]></JSON_STRUCTURE>
+<!--206B71E96BF145D480FE535BF7607CD4-->  <USE_MODEL><![CDATA[N]]></USE_MODEL>
 <!--206B71E96BF145D480FE535BF7607CD4--></ETCOP_TOOL>
 
 <!--2A95B3081BF443F880BF8D3C2FA6A755--><ETCOP_TOOL>
@@ -129,6 +132,7 @@
   }
 }]]></JSON_STRUCTURE>
 <!--2A95B3081BF443F880BF8D3C2FA6A755-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--2A95B3081BF443F880BF8D3C2FA6A755-->  <USE_MODEL><![CDATA[N]]></USE_MODEL>
 <!--2A95B3081BF443F880BF8D3C2FA6A755--></ETCOP_TOOL>
 
 <!--31C61BF695C84B79936D273318FA5AD3--><ETCOP_TOOL>
@@ -167,6 +171,7 @@
   }
 }]]></JSON_STRUCTURE>
 <!--31C61BF695C84B79936D273318FA5AD3-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--31C61BF695C84B79936D273318FA5AD3-->  <USE_MODEL><![CDATA[N]]></USE_MODEL>
 <!--31C61BF695C84B79936D273318FA5AD3--></ETCOP_TOOL>
 
 <!--3D54E50D0F8C4EA1B88B4A831811CF42--><ETCOP_TOOL>
@@ -194,6 +199,7 @@
   }
 }]]></JSON_STRUCTURE>
 <!--3D54E50D0F8C4EA1B88B4A831811CF42-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--3D54E50D0F8C4EA1B88B4A831811CF42-->  <USE_MODEL><![CDATA[N]]></USE_MODEL>
 <!--3D54E50D0F8C4EA1B88B4A831811CF42--></ETCOP_TOOL>
 
 <!--411DAEEBBE7C41FAA146BFB66EC8C0B6--><ETCOP_TOOL>
@@ -203,31 +209,50 @@
 <!--411DAEEBBE7C41FAA146BFB66EC8C0B6-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
 <!--411DAEEBBE7C41FAA146BFB66EC8C0B6-->  <VALUE><![CDATA[OCRAdvancedTool]]></VALUE>
 <!--411DAEEBBE7C41FAA146BFB66EC8C0B6-->  <NAME><![CDATA[OCR Advanced Tool]]></NAME>
-<!--411DAEEBBE7C41FAA146BFB66EC8C0B6-->  <DESCRIPTION><![CDATA[Advanced OCR tool that extracts data from local images or PDF files and returns structured JSON. The tool automatically searches for similar reference templates in a vector database (ChromaDB) using the collection 'KB_TOOL_411DAEEBBE7C41FAA146BFB66EC8C0B6'. If a similar reference is found (with red-highlighted areas indicating important data), it uses that template to guide the extraction process. This is particularly useful for invoices, forms, and structured documents with consistent layouts. The file must be in the local file system.]]></DESCRIPTION>
+<!--411DAEEBBE7C41FAA146BFB66EC8C0B6-->  <DESCRIPTION><![CDATA[Extracts structured data from images and PDF documents and returns JSON. Automatically finds and uses similar reference templates from the agent's vector database to guide extraction. Reference templates contain visual markers (red boxes) highlighting which data fields to extract. Best for: invoices, receipts, forms, contracts, and any structured document with consistent layouts. Reference images must be uploaded to the agent's database using the /addToVectorDB endpoint. Supports: JPEG, PNG, WebP, GIF, and multi-page PDF files. Supports extensible structured output schemas - add new schemas in tools/schemas/ directory. File must be accessible in the local file system.]]></DESCRIPTION>
 <!--411DAEEBBE7C41FAA146BFB66EC8C0B6-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
 <!--411DAEEBBE7C41FAA146BFB66EC8C0B6-->  <JSON_STRUCTURE><![CDATA[{
   "type": "function",
   "function": {
     "name": "OCRAdvancedTool",
-    "description": "Advanced OCR tool that extracts data from local images or PDF files and returns structured JSON. The tool automatically searches for similar reference templates in a vector database (ChromaDB) using the collection 'KB_TOOL_411DAEEBBE7C41FAA146BFB66EC8C0B6'. If a similar reference is found (with red-highlighted areas indicating important data), it uses that template to guide the extraction process. This is particularly useful for invoices, forms, and structured documents with consistent layouts. The file must be in the local file system.",
+    "description": "Extracts structured data from images and PDF documents and returns JSON. Automatically finds and uses similar reference templates from the agent's vector database to guide extraction. Reference templates contain visual markers (red boxes) highlighting which data fields to extract. Best for: invoices, receipts, forms, contracts, and any structured document with consistent layouts. Reference images must be uploaded to the agent's database using the \/addToVectorDB endpoint. Supports: JPEG, PNG, WebP, GIF, and multi-page PDF files. Supports extensible structured output schemas - add new schemas in tools\/schemas\/ directory. File must be accessible in the local file system.",
     "parameters": {
       "type": "object",
       "properties": {
         "path": {
-          "description": "path of the image to be processed",
+          "description": "Absolute or relative path to the image or PDF file to be processed. The file must exist in the local file system.",
           "title": "Path",
           "type": "string"
         },
         "question": {
-          "description": "Contextual question to be asked to the model, where is specified the information to be extracted from the image. This is mandatory and very important to get precise results.",
+          "description": "Specific instructions or question describing what information to extract from the document. Be precise about the data fields needed (e.g., 'Extract invoice number, date, total amount, and vendor name'). Clear instructions improve extraction accuracy.",
           "title": "Question",
           "type": "string"
+        },
+        "structured_output": {
+          "default": null,
+          "description": "Optional. Specify a schema name to use structured output format (e.g., 'Invoice'). Available schemas are loaded from tools\/schemas\/ directory. When specified, the response will follow the predefined schema structure. Leave empty or None for unstructured JSON extraction.",
+          "title": "Structured Output",
+          "type": "string"
+        },
+        "force_structured_output_compat": {
+          "default": false,
+          "description": "Optional. When True, do not use the LLM's structured-output wrapper. Instead the tool will request structured output by adding the literal string \"Expected output: JSON-OF-SO-\" into the system prompt to preserve compatibility with older agents.",
+          "title": "Force Structured Output Compat",
+          "type": "boolean"
+        },
+        "disable_threshold_filter": {
+          "default": false,
+          "description": "Optional. When True, ignore the configured similarity threshold and return the most similar reference found in the agent database (disables threshold filtering). Default: False.",
+          "title": "Disable Threshold Filter",
+          "type": "boolean"
         }
       }
     }
   }
 }]]></JSON_STRUCTURE>
 <!--411DAEEBBE7C41FAA146BFB66EC8C0B6-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--411DAEEBBE7C41FAA146BFB66EC8C0B6-->  <USE_MODEL><![CDATA[N]]></USE_MODEL>
 <!--411DAEEBBE7C41FAA146BFB66EC8C0B6--></ETCOP_TOOL>
 
 <!--438B5A5EB8B1405BABE39F9EEE34F44F--><ETCOP_TOOL>
@@ -261,6 +286,7 @@
     }
   }
 }]]></JSON_STRUCTURE>
+<!--438B5A5EB8B1405BABE39F9EEE34F44F-->  <USE_MODEL><![CDATA[N]]></USE_MODEL>
 <!--438B5A5EB8B1405BABE39F9EEE34F44F--></ETCOP_TOOL>
 
 <!--4F02003167F54F1290A120C45E265860--><ETCOP_TOOL>
@@ -347,6 +373,7 @@
   }
 }]]></JSON_STRUCTURE>
 <!--4F02003167F54F1290A120C45E265860-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--4F02003167F54F1290A120C45E265860-->  <USE_MODEL><![CDATA[N]]></USE_MODEL>
 <!--4F02003167F54F1290A120C45E265860--></ETCOP_TOOL>
 
 <!--57761B3A2CD24870BF3D75D2B3562415--><ETCOP_TOOL>
@@ -388,6 +415,7 @@
     }
   }
 }]]></JSON_STRUCTURE>
+<!--57761B3A2CD24870BF3D75D2B3562415-->  <USE_MODEL><![CDATA[N]]></USE_MODEL>
 <!--57761B3A2CD24870BF3D75D2B3562415--></ETCOP_TOOL>
 
 <!--58C34948E04E41C1BCB2C2BCBCA8A852--><ETCOP_TOOL>
@@ -417,6 +445,7 @@
   }
 }]]></JSON_STRUCTURE>
 <!--58C34948E04E41C1BCB2C2BCBCA8A852-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--58C34948E04E41C1BCB2C2BCBCA8A852-->  <USE_MODEL><![CDATA[N]]></USE_MODEL>
 <!--58C34948E04E41C1BCB2C2BCBCA8A852--></ETCOP_TOOL>
 
 <!--6CE408BCFCF84D2F9DA6F4FE276C9A70--><ETCOP_TOOL>
@@ -445,6 +474,7 @@
   }
 }]]></JSON_STRUCTURE>
 <!--6CE408BCFCF84D2F9DA6F4FE276C9A70-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--6CE408BCFCF84D2F9DA6F4FE276C9A70-->  <USE_MODEL><![CDATA[N]]></USE_MODEL>
 <!--6CE408BCFCF84D2F9DA6F4FE276C9A70--></ETCOP_TOOL>
 
 <!--7ACB63A4A83B4CF18FBDBF7F4129DC93--><ETCOP_TOOL>
@@ -517,6 +547,7 @@
   }
 }]]></JSON_STRUCTURE>
 <!--7ACB63A4A83B4CF18FBDBF7F4129DC93-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--7ACB63A4A83B4CF18FBDBF7F4129DC93-->  <USE_MODEL><![CDATA[N]]></USE_MODEL>
 <!--7ACB63A4A83B4CF18FBDBF7F4129DC93--></ETCOP_TOOL>
 
 <!--7B591C3A095844919932177F794E4E79--><ETCOP_TOOL>
@@ -544,6 +575,7 @@
   }
 }]]></JSON_STRUCTURE>
 <!--7B591C3A095844919932177F794E4E79-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--7B591C3A095844919932177F794E4E79-->  <USE_MODEL><![CDATA[N]]></USE_MODEL>
 <!--7B591C3A095844919932177F794E4E79--></ETCOP_TOOL>
 
 <!--7B9D485A48F94CA181841E31A9D21B5F--><ETCOP_TOOL>
@@ -575,6 +607,7 @@
   }
 }]]></JSON_STRUCTURE>
 <!--7B9D485A48F94CA181841E31A9D21B5F-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--7B9D485A48F94CA181841E31A9D21B5F-->  <USE_MODEL><![CDATA[N]]></USE_MODEL>
 <!--7B9D485A48F94CA181841E31A9D21B5F--></ETCOP_TOOL>
 
 <!--9154462E3B9F427496F00FA5C136F357--><ETCOP_TOOL>
@@ -618,7 +651,36 @@
   }
 }]]></JSON_STRUCTURE>
 <!--9154462E3B9F427496F00FA5C136F357-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--9154462E3B9F427496F00FA5C136F357-->  <USE_MODEL><![CDATA[N]]></USE_MODEL>
 <!--9154462E3B9F427496F00FA5C136F357--></ETCOP_TOOL>
+
+<!--98FA05E9EFFF4798A8988BAB5339C1D1--><ETCOP_TOOL>
+<!--98FA05E9EFFF4798A8988BAB5339C1D1-->  <ETCOP_TOOL_ID><![CDATA[98FA05E9EFFF4798A8988BAB5339C1D1]]></ETCOP_TOOL_ID>
+<!--98FA05E9EFFF4798A8988BAB5339C1D1-->  <AD_CLIENT_ID><![CDATA[0]]></AD_CLIENT_ID>
+<!--98FA05E9EFFF4798A8988BAB5339C1D1-->  <AD_ORG_ID><![CDATA[0]]></AD_ORG_ID>
+<!--98FA05E9EFFF4798A8988BAB5339C1D1-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
+<!--98FA05E9EFFF4798A8988BAB5339C1D1-->  <VALUE><![CDATA[OCRExampleCreatorTool]]></VALUE>
+<!--98FA05E9EFFF4798A8988BAB5339C1D1-->  <NAME><![CDATA[OCR Example Creator Tool]]></NAME>
+<!--98FA05E9EFFF4798A8988BAB5339C1D1-->  <DESCRIPTION><![CDATA[Extracts the first page from a PDF or converts an image to JPEG format, saving it to a temporary file. Use this to create reference images for OCR extraction. For PDFs, extracts and saves the first page as JPEG. For images, converts to JPEG format. Returns the path to the temporary file. Best practice: add visual markers (red boxes) to highlight important fields before processing. Supports: JPEG, PNG, WebP, GIF, and PDF files.]]></DESCRIPTION>
+<!--98FA05E9EFFF4798A8988BAB5339C1D1-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
+<!--98FA05E9EFFF4798A8988BAB5339C1D1-->  <JSON_STRUCTURE><![CDATA[{
+  "type": "function",
+  "function": {
+    "name": "OCRExampleCreatorTool",
+    "description": "Extracts the first page from a PDF or converts an image to JPEG format, saving it to a temporary file. Use this to create reference images for OCR extraction. For PDFs, extracts and saves the first page as JPEG. For images, converts to JPEG format. Returns the path to the temporary file. Best practice: add visual markers (red boxes) to highlight important fields before processing. Supports: JPEG, PNG, WebP, GIF, and PDF files.",
+    "parameters": {
+      "type": "object",
+      "properties": {"path": {
+        "description": "Absolute or relative path to the image or PDF file to use as reference. For PDFs, only the first page will be used. The file must exist in the local file system.",
+        "title": "Path",
+        "type": "string"
+      }}
+    }
+  }
+}]]></JSON_STRUCTURE>
+<!--98FA05E9EFFF4798A8988BAB5339C1D1-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--98FA05E9EFFF4798A8988BAB5339C1D1-->  <USE_MODEL><![CDATA[N]]></USE_MODEL>
+<!--98FA05E9EFFF4798A8988BAB5339C1D1--></ETCOP_TOOL>
 
 <!--9B93E3F0B846482A8640368F7C11E5A5--><ETCOP_TOOL>
 <!--9B93E3F0B846482A8640368F7C11E5A5-->  <ETCOP_TOOL_ID><![CDATA[9B93E3F0B846482A8640368F7C11E5A5]]></ETCOP_TOOL_ID>
@@ -664,6 +726,7 @@
     }
   }
 }]]></JSON_STRUCTURE>
+<!--9B93E3F0B846482A8640368F7C11E5A5-->  <USE_MODEL><![CDATA[N]]></USE_MODEL>
 <!--9B93E3F0B846482A8640368F7C11E5A5--></ETCOP_TOOL>
 
 <!--BEA2A2F367574FE38FAD68876094D19C--><ETCOP_TOOL>
@@ -709,6 +772,7 @@
     }
   }
 }]]></JSON_STRUCTURE>
+<!--BEA2A2F367574FE38FAD68876094D19C-->  <USE_MODEL><![CDATA[N]]></USE_MODEL>
 <!--BEA2A2F367574FE38FAD68876094D19C--></ETCOP_TOOL>
 
 <!--BF6E78B5CAA74498AD755F1737DBCB69--><ETCOP_TOOL>
@@ -735,6 +799,7 @@
     }
   }
 }]]></JSON_STRUCTURE>
+<!--BF6E78B5CAA74498AD755F1737DBCB69-->  <USE_MODEL><![CDATA[N]]></USE_MODEL>
 <!--BF6E78B5CAA74498AD755F1737DBCB69--></ETCOP_TOOL>
 
 <!--C7DECA931AAE42B986106ACBF11C4651--><ETCOP_TOOL>
@@ -760,6 +825,7 @@
     }
   }
 }]]></JSON_STRUCTURE>
+<!--C7DECA931AAE42B986106ACBF11C4651-->  <USE_MODEL><![CDATA[N]]></USE_MODEL>
 <!--C7DECA931AAE42B986106ACBF11C4651--></ETCOP_TOOL>
 
 <!--C816B0D4763B41D0BACE39A8CDA573BC--><ETCOP_TOOL>
@@ -799,6 +865,7 @@
   }
 }]]></JSON_STRUCTURE>
 <!--C816B0D4763B41D0BACE39A8CDA573BC-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--C816B0D4763B41D0BACE39A8CDA573BC-->  <USE_MODEL><![CDATA[N]]></USE_MODEL>
 <!--C816B0D4763B41D0BACE39A8CDA573BC--></ETCOP_TOOL>
 
 <!--D9BF53C2260449CB90C4E65C50105FE0--><ETCOP_TOOL>
@@ -861,6 +928,7 @@
   }
 }]]></JSON_STRUCTURE>
 <!--D9BF53C2260449CB90C4E65C50105FE0-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--D9BF53C2260449CB90C4E65C50105FE0-->  <USE_MODEL><![CDATA[N]]></USE_MODEL>
 <!--D9BF53C2260449CB90C4E65C50105FE0--></ETCOP_TOOL>
 
 <!--DD195D1E832A430E914D36748244B0D6--><ETCOP_TOOL>
@@ -895,6 +963,17 @@
           "title": "Group ID",
           "type": "string"
         },
+        "groupby": {
+          "anyOf": [
+            {
+              "items": {"type": "string"},
+              "type": "array"
+            },
+            {"type": "null"}
+          ],
+          "description": "Optional list of column names to group rows by when processing CSV\/XLS files. If provided, rows that share the same values for these columns will be sent as a single task (the task item will be a JSON array string with all rows in the group). Accepts a list or a comma-separated string.",
+          "title": "Group By"
+        },
         "task_type_id": {
           "anyOf": [
             {"type": "string"},
@@ -918,12 +997,21 @@
           ],
           "description": "ID of the agent to which the task is assigned. This agent will be who processes the task. If not provided, the tool will use the current main assistant's ID.",
           "title": "Agent ID"
+        },
+        "preview": {
+          "anyOf": [
+            {"type": "boolean"},
+            {"type": "null"}
+          ],
+          "description": "If true, the tool will return the column names (or file contents for ZIP) instead of creating tasks.",
+          "title": "Preview"
         }
       }
     }
   }
 }]]></JSON_STRUCTURE>
 <!--DD195D1E832A430E914D36748244B0D6-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--DD195D1E832A430E914D36748244B0D6-->  <USE_MODEL><![CDATA[N]]></USE_MODEL>
 <!--DD195D1E832A430E914D36748244B0D6--></ETCOP_TOOL>
 
 <!--E6050C9D77BD4CC4BBA7B79748C57770--><ETCOP_TOOL>
@@ -961,6 +1049,7 @@
   }
 }]]></JSON_STRUCTURE>
 <!--E6050C9D77BD4CC4BBA7B79748C57770-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--E6050C9D77BD4CC4BBA7B79748C57770-->  <USE_MODEL><![CDATA[N]]></USE_MODEL>
 <!--E6050C9D77BD4CC4BBA7B79748C57770--></ETCOP_TOOL>
 
 <!--EB58EEA0AA804C219C4D64260550745A--><ETCOP_TOOL>
@@ -970,30 +1059,49 @@
 <!--EB58EEA0AA804C219C4D64260550745A-->  <ISACTIVE><![CDATA[Y]]></ISACTIVE>
 <!--EB58EEA0AA804C219C4D64260550745A-->  <VALUE><![CDATA[OcrTool]]></VALUE>
 <!--EB58EEA0AA804C219C4D64260550745A-->  <NAME><![CDATA[OCR Tool]]></NAME>
-<!--EB58EEA0AA804C219C4D64260550745A-->  <DESCRIPTION><![CDATA[This is a OCR tool implementation that returns an appropriate JSON object for the data in a local file (image or pdf). Its important to note that the file should be in the local file system. Is the best way to extract the data/information from a image or pdf file.]]></DESCRIPTION>
+<!--EB58EEA0AA804C219C4D64260550745A-->  <DESCRIPTION><![CDATA[Extracts structured data from images and PDF documents and returns JSON. Automatically finds and uses similar reference templates from the agent's vector database to guide extraction. Reference templates contain visual markers (red boxes) highlighting which data fields to extract. Best for: invoices, receipts, forms, contracts, and any structured document with consistent layouts. Reference images must be uploaded to the agent's database using the /addToVectorDB endpoint. Supports: JPEG, PNG, WebP, GIF, and multi-page PDF files. Supports extensible structured output schemas - add new schemas in tools/schemas/ directory. File must be accessible in the local file system.]]></DESCRIPTION>
 <!--EB58EEA0AA804C219C4D64260550745A-->  <AD_MODULE_ID><![CDATA[DAD8E003446345E1BD052DC3539DAA53]]></AD_MODULE_ID>
 <!--EB58EEA0AA804C219C4D64260550745A-->  <JSON_STRUCTURE><![CDATA[{
   "type": "function",
   "function": {
     "name": "OcrTool",
-    "description": "This is a OCR tool implementation that returns an appropriate JSON object for the data in a local file (image or pdf). Its important to note that the file should be in the local file system. Is the best way to extract the data\/information from a image or pdf file.",
+    "description": "Extracts structured data from images and PDF documents and returns JSON. Automatically finds and uses similar reference templates from the agent's vector database to guide extraction. Reference templates contain visual markers (red boxes) highlighting which data fields to extract. Best for: invoices, receipts, forms, contracts, and any structured document with consistent layouts. Reference images must be uploaded to the agent's database using the \/addToVectorDB endpoint. Supports: JPEG, PNG, WebP, GIF, and multi-page PDF files. Supports extensible structured output schemas - add new schemas in tools\/schemas\/ directory. File must be accessible in the local file system.",
     "parameters": {
       "type": "object",
       "properties": {
         "path": {
-          "description": "path of the image to be processed",
+          "description": "Absolute or relative path to the image or PDF file to be processed. The file must exist in the local file system.",
           "title": "Path",
           "type": "string"
         },
         "question": {
-          "description": "Contextual question to be asked to the model, where is specified the information to be extracted from the image",
+          "description": "Specific instructions or question describing what information to extract from the document. Be precise about the data fields needed (e.g., 'Extract invoice number, date, total amount, and vendor name'). Clear instructions improve extraction accuracy.",
           "title": "Question",
           "type": "string"
+        },
+        "structured_output": {
+          "default": null,
+          "description": "Optional. Specify a schema name to use structured output format (e.g., 'Invoice'). Available schemas are loaded from tools\/schemas\/ directory. When specified, the response will follow the predefined schema structure. Leave empty or None for unstructured JSON extraction.",
+          "title": "Structured Output",
+          "type": "string"
+        },
+        "force_structured_output_compat": {
+          "default": false,
+          "description": "Optional. When True (or when the selected model starts with 'gpt-5'), do not use the LLM's structured-output wrapper. Instead the tool will request structured output by embedding the schema JSON directly into the system prompt for compatibility with older agents.",
+          "title": "Force Structured Output Compat",
+          "type": "boolean"
+        },
+        "disable_threshold_filter": {
+          "default": false,
+          "description": "Optional. When True, ignore the configured similarity threshold and return the most similar reference found in the agent database (disables threshold filtering). Default: False.",
+          "title": "Disable Threshold Filter",
+          "type": "boolean"
         }
       }
     }
   }
 }]]></JSON_STRUCTURE>
+<!--EB58EEA0AA804C219C4D64260550745A-->  <USE_MODEL><![CDATA[Y]]></USE_MODEL>
 <!--EB58EEA0AA804C219C4D64260550745A--></ETCOP_TOOL>
 
 <!--F531471DE4E04DA28EF6968EF4C5864B--><ETCOP_TOOL>
@@ -1068,6 +1176,7 @@
   }
 }]]></JSON_STRUCTURE>
 <!--F531471DE4E04DA28EF6968EF4C5864B-->  <SYNC_STRUCTURE><![CDATA[N]]></SYNC_STRUCTURE>
+<!--F531471DE4E04DA28EF6968EF4C5864B-->  <USE_MODEL><![CDATA[N]]></USE_MODEL>
 <!--F531471DE4E04DA28EF6968EF4C5864B--></ETCOP_TOOL>
 
 </data>
