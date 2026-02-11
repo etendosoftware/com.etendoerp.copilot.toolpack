@@ -44,13 +44,14 @@ class TaskCreatorToolInput(ToolInput):
         "tool will "
         "create it.",
     )
-    groupby: Optional[List[str]] = ToolField(
+    groupby: List[str] = ToolField(
+        default=[],
         title="Group By",
         description=(
             "Optional list of column names to group rows by when processing CSV/XLS files. "
             "If provided, rows that share the same values for these columns will be sent "
             "as a single task (the task item will be a JSON array string with all rows in the group). "
-            "Accepts a list or a comma-separated string."
+            "If no grouping is desired, send an empty array []."
         ),
     )
     task_type_id: Optional[str] = ToolField(
@@ -477,7 +478,9 @@ class TaskCreatorTool(ToolWrapper):
             if not status or status == "":
                 status = TASK_STATUS_PENDING
             if not group_id or group_id == "":
-                group_id = ThreadContext.get_data("conversation_id")
+                group_id = ThreadContext.get_data("conversation_id") or str(
+                    uuid.uuid4()
+                )
             if not agent or agent == "":
                 agent = ThreadContext.get_data("assistant_id")
             if not file_path:
@@ -518,8 +521,9 @@ class TaskCreatorTool(ToolWrapper):
 
             print(responses)
             return {
-                "message": "Bulk Task creation process completed, the tasks from "
-                "this batch group has the group id: " + group_id
+                "message": f"Bulk Task creation process completed, the tasks from this batch group has the group id: {group_id}"
             }
+        except ToolException as e:
+            return {"error": f"Tool error creating tasks: {str(e)}"}
         except Exception as e:
-            raise ToolException(f"Error creating tasks: {str(e)}")
+            return {"error": f"Unexpected error creating tasks: {str(e)}"}
