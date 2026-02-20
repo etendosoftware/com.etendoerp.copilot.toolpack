@@ -1,8 +1,8 @@
-import os
 from typing import Type, Dict
 
 from langsmith import traceable
 
+from copilot.baseutils.logging_envvar import read_optional_env_var
 from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import ToolWrapper
 
@@ -39,11 +39,11 @@ class SendEmailTool(ToolWrapper):
             print("Extra arguments: " + str(args))
             # print extra keyword arguments
             print("Extra keyword arguments: " + str(kwargs))
-            mail_method = os.getenv("MAIL_METHOD", "SMTP")
+            mail_method = read_optional_env_var("mail.method", "SMTP")
             if mail_method == "resend":
                 import resend
 
-                resend.api_key = os.getenv("RESEND_API_KEY")
+                resend.api_key = read_optional_env_var("resend.api.key", None)
                 print(
                     "Sending mail to: "
                     + p_to
@@ -66,7 +66,7 @@ class SendEmailTool(ToolWrapper):
                 from email.mime.multipart import MIMEMultipart
                 from email.mime.text import MIMEText
 
-                fromaddr = os.getenv("MAIL_FROM")
+                fromaddr = read_optional_env_var("mail.from", None)
                 toaddr = p_to
                 msg = MIMEMultipart()
                 msg["From"] = fromaddr
@@ -76,7 +76,7 @@ class SendEmailTool(ToolWrapper):
                 msg.attach(MIMEText(body, "html"))
                 server = smtplib.SMTP("smtp.gmail.com", 587)
                 server.starttls()
-                server.login(fromaddr, os.getenv("SMTP_PASSWORD", "SMTP"))
+                server.login(fromaddr, read_optional_env_var("smtp.password", "SMTP"))
                 text = msg.as_string()
                 server.sendmail(fromaddr, toaddr, text)
                 server.quit()

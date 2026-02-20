@@ -5,7 +5,6 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
-from langsmith import unit
 
 from tools.ExcelOCRTool import (
     GET_JSON_PROMPT,
@@ -17,7 +16,6 @@ from tools.ExcelOCRTool import (
 class TestExcelOCRTool(unittest.TestCase):
     """Test suite for ExcelOCRTool"""
 
-    @unit
     def test_excel_ocr_tool_input_schema(self):
         """Test ExcelOCRToolInput schema validation"""
         valid_input = ExcelOCRToolInput(
@@ -26,7 +24,6 @@ class TestExcelOCRTool(unittest.TestCase):
         self.assertEqual(valid_input.path, "/test/file.xlsx")
         self.assertEqual(valid_input.question, "Extract all data")
 
-    @unit
     def test_excel_ocr_tool_metadata(self):
         """Test ExcelOCRTool metadata"""
         tool = ExcelOCRTool()
@@ -36,14 +33,12 @@ class TestExcelOCRTool(unittest.TestCase):
         self.assertIn("Excel", tool.description)
         self.assertEqual(tool.args_schema, ExcelOCRToolInput)
 
-    @unit
     def test_get_json_prompt_constant(self):
         """Test that GET_JSON_PROMPT constant is defined"""
         self.assertIsNotNone(GET_JSON_PROMPT)
         self.assertIn("JSON", GET_JSON_PROMPT)
         self.assertIn("Extract", GET_JSON_PROMPT)
 
-    @unit
     def test_image_to_base64(self):
         """Test image_to_base64 method"""
         tool = ExcelOCRTool()
@@ -63,7 +58,6 @@ class TestExcelOCRTool(unittest.TestCase):
         finally:
             os.unlink(tmp_path)
 
-    @unit
     def test_render_excel_to_images_single_sheet(self):
         """Test render_excel_to_images with single sheet Excel"""
         tool = ExcelOCRTool()
@@ -89,7 +83,6 @@ class TestExcelOCRTool(unittest.TestCase):
         finally:
             os.unlink(tmp_path)
 
-    @unit
     def test_render_excel_to_images_multiple_sheets(self):
         """Test render_excel_to_images with multiple sheets"""
         tool = ExcelOCRTool()
@@ -125,7 +118,6 @@ class TestExcelOCRTool(unittest.TestCase):
     @patch("tools.ExcelOCRTool.init_chat_model")
     @patch.object(ExcelOCRTool, "render_excel_to_images")
     @patch.object(ExcelOCRTool, "image_to_base64")
-    @unit
     def test_excel_ocr_tool_run_success(
         self, mock_img_to_b64, mock_render, mock_init_chat
     ):
@@ -154,7 +146,6 @@ class TestExcelOCRTool(unittest.TestCase):
     @patch("tools.ExcelOCRTool.init_chat_model")
     @patch.object(ExcelOCRTool, "render_excel_to_images")
     @patch.object(ExcelOCRTool, "image_to_base64")
-    @unit
     def test_excel_ocr_tool_run_uses_default_prompt(
         self, mock_img_to_b64, mock_render, mock_init_chat
     ):
@@ -184,7 +175,6 @@ class TestExcelOCRTool(unittest.TestCase):
     @patch("tools.ExcelOCRTool.init_chat_model")
     @patch.object(ExcelOCRTool, "render_excel_to_images")
     @patch.object(ExcelOCRTool, "image_to_base64")
-    @unit
     def test_excel_ocr_tool_run_multiple_sheets(
         self, mock_img_to_b64, mock_render, mock_init_chat
     ):
@@ -215,11 +205,12 @@ class TestExcelOCRTool(unittest.TestCase):
         # Verify messages contain two image payloads
         call_args = mock_llm.invoke.call_args[0][0]
         message_content = call_args[0]["content"]
-        image_items = [item for item in message_content if item.get("type") == "image_url"]
+        image_items = [
+            item for item in message_content if item.get("type") == "image_url"
+        ]
         self.assertEqual(len(image_items), 2)
 
     @patch.object(ExcelOCRTool, "render_excel_to_images")
-    @unit
     def test_excel_ocr_tool_run_error(self, mock_render):
         """Test ExcelOCRTool.run returns error on exception"""
         tool = ExcelOCRTool()
@@ -238,7 +229,6 @@ class TestExcelOCRTool(unittest.TestCase):
     @patch("tools.ExcelOCRTool.init_chat_model")
     @patch.object(ExcelOCRTool, "render_excel_to_images")
     @patch.object(ExcelOCRTool, "image_to_base64")
-    @unit
     def test_excel_ocr_tool_run_cleans_up_temp_files(
         self, mock_img_to_b64, mock_render, mock_init_chat, mock_unlink, mock_exists
     ):
@@ -270,7 +260,6 @@ class TestExcelOCRTool(unittest.TestCase):
     @patch("os.unlink")
     @patch.object(ExcelOCRTool, "image_to_base64")
     @patch.object(ExcelOCRTool, "render_excel_to_images")
-    @unit
     def test_excel_ocr_tool_run_cleans_up_on_error(
         self, mock_render, mock_img_to_b64, mock_unlink, mock_exists
     ):
@@ -295,7 +284,6 @@ class TestExcelOCRTool(unittest.TestCase):
     @patch("tools.ExcelOCRTool.init_chat_model")
     @patch.object(ExcelOCRTool, "render_excel_to_images")
     @patch.object(ExcelOCRTool, "image_to_base64")
-    @unit
     def test_excel_ocr_tool_run_uses_configured_model(
         self, mock_img_to_b64, mock_render, mock_init_chat, mock_read_env
     ):
@@ -327,7 +315,6 @@ class TestExcelOCRTool(unittest.TestCase):
     @patch("tools.ExcelOCRTool.init_chat_model")
     @patch.object(ExcelOCRTool, "render_excel_to_images")
     @patch.object(ExcelOCRTool, "image_to_base64")
-    @unit
     def test_excel_ocr_tool_run_message_format(
         self, mock_img_to_b64, mock_render, mock_init_chat
     ):
@@ -367,7 +354,9 @@ class TestExcelOCRTool(unittest.TestCase):
 
         # Verify image format
         self.assertIn("url", image_items[0]["image_url"])
-        self.assertTrue(image_items[0]["image_url"]["url"].startswith("data:image/jpeg;base64,"))
+        self.assertTrue(
+            image_items[0]["image_url"]["url"].startswith("data:image/jpeg;base64,")
+        )
         self.assertEqual(image_items[0]["image_url"]["detail"], "high")
 
         # Verify text
