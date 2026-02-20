@@ -2,13 +2,11 @@ from unittest.mock import mock_open
 
 import pytest
 from pydantic import ValidationError
-from langsmith import unit
 
 from tools import ReadFileTool
 from tools.ReadFileTool import ReadFileToolInput
 
 
-@unit
 def test_read_existing_file(mocker):
     tool = ReadFileTool()
     valid_file_path = "/path/to/test.txt"
@@ -25,7 +23,6 @@ def test_read_existing_file(mocker):
     assert result["message"] == file_content
 
 
-@unit
 def test_file_does_not_exist(mocker):
     tool = ReadFileTool()
     invalid_file_path = "/path/to/nonexistent.txt"
@@ -38,7 +35,6 @@ def test_file_does_not_exist(mocker):
     assert " No such file or directory" in result["error"]
 
 
-@unit
 def test_read_empty_file(mocker):
     tool = ReadFileTool()
     empty_file_path = "/path/to/empty.txt"
@@ -55,13 +51,11 @@ def test_read_empty_file(mocker):
     assert result["message"] == file_content
 
 
-@unit
 def test_invalid_input_params():
     with pytest.raises(ValidationError):
         ReadFileToolInput(fil=123)  # Invalid type for filepath
 
 
-@unit
 def test_invalid_input_params_empty():
     with pytest.raises(ValidationError):
         ReadFileToolInput()  # Invalid type for filepath

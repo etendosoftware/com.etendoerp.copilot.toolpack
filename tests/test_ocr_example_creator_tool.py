@@ -1,10 +1,8 @@
 import os
 import tempfile
 import unittest
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from langsmith import unit
 
 from tools.OCRExampleCreatorTool import (
     SUPPORTED_MIME_FORMATS,
@@ -20,7 +18,6 @@ from tools.OCRExampleCreatorTool import (
 class TestOCRExampleCreatorTool(unittest.TestCase):
     """Test suite for OCRExampleCreatorTool"""
 
-    @unit
     def test_convert_to_pil_img(self):
         """Test bitmap to PIL image conversion"""
         mock_bitmap = MagicMock()
@@ -35,7 +32,6 @@ class TestOCRExampleCreatorTool(unittest.TestCase):
         self.assertEqual(pil_image.size, (100, 100))
 
     @patch("filetype.guess")
-    @unit
     def test_read_mime_success(self, mock_guess):
         """Test MIME type reading from file - success case"""
         mock_guess.return_value = MagicMock(mime="image/jpeg")
@@ -43,7 +39,6 @@ class TestOCRExampleCreatorTool(unittest.TestCase):
         self.assertEqual(result, "image/jpeg")
 
     @patch("filetype.guess")
-    @unit
     def test_read_mime_failure(self, mock_guess):
         """Test MIME type reading from file - failure case"""
         mock_guess.return_value = None
@@ -51,7 +46,6 @@ class TestOCRExampleCreatorTool(unittest.TestCase):
         self.assertIsNone(result)
 
     @patch("filetype.guess")
-    @unit
     def test_read_mime_exception(self, mock_guess):
         """Test MIME type reading handles exceptions"""
         mock_guess.side_effect = Exception("File error")
@@ -59,7 +53,6 @@ class TestOCRExampleCreatorTool(unittest.TestCase):
         self.assertIsNone(result)
 
     @patch("tools.OCRExampleCreatorTool.Path")
-    @unit
     def test_get_file_path_with_app_prefix(self, mock_path):
         """Test file path resolution with /app prefix"""
         input_params = {"path": "/test/image.png"}
@@ -72,7 +65,6 @@ class TestOCRExampleCreatorTool(unittest.TestCase):
         self.assertEqual(result, "/app/test/image.png")
 
     @patch("tools.OCRExampleCreatorTool.Path")
-    @unit
     def test_get_file_path_with_relative_prefix(self, mock_path):
         """Test file path resolution falls back to relative path"""
         input_params = {"path": "/test/image.png"}
@@ -86,7 +78,6 @@ class TestOCRExampleCreatorTool(unittest.TestCase):
         self.assertEqual(result, "../test/image.png")
 
     @patch("tools.OCRExampleCreatorTool.Path")
-    @unit
     def test_get_file_path_direct_path(self, mock_path):
         """Test file path resolution uses direct path as last resort"""
         input_params = {"path": "/test/image.png"}
@@ -100,7 +91,6 @@ class TestOCRExampleCreatorTool(unittest.TestCase):
         self.assertEqual(result, "/test/image.png")
 
     @patch("tools.OCRExampleCreatorTool.Path")
-    @unit
     def test_get_file_path_not_found(self, mock_path):
         """Test file path resolution when file doesn't exist"""
         input_params = {"path": "/nonexistent/image.png"}
@@ -112,13 +102,11 @@ class TestOCRExampleCreatorTool(unittest.TestCase):
         with self.assertRaises(FileNotFoundError):
             get_file_path(input_params)
 
-    @unit
     def test_ocr_example_creator_tool_input_schema(self):
         """Test OCRExampleCreatorToolInput schema validation"""
         valid_input = OCRExampleCreatorToolInput(path="/test/image.png")
         self.assertEqual(valid_input.path, "/test/image.png")
 
-    @unit
     def test_ocr_example_creator_tool_metadata(self):
         """Test OCRExampleCreatorTool metadata"""
         tool = OCRExampleCreatorTool()
@@ -129,7 +117,6 @@ class TestOCRExampleCreatorTool(unittest.TestCase):
         self.assertIn("JPEG", tool.description)
         self.assertEqual(tool.args_schema, OCRExampleCreatorToolInput)
 
-    @unit
     def test_supported_mime_formats(self):
         """Test that required MIME formats are defined"""
         self.assertIn("JPEG", SUPPORTED_MIME_FORMATS)
@@ -145,7 +132,6 @@ class TestOCRExampleCreatorTool(unittest.TestCase):
     @patch("tools.OCRExampleCreatorTool.extract_and_save_first_page")
     @patch("tools.OCRExampleCreatorTool.read_mime")
     @patch("tools.OCRExampleCreatorTool.get_file_path")
-    @unit
     def test_ocr_example_creator_tool_run_success(
         self, mock_get_file_path, mock_read_mime, mock_extract
     ):
@@ -168,7 +154,6 @@ class TestOCRExampleCreatorTool(unittest.TestCase):
 
     @patch("tools.OCRExampleCreatorTool.read_mime")
     @patch("tools.OCRExampleCreatorTool.get_file_path")
-    @unit
     def test_ocr_example_creator_tool_run_unsupported_format(
         self, mock_get_file_path, mock_read_mime
     ):
@@ -188,7 +173,6 @@ class TestOCRExampleCreatorTool(unittest.TestCase):
         self.assertIn("unsupported format", result["error"])
 
     @patch("tools.OCRExampleCreatorTool.get_file_path")
-    @unit
     def test_ocr_example_creator_tool_run_file_not_found(self, mock_get_file_path):
         """Test OCRExampleCreatorTool.run with file not found"""
         tool = OCRExampleCreatorTool()
@@ -204,7 +188,6 @@ class TestOCRExampleCreatorTool(unittest.TestCase):
 
     @patch("pypdfium2.PdfDocument")
     @patch("tools.OCRExampleCreatorTool.convert_to_pil_img")
-    @unit
     def test_extract_and_save_first_page_pdf(self, mock_convert, mock_pdf_doc):
         """Test extract_and_save_first_page with PDF file"""
         from PIL import Image
@@ -227,7 +210,9 @@ class TestOCRExampleCreatorTool(unittest.TestCase):
             tmp_path = tmp.name
 
         try:
-            result = extract_and_save_first_page(tmp_path, SUPPORTED_MIME_FORMATS["PDF"])
+            result = extract_and_save_first_page(
+                tmp_path, SUPPORTED_MIME_FORMATS["PDF"]
+            )
 
             self.assertTrue(os.path.exists(result))
             self.assertTrue(result.endswith(".jpeg"))
@@ -242,7 +227,6 @@ class TestOCRExampleCreatorTool(unittest.TestCase):
             os.unlink(tmp_path)
 
     @patch("pypdfium2.PdfDocument")
-    @unit
     def test_extract_and_save_first_page_pdf_empty(self, mock_pdf_doc):
         """Test extract_and_save_first_page with empty PDF"""
         mock_pdf = MagicMock()
@@ -259,7 +243,6 @@ class TestOCRExampleCreatorTool(unittest.TestCase):
         finally:
             os.unlink(tmp_path)
 
-    @unit
     def test_extract_and_save_first_page_jpeg(self):
         """Test extract_and_save_first_page with JPEG file (copy)"""
         from PIL import Image
@@ -271,7 +254,9 @@ class TestOCRExampleCreatorTool(unittest.TestCase):
             tmp_path = tmp.name
 
         try:
-            result = extract_and_save_first_page(tmp_path, SUPPORTED_MIME_FORMATS["JPEG"])
+            result = extract_and_save_first_page(
+                tmp_path, SUPPORTED_MIME_FORMATS["JPEG"]
+            )
 
             self.assertTrue(os.path.exists(result))
             self.assertTrue(result.endswith(".jpeg"))
@@ -286,7 +271,6 @@ class TestOCRExampleCreatorTool(unittest.TestCase):
         finally:
             os.unlink(tmp_path)
 
-    @unit
     def test_extract_and_save_first_page_png(self):
         """Test extract_and_save_first_page with PNG file (convert to JPEG)"""
         from PIL import Image
@@ -298,7 +282,9 @@ class TestOCRExampleCreatorTool(unittest.TestCase):
             tmp_path = tmp.name
 
         try:
-            result = extract_and_save_first_page(tmp_path, SUPPORTED_MIME_FORMATS["PNG"])
+            result = extract_and_save_first_page(
+                tmp_path, SUPPORTED_MIME_FORMATS["PNG"]
+            )
 
             self.assertTrue(os.path.exists(result))
             self.assertTrue(result.endswith(".jpeg"))
@@ -316,7 +302,6 @@ class TestOCRExampleCreatorTool(unittest.TestCase):
         finally:
             os.unlink(tmp_path)
 
-    @unit
     def test_extract_and_save_first_page_webp(self):
         """Test extract_and_save_first_page with WebP file (convert to JPEG)"""
         from PIL import Image
@@ -328,7 +313,9 @@ class TestOCRExampleCreatorTool(unittest.TestCase):
             tmp_path = tmp.name
 
         try:
-            result = extract_and_save_first_page(tmp_path, SUPPORTED_MIME_FORMATS["WEBP"])
+            result = extract_and_save_first_page(
+                tmp_path, SUPPORTED_MIME_FORMATS["WEBP"]
+            )
 
             self.assertTrue(os.path.exists(result))
             self.assertTrue(result.endswith(".jpeg"))
@@ -342,7 +329,6 @@ class TestOCRExampleCreatorTool(unittest.TestCase):
         finally:
             os.unlink(tmp_path)
 
-    @unit
     def test_extract_and_save_first_page_gif(self):
         """Test extract_and_save_first_page with GIF file (convert to JPEG)"""
         from PIL import Image
@@ -354,7 +340,9 @@ class TestOCRExampleCreatorTool(unittest.TestCase):
             tmp_path = tmp.name
 
         try:
-            result = extract_and_save_first_page(tmp_path, SUPPORTED_MIME_FORMATS["GIF"])
+            result = extract_and_save_first_page(
+                tmp_path, SUPPORTED_MIME_FORMATS["GIF"]
+            )
 
             self.assertTrue(os.path.exists(result))
             self.assertTrue(result.endswith(".jpeg"))
@@ -371,7 +359,6 @@ class TestOCRExampleCreatorTool(unittest.TestCase):
     @patch("tools.OCRExampleCreatorTool.extract_and_save_first_page")
     @patch("tools.OCRExampleCreatorTool.read_mime")
     @patch("tools.OCRExampleCreatorTool.get_file_path")
-    @unit
     def test_ocr_example_creator_tool_run_pdf(
         self, mock_get_file_path, mock_read_mime, mock_extract
     ):
@@ -394,7 +381,6 @@ class TestOCRExampleCreatorTool(unittest.TestCase):
     @patch("tools.OCRExampleCreatorTool.extract_and_save_first_page")
     @patch("tools.OCRExampleCreatorTool.read_mime")
     @patch("tools.OCRExampleCreatorTool.get_file_path")
-    @unit
     def test_ocr_example_creator_tool_run_exception(
         self, mock_get_file_path, mock_read_mime, mock_extract
     ):
@@ -417,7 +403,6 @@ class TestOCRExampleCreatorTool(unittest.TestCase):
     @patch("tools.OCRExampleCreatorTool.extract_and_save_first_page")
     @patch("tools.OCRExampleCreatorTool.read_mime")
     @patch("tools.OCRExampleCreatorTool.get_file_path")
-    @unit
     def test_ocr_example_creator_tool_run_returns_paths(
         self, mock_get_file_path, mock_read_mime, mock_extract
     ):
