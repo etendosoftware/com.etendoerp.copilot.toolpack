@@ -8,7 +8,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -18,6 +20,7 @@ import org.hibernate.criterion.Restrictions;
 import org.openbravo.base.exception.OBException;
 import org.openbravo.base.model.Entity;
 import org.openbravo.dal.core.OBContext;
+import org.openbravo.dal.security.EntityAccessChecker;
 import org.openbravo.dal.service.OBCriteria;
 import org.openbravo.dal.service.OBDal;
 import org.openbravo.erpCommon.utility.OBMessageUtils;
@@ -35,10 +38,11 @@ import net.sf.jsqlparser.expression.operators.relational.ParenthesedExpressionLi
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.StatementVisitorAdapter;
-import net.sf.jsqlparser.statement.select.FromItemVisitorAdapter;
+import net.sf.jsqlparser.statement.select.FromItem;
+import net.sf.jsqlparser.statement.select.Join;
+import net.sf.jsqlparser.statement.select.ParenthesedSelect;
 import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.Select;
-import net.sf.jsqlparser.statement.select.SelectVisitorAdapter;
 
 /**
  * The ExecSQL class handles the execution of SQL queries received through a webhook and returns the result in JSON format.
@@ -160,37 +164,75 @@ public class ExecSQL extends BaseWebhookService {
    *     the SQL statement to modify
    */
   private void addSecurityFilters(Statement statement) {
-    SelectVisitorAdapter<Void> selectVisitorAdapter = new SelectVisitorAdapter<>() {
-      @Override
-      public <S> Void visit(PlainSelect plainSelect, S context) {
-        InExpression clientValidation = new InExpression();
-        String alias = plainSelect.getFromItem().getAlias().getName();
-        clientValidation.setLeftExpression(new net.sf.jsqlparser.schema.Column(alias + ".ad_client_id"));
-        clientValidation.setRightExpression(convertToArrayExpression(getClientreadableSet()));
-
-        InExpression orgValidation = new InExpression();
-        orgValidation.setLeftExpression(new net.sf.jsqlparser.schema.Column(alias + ".ad_org_id"));
-        orgValidation.setRightExpression(convertToArrayExpression(getOrganizationReadableSet()));
-
-        AndExpression cliAndOrgValidations = new AndExpression(clientValidation, orgValidation);
-
-        if (plainSelect.getWhere() == null) {
-          plainSelect.setWhere(cliAndOrgValidations);
-        } else {
-          plainSelect.setWhere(
-              new AndExpression(plainSelect.getWhere(),
-                  cliAndOrgValidations));
-        }
+    StatementVisitorAdapter<Void> statementVisitor = new StatementVisitorAdapter<>() {
+      public <S> Void visit(Select select, S context) {
+        addSecurityFiltersToPlainSelect(select.getPlainSelect());
         return null;
       }
     };
-
-    StatementVisitorAdapter<Void> statementVisitor = new StatementVisitorAdapter<>() {
-      public <S> Void visit(Select select, S context) {
-        return select.getPlainSelect().accept(selectVisitorAdapter, context);
-      }
-    };
     statement.accept(statementVisitor, null);
+  }
+
+  /**
+   * Recursively adds security filters to a PlainSelect.
+   * For real tables, filters are injected directly on the PlainSelect's WHERE clause.
+   * For derived tables (subqueries), it recurses into the inner PlainSelect.
+   *
+   * @param plainSelect the PlainSelect to process
+   */
+  private void addSecurityFiltersToPlainSelect(PlainSelect plainSelect) {
+    FromItem fromItem = plainSelect.getFromItem();
+    addSecurityFiltersForFromItem(fromItem, plainSelect);
+
+    if (plainSelect.getJoins() != null) {
+      for (Join join : plainSelect.getJoins()) {
+        addSecurityFiltersForFromItem(join.getRightItem(), plainSelect);
+      }
+    }
+  }
+
+  /**
+   * Adds security filters for a single FROM item.
+   * If the item is a table, injects client/org filters on the given PlainSelect.
+   * If the item is a subquery, recurses into it.
+   *
+   * @param fromItem    the FROM item to process
+   * @param plainSelect the PlainSelect to inject filters into (for table items)
+   */
+  private void addSecurityFiltersForFromItem(FromItem fromItem, PlainSelect plainSelect) {
+    if (fromItem instanceof net.sf.jsqlparser.schema.Table) {
+      String alias = fromItem.getAlias().getName();
+      appendSecurityWhere(plainSelect, alias);
+    } else if (fromItem instanceof ParenthesedSelect) {
+      ParenthesedSelect subSelect = (ParenthesedSelect) fromItem;
+      if (subSelect.getPlainSelect() != null) {
+        addSecurityFiltersToPlainSelect(subSelect.getPlainSelect());
+      }
+    }
+  }
+
+  /**
+   * Appends ad_client_id and ad_org_id IN expressions to the WHERE clause of a PlainSelect.
+   *
+   * @param plainSelect the PlainSelect whose WHERE to modify
+   * @param alias       the table alias to qualify the columns
+   */
+  private void appendSecurityWhere(PlainSelect plainSelect, String alias) {
+    InExpression clientValidation = new InExpression();
+    clientValidation.setLeftExpression(new net.sf.jsqlparser.schema.Column(alias + ".ad_client_id"));
+    clientValidation.setRightExpression(convertToArrayExpression(getClientreadableSet()));
+
+    InExpression orgValidation = new InExpression();
+    orgValidation.setLeftExpression(new net.sf.jsqlparser.schema.Column(alias + ".ad_org_id"));
+    orgValidation.setRightExpression(convertToArrayExpression(getOrganizationReadableSet()));
+
+    AndExpression cliAndOrgValidations = new AndExpression(clientValidation, orgValidation);
+
+    if (plainSelect.getWhere() == null) {
+      plainSelect.setWhere(cliAndOrgValidations);
+    } else {
+      plainSelect.setWhere(new AndExpression(plainSelect.getWhere(), cliAndOrgValidations));
+    }
   }
 
   /**
@@ -267,30 +309,50 @@ public class ExecSQL extends BaseWebhookService {
   private List<net.sf.jsqlparser.schema.Table> extractAllTables(Statement statement) {
     List<net.sf.jsqlparser.schema.Table> tables = new ArrayList<>();
 
-    // Define an Expression Visitor reacting on any Expression
-    FromItemVisitorAdapter<Void> fromItemVisitorAdapter = new FromItemVisitorAdapter<>() {
-      public <S> Void visit(net.sf.jsqlparser.schema.Table table, S context) {
-        tables.add(table);
-        return null;
-      }
-    };
-
-    // Define a Select Visitor reacting on a Plain Select invoking the Expression Visitor on the Where Clause
-    SelectVisitorAdapter<Void> selectVisitorAdapter = new SelectVisitorAdapter<>() {
-      @Override
-      public <S> Void visit(PlainSelect plainSelect, S context) {
-        return plainSelect.getFromItem().accept(fromItemVisitorAdapter, context);
-      }
-    };
-
     StatementVisitorAdapter<Void> statementVisitor = new StatementVisitorAdapter<>() {
       public <S> Void visit(Select select, S context) {
-        return select.getPlainSelect().accept(selectVisitorAdapter, context);
+        collectTablesFromPlainSelect(select.getPlainSelect(), tables);
+        return null;
       }
     };
 
     statement.accept(statementVisitor, null);
     return tables;
+  }
+
+  /**
+   * Recursively collects all real tables from a PlainSelect, including tables
+   * in JOINs and inside derived tables (subqueries).
+   *
+   * @param plainSelect the PlainSelect to inspect
+   * @param tables      the list to add found tables to
+   */
+  private void collectTablesFromPlainSelect(PlainSelect plainSelect, List<net.sf.jsqlparser.schema.Table> tables) {
+    collectTablesFromFromItem(plainSelect.getFromItem(), tables);
+
+    if (plainSelect.getJoins() != null) {
+      for (Join join : plainSelect.getJoins()) {
+        collectTablesFromFromItem(join.getRightItem(), tables);
+      }
+    }
+  }
+
+  /**
+   * Collects tables from a single FROM item. If the item is a table, adds it.
+   * If it is a subquery, recurses into it.
+   *
+   * @param fromItem the FROM item to inspect
+   * @param tables   the list to add found tables to
+   */
+  private void collectTablesFromFromItem(FromItem fromItem, List<net.sf.jsqlparser.schema.Table> tables) {
+    if (fromItem instanceof net.sf.jsqlparser.schema.Table) {
+      tables.add((net.sf.jsqlparser.schema.Table) fromItem);
+    } else if (fromItem instanceof ParenthesedSelect) {
+      ParenthesedSelect subSelect = (ParenthesedSelect) fromItem;
+      if (subSelect.getPlainSelect() != null) {
+        collectTablesFromPlainSelect(subSelect.getPlainSelect(), tables);
+      }
+    }
   }
 
   /**
@@ -412,13 +474,18 @@ public class ExecSQL extends BaseWebhookService {
   /**
    * Retrieves a list of accessible table IDs based on the current context.
    * <p>
-   * This method retrieves the IDs of all tables that are writable based on the current user's context.
+   * This method retrieves the IDs of all tables that are readable based on the current user's context,
+   * including directly readable entities and derived readable entities (reachable via foreign keys).
    *
    * @return a list of accessible table IDs
    */
   private static List<String> getAccesableTablesID() {
-    return OBContext.getOBContext().getEntityAccessChecker().getWritableEntities().stream()
-        .map(Entity::getTableId).collect(Collectors.toList());
+    EntityAccessChecker checker = OBContext.getOBContext().getEntityAccessChecker();
+    Set<String> tableIdSet = Stream.concat(
+        checker.getReadableEntities().stream(),
+        checker.getDerivedReadableEntities().stream()
+    ).map(Entity::getTableId).collect(Collectors.toSet());
+    return new ArrayList<>(tableIdSet);
   }
 
   /**

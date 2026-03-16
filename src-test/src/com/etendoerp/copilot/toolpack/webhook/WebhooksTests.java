@@ -133,6 +133,63 @@ public class WebhooksTests extends WeldBaseTest {
   }
 
   /**
+   * Tests ExecSQL with a derived table (subquery in FROM clause).
+   * Security filters should be applied to the inner real table, not the outer alias.
+   */
+  @Test
+  public void execSQLWithDerivedTable() {
+    ExecSQL ex = new ExecSQL();
+    Map<String, String> parameter = new HashMap<>();
+    parameter.put("Mode", "EXEC");
+    parameter.put("Query",
+        "SELECT x.name, x.rn FROM ("
+            + "SELECT af.name, ROW_NUMBER() OVER (ORDER BY af.name) AS rn "
+            + "FROM ad_field af WHERE af.isactive = 'Y'"
+            + ") x WHERE x.rn <= 10 ORDER BY x.rn");
+    Map<String, String> respVars = new HashMap<>();
+    ex.get(parameter, respVars);
+    assertNull("Expected no error for derived table query, got: " + respVars.get(ERROR), respVars.get(ERROR));
+    assertFalse(StringUtils.isEmpty(respVars.get("data")));
+  }
+
+  /**
+   * Tests ExecSQL with a derived table that projects security columns.
+   */
+  @Test
+  public void execSQLWithDerivedTableProjectingSecurityColumns() {
+    ExecSQL ex = new ExecSQL();
+    Map<String, String> parameter = new HashMap<>();
+    parameter.put("Mode", "EXEC");
+    parameter.put("Query",
+        "SELECT x.ad_client_id, x.ad_org_id, x.name FROM ("
+            + "SELECT af.ad_client_id, af.ad_org_id, af.name FROM ad_field af"
+            + ") x");
+    Map<String, String> respVars = new HashMap<>();
+    ex.get(parameter, respVars);
+    assertNull("Expected no error for derived table with security columns, got: " + respVars.get(ERROR),
+        respVars.get(ERROR));
+    assertFalse(StringUtils.isEmpty(respVars.get("data")));
+  }
+
+  /**
+   * Tests ExecSQL with a JOIN query.
+   * Security filters should be applied to both joined tables.
+   */
+  @Test
+  public void execSQLWithJoin() {
+    ExecSQL ex = new ExecSQL();
+    Map<String, String> parameter = new HashMap<>();
+    parameter.put("Mode", "EXEC");
+    parameter.put("Query",
+        "SELECT af.name, at2.name FROM ad_field af "
+            + "JOIN ad_tab at2 ON af.ad_tab_id = at2.ad_tab_id");
+    Map<String, String> respVars = new HashMap<>();
+    ex.get(parameter, respVars);
+    assertNull("Expected no error for JOIN query, got: " + respVars.get(ERROR), respVars.get(ERROR));
+    assertFalse(StringUtils.isEmpty(respVars.get("data")));
+  }
+
+  /**
    * Tests the simSearch method.
    * <p>
    * This test method verifies the functionality of the simSearch method in the SimSearch class.
