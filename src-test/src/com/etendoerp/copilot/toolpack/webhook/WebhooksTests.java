@@ -51,6 +51,7 @@ public class WebhooksTests extends WeldBaseTest {
   public static final String FILE_NAME = "FileName";
   public static final String FILE_CONTENT = "FileContent";
   public static final String AD_TAB_ID = "ADTabId";
+  public static final String QUERY = "Query";
   public static final String AGENTS = "agents";
   public static final String MESSAGE = "message";
   public static final String TEST_RECORD_ID = "testRecordId";
@@ -115,7 +116,7 @@ public class WebhooksTests extends WeldBaseTest {
     // Test EXEC mode with a query that should fail
     try {
       parameter.put("Mode", "EXEC");
-      parameter.put("Query", "SELECT * FROM ad_field");
+      parameter.put(QUERY, "SELECT * FROM ad_field");
       respVars = new HashMap<>();
       ex.get(parameter, respVars);
     } catch (Exception e) {
@@ -125,10 +126,67 @@ public class WebhooksTests extends WeldBaseTest {
 
     // Test EXEC mode with a valid query
     parameter.put("Mode", "EXEC");
-    parameter.put("Query", "SELECT * FROM ad_field af");
+    parameter.put(QUERY, "SELECT * FROM ad_field af");
     respVars = new HashMap<>();
     ex.get(parameter, respVars);
     assertFalse(respVars.isEmpty());
+    assertFalse(StringUtils.isEmpty(respVars.get("data")));
+  }
+
+  /**
+   * Tests ExecSQL with a derived table (subquery in FROM clause).
+   * Security filters should be applied to the inner real table, not the outer alias.
+   */
+  @Test
+  public void execSQLWithDerivedTable() {
+    ExecSQL ex = new ExecSQL();
+    Map<String, String> parameter = new HashMap<>();
+    parameter.put("Mode", "EXEC");
+    parameter.put(QUERY,
+        "SELECT x.name, x.rn FROM ("
+            + "SELECT af.name, ROW_NUMBER() OVER (ORDER BY af.name) AS rn "
+            + "FROM ad_field af WHERE af.isactive = 'Y'"
+            + ") x WHERE x.rn <= 10 ORDER BY x.rn");
+    Map<String, String> respVars = new HashMap<>();
+    ex.get(parameter, respVars);
+    assertNull("Expected no error for derived table query, got: " + respVars.get(ERROR), respVars.get(ERROR));
+    assertFalse(StringUtils.isEmpty(respVars.get("data")));
+  }
+
+  /**
+   * Tests ExecSQL with a derived table that projects security columns.
+   */
+  @Test
+  public void execSQLWithDerivedTableProjectingSecurityColumns() {
+    ExecSQL ex = new ExecSQL();
+    Map<String, String> parameter = new HashMap<>();
+    parameter.put("Mode", "EXEC");
+    parameter.put(QUERY,
+        "SELECT x.ad_client_id, x.ad_org_id, x.name FROM ("
+            + "SELECT af.ad_client_id, af.ad_org_id, af.name FROM ad_field af"
+            + ") x");
+    Map<String, String> respVars = new HashMap<>();
+    ex.get(parameter, respVars);
+    assertNull("Expected no error for derived table with security columns, got: " + respVars.get(ERROR),
+        respVars.get(ERROR));
+    assertFalse(StringUtils.isEmpty(respVars.get("data")));
+  }
+
+  /**
+   * Tests ExecSQL with a JOIN query.
+   * Security filters should be applied to both joined tables.
+   */
+  @Test
+  public void execSQLWithJoin() {
+    ExecSQL ex = new ExecSQL();
+    Map<String, String> parameter = new HashMap<>();
+    parameter.put("Mode", "EXEC");
+    parameter.put(QUERY,
+        "SELECT af.name, at2.name FROM ad_field af "
+            + "JOIN ad_tab at2 ON af.ad_tab_id = at2.ad_tab_id");
+    Map<String, String> respVars = new HashMap<>();
+    ex.get(parameter, respVars);
+    assertNull("Expected no error for JOIN query, got: " + respVars.get(ERROR), respVars.get(ERROR));
     assertFalse(StringUtils.isEmpty(respVars.get("data")));
   }
 
