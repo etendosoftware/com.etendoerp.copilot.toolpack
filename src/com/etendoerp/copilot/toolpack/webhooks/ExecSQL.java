@@ -201,6 +201,10 @@ public class ExecSQL extends BaseWebhookService {
    */
   private void addSecurityFiltersForFromItem(FromItem fromItem, PlainSelect plainSelect) {
     if (fromItem instanceof net.sf.jsqlparser.schema.Table) {
+      if (fromItem.getAlias() == null) {
+        log.warn("Table '{}' has no alias — skipping security filter injection", fromItem);
+        return;
+      }
       String alias = fromItem.getAlias().getName();
       appendSecurityWhere(plainSelect, alias);
     } else if (fromItem instanceof ParenthesedSelect) {
