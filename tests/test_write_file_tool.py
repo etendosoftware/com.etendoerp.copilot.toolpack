@@ -95,3 +95,55 @@ def test_insert_content_at_line(setup_tool, filepath, file_content):
     expected_content = "Line1\nHello world\nLine2"
     assert os.path.exists(filepath)
     assert open(filepath).read() == expected_content
+
+
+def test_write_creates_folder(setup_tool, tmp_path, file_content):
+    nested_path = str(tmp_path / "new_dir" / "sub" / "file.txt")
+    input_params = {
+        "filepath": nested_path,
+        "content": file_content,
+        "override": True,
+        "lineno": -1,
+    }
+    result = setup_tool.run(input_params)
+    assert os.path.exists(nested_path)
+    assert open(nested_path).read() == file_content
+    assert "written successfully" in result["message"]
+
+
+def test_write_with_chmod(setup_tool, tmp_path, file_content, mocker):
+    nested_path = str(tmp_path / "chmod_dir" / "file.txt")
+    mocker.patch(
+        "tools.WriteFileTool.read_optional_env_var", return_value="0o666"
+    )
+    mock_chmod = mocker.patch("os.chmod")
+
+    input_params = {
+        "filepath": nested_path,
+        "content": file_content,
+        "override": True,
+        "lineno": -1,
+    }
+    result = setup_tool.run(input_params)
+    assert os.path.exists(nested_path)
+    assert mock_chmod.call_count >= 2  # folder + file
+    assert "written successfully" in result["message"]
+
+
+def test_write_with_chmod_existing_file(setup_tool, filepath, file_content, mocker):
+    open(filepath, "w").write("Old content")
+    mocker.patch(
+        "tools.WriteFileTool.read_optional_env_var", return_value="0o644"
+    )
+    mock_chmod = mocker.patch("os.chmod")
+
+    input_params = {
+        "filepath": filepath,
+        "content": file_content,
+        "override": True,
+        "lineno": -1,
+    }
+    result = setup_tool.run(input_params)
+    assert open(filepath).read() == file_content
+    assert mock_chmod.call_count >= 1  # file chmod
+    assert "backup: True" in result["message"]
