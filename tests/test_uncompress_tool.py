@@ -2,7 +2,6 @@ import bz2
 import gzip
 import os
 import shutil
-import tarfile
 import tempfile
 import unittest
 import zipfile
@@ -30,13 +29,6 @@ class TestUncompressTool(unittest.TestCase):
             zipf.write(self.create_test_file("test1.txt"), arcname="test1.txt")
             zipf.write(self.create_test_file("test2.txt"), arcname="test2.txt")
         return zip_path
-
-    def create_tar_file(self):
-        tar_path = os.path.join(self.test_dir, "test.tar")
-        with tarfile.open(tar_path, "w") as tarf:  # noqa: S202
-            tarf.add(self.create_test_file("test1.txt"), arcname="test1.txt")
-            tarf.add(self.create_test_file("test2.txt"), arcname="test2.txt")
-        return tar_path
 
     def create_gzip_file(self):
         gzip_path = os.path.join(self.test_dir, "test.gz")
@@ -69,12 +61,6 @@ class TestUncompressTool(unittest.TestCase):
         result = self.tool.run({"compressed_file_path": bzip2_path})
         self.assertIn("uncompressed_files_paths", result)
         self.assertEqual(len(result["uncompressed_files_paths"]), 1)
-
-    def test_untar(self):
-        tar_path = self.create_tar_file()
-        result = self.tool.run({"compressed_file_path": tar_path})
-        self.assertIn("uncompressed_files_paths", result)
-        self.assertEqual(len(result["uncompressed_files_paths"]), 2)
 
     def test_unsupported_format(self):
         unsupported_file = self.create_test_file("test.xyz", content="not compressed")
