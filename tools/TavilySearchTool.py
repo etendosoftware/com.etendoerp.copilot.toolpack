@@ -30,10 +30,9 @@ class TavilySearchTool(ToolWrapper):
         super().__init__()
 
     def run(self, input_params: Dict, *args, **kwargs) -> dict:
-        query = input_params.get("searchquery")
+        query = input_params.get("query")
 
         tool = TavilySearchResults(
             tavily_api_key=read_optional_env_var("tavily.api.key", None),
-            query=query,
         )
         return tool.invoke({"query": query})

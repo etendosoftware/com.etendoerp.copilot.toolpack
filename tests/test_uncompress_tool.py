@@ -3,6 +3,7 @@ import gzip
 import os
 import shutil
 import tarfile
+import tempfile
 import unittest
 import zipfile
 
@@ -12,8 +13,7 @@ from tools.UncompressTool import UncompressTool
 class TestUncompressTool(unittest.TestCase):
     def setUp(self):
         self.tool = UncompressTool()
-        self.test_dir = "./test_data"
-        os.makedirs(self.test_dir, exist_ok=True)
+        self.test_dir = tempfile.mkdtemp()
 
     def tearDown(self):
         shutil.rmtree(self.test_dir)
@@ -33,7 +33,7 @@ class TestUncompressTool(unittest.TestCase):
 
     def create_tar_file(self):
         tar_path = os.path.join(self.test_dir, "test.tar")
-        with tarfile.open(tar_path, "w") as tarf:
+        with tarfile.open(tar_path, "w") as tarf:  # noqa: S202
             tarf.add(self.create_test_file("test1.txt"), arcname="test1.txt")
             tarf.add(self.create_test_file("test2.txt"), arcname="test2.txt")
         return tar_path
@@ -69,6 +69,21 @@ class TestUncompressTool(unittest.TestCase):
         result = self.tool.run({"compressed_file_path": bzip2_path})
         self.assertIn("uncompressed_files_paths", result)
         self.assertEqual(len(result["uncompressed_files_paths"]), 1)
+
+    def test_untar(self):
+        tar_path = self.create_tar_file()
+        result = self.tool.run({"compressed_file_path": tar_path})
+        self.assertIn("uncompressed_files_paths", result)
+        self.assertEqual(len(result["uncompressed_files_paths"]), 2)
+
+    def test_unsupported_format(self):
+        unsupported_file = self.create_test_file("test.xyz", content="not compressed")
+        result = self.tool.run({"compressed_file_path": unsupported_file})
+        self.assertIn("error", result)
+
+    def test_nonexistent_file(self):
+        result = self.tool.run({"compressed_file_path": "/nonexistent/path/file.zip"})
+        self.assertIn("error", result)
 
 
 if __name__ == "__main__":

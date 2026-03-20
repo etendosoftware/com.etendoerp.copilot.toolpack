@@ -9,13 +9,13 @@ def setup_tool():
 
 
 @pytest.fixture
-def filepath():
-    return "/tmp/test_write_file_tool.txt"
+def filepath(tmp_path):
+    return str(tmp_path / "test_write_file_tool.txt")
 
 
 @pytest.fixture
-def new_filepath():
-    return "/tmp/test_write_file_tool_new.txt"
+def new_filepath(tmp_path):
+    return str(tmp_path / "test_write_file_tool_new.txt")
 
 
 @pytest.fixture
@@ -23,24 +23,16 @@ def file_content():
     return "Hello world"
 
 
-@pytest.fixture
-def file_backup_pattern():
-    return "/tmp/test_write_file_tool.txt.bak"
-
-
 @pytest.fixture(autouse=True)
-def cleanup_files(filepath, new_filepath, file_backup_pattern):
-    # Cleanup before running each test
+def cleanup_files(filepath, new_filepath, tmp_path):
     yield
-    # Cleanup after running each test
     if os.path.exists(filepath):
         os.remove(filepath)
     if os.path.exists(new_filepath):
         os.remove(new_filepath)
-    # Remove backups if they were created
-    for file in os.listdir("/tmp"):
+    for file in os.listdir(str(tmp_path)):
         if file.startswith("test_write_file_tool.txt.bak"):
-            os.remove(os.path.join("/tmp", file))
+            os.remove(os.path.join(str(tmp_path), file))
 
 
 def test_write_file_successfully(setup_tool, filepath, file_content):
@@ -53,14 +45,10 @@ def test_write_file_successfully(setup_tool, filepath, file_content):
     result = setup_tool.run(input_params)
     assert os.path.exists(filepath)
     assert open(filepath).read() == file_content
-    assert (
-        "File /tmp/test_write_file_tool.txt written successfully" in result["message"]
-    )
+    assert "written successfully" in result["message"]
 
 
-def test_write_file_with_backup(
-    setup_tool, filepath, file_content, file_backup_pattern
-):
+def test_write_file_with_backup(setup_tool, filepath, file_content, tmp_path):
     open(filepath, "w").write("Old content")
     input_params = {
         "filepath": filepath,
@@ -72,13 +60,12 @@ def test_write_file_with_backup(
     assert os.path.exists(filepath)
     assert open(filepath).read() == file_content
     backups = [
-        f for f in os.listdir("/tmp") if f.startswith("test_write_file_tool.txt.bak")
+        f
+        for f in os.listdir(str(tmp_path))
+        if f.startswith("test_write_file_tool.txt.bak")
     ]
     assert len(backups) == 1
-    assert (
-        "File /tmp/test_write_file_tool.txt written successfully, backup: True"
-        in result["message"]
-    )
+    assert "written successfully, backup: True" in result["message"]
 
 
 def test_append_file_content(setup_tool, filepath, file_content):

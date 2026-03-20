@@ -39,25 +39,40 @@ def test_file_copy_tool_invalid_source():
         "destination_directory": "destination_directory",
     }
 
-    try:
+    with pytest.raises(FileNotFoundError):
         tool.run(input_data)
-    except Exception as e:
-        assert isinstance(
-            e, FileNotFoundError
-        ), "The tool should handle non-existent source file gracefully."
 
 
-def test_file_copy_tool_invalid_destination(setup_files):
-    source_file, _ = setup_files
+def test_file_copy_tool_creates_destination_dir(tmp_path):
+    source_file = tmp_path / "source.txt"
+    source_file.write_text("test content")
+    dest_dir = tmp_path / "new_dir" / "nested"
+
     tool = FileCopyTool()
     input_data = {
         "source_path": str(source_file),
-        "destination_directory": "non_existent_directory/subdir",
+        "destination_directory": str(dest_dir),
     }
 
-    try:
-        tool.run(input_data)
-    except Exception as e:
-        assert isinstance(
-            e, FileNotFoundError
-        ), "The tool should handle non-existent destination directory gracefully."
+    result = tool.run(input_data)
+
+    assert os.path.exists(dest_dir), "The destination directory should be created."
+    expected_path = os.path.join(str(dest_dir), "source.txt")
+    assert result["file_path"] == expected_path
+    assert open(expected_path).read() == "test content"
+
+
+def test_file_copy_preserves_content(setup_files):
+    source_file, destination_dir = setup_files
+    tool = FileCopyTool()
+
+    input_data = {
+        "source_path": str(source_file),
+        "destination_directory": str(destination_dir),
+    }
+
+    result = tool.run(input_data)
+    copied_content = open(result["file_path"]).read()
+    original_content = open(str(source_file)).read()
+
+    assert copied_content == original_content

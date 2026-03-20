@@ -1,17 +1,7 @@
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from tools import TavilySearchTool
-
-
-@pytest.fixture
-def valid_query():
-    return {"query": "What is the capital of Spain?"}
-
-
-@pytest.fixture
-def invalid_query():
-    return {"query": ""}
 
 
 @pytest.fixture
@@ -19,65 +9,77 @@ def setup_tool():
     return TavilySearchTool()
 
 
-# Valid query test case
+@pytest.fixture
+def valid_query():
+    return {"query": "What is the capital of Spain?"}
 
 
-@patch.object(
-    TavilySearchTool,
-    "run",
-    return_value=[{"content": "Madrid is the capital of Spain."}],
-)
-def test_valid_query(mock_run, setup_tool, valid_query):
+@patch("tools.TavilySearchTool.TavilySearchResults")
+@patch("tools.TavilySearchTool.read_optional_env_var", return_value="fake_key")
+def test_run_invokes_tavily(mock_env, mock_tavily_cls, setup_tool, valid_query):
+    mock_tool_instance = MagicMock()
+    mock_tool_instance.invoke.return_value = [{"content": "Madrid is the capital of Spain."}]
+    mock_tavily_cls.return_value = mock_tool_instance
+
     result = setup_tool.run(valid_query)
-    assert isinstance(result, list)  # Should return a list
-    assert all(
-        isinstance(item, dict) for item in result
-    )  # Each item in the list should be a dictionary
+
+    mock_tavily_cls.assert_called_once_with(tavily_api_key="fake_key")
+    mock_tool_instance.invoke.assert_called_once_with({"query": "What is the capital of Spain?"})
+    assert isinstance(result, list)
     assert "Madrid" in result[0]["content"]
 
 
-# Invalid query test case
+@patch("tools.TavilySearchTool.TavilySearchResults")
+@patch("tools.TavilySearchTool.read_optional_env_var", return_value=None)
+def test_run_with_no_api_key(mock_env, mock_tavily_cls, setup_tool, valid_query):
+    mock_tool_instance = MagicMock()
+    mock_tool_instance.invoke.return_value = []
+    mock_tavily_cls.return_value = mock_tool_instance
 
-
-@patch.object(TavilySearchTool, "run", side_effect=Exception("Bad Request"))
-def test_invalid_query(mock_run, setup_tool, invalid_query):
-    try:
-        result = setup_tool.run(invalid_query)
-    except Exception as e:
-        result = str(e)
-    assert "Bad Request" in result
-
-
-# Empty query test case
-
-
-@patch.object(TavilySearchTool, "run", side_effect=Exception("Bad Request"))
-def test_empty_query(mock_run, setup_tool):
-    query = {"query": ""}
-    try:
-        result = setup_tool.run(query)
-    except Exception as e:
-        result = str(e)
-    assert "Bad Request" in result
-
-
-# Test for embedding distance
-
-
-@patch.object(
-    TavilySearchTool,
-    "run",
-    return_value=[{"content": "Madrid is the capital of Spain."}],
-)
-def test_partial_search_result(mock_run, setup_tool, valid_query):
     result = setup_tool.run(valid_query)
-    assert "capital of Spain" in result[0]["content"]
+
+    mock_tavily_cls.assert_called_once_with(tavily_api_key=None)
+    assert result == []
 
 
-# Test for edit distance
+@patch("tools.TavilySearchTool.TavilySearchResults")
+@patch("tools.TavilySearchTool.read_optional_env_var", return_value="fake_key")
+def test_run_with_empty_query(mock_env, mock_tavily_cls, setup_tool):
+    mock_tool_instance = MagicMock()
+    mock_tool_instance.invoke.return_value = []
+    mock_tavily_cls.return_value = mock_tool_instance
+
+    result = setup_tool.run({"query": ""})
+
+    mock_tool_instance.invoke.assert_called_once_with({"query": ""})
+    assert result == []
 
 
-@patch.object(TavilySearchTool, "run", return_value=[{"content": "Madrid"}])
-def test_edit_distance(mock_run, setup_tool, valid_query):
+@patch("tools.TavilySearchTool.TavilySearchResults")
+@patch("tools.TavilySearchTool.read_optional_env_var", return_value="fake_key")
+def test_run_with_missing_query_key(mock_env, mock_tavily_cls, setup_tool):
+    mock_tool_instance = MagicMock()
+    mock_tool_instance.invoke.return_value = []
+    mock_tavily_cls.return_value = mock_tool_instance
+
+    result = setup_tool.run({})
+
+    mock_tool_instance.invoke.assert_called_once_with({"query": None})
+    assert result == []
+
+
+@patch("tools.TavilySearchTool.TavilySearchResults")
+@patch("tools.TavilySearchTool.read_optional_env_var", return_value="fake_key")
+def test_run_returns_multiple_results(mock_env, mock_tavily_cls, setup_tool, valid_query):
+    mock_tool_instance = MagicMock()
+    mock_tool_instance.invoke.return_value = [
+        {"content": "Result 1"},
+        {"content": "Result 2"},
+    ]
+    mock_tavily_cls.return_value = mock_tool_instance
+
     result = setup_tool.run(valid_query)
-    assert result[0]["content"] == "Madrid"
+
+    assert len(result) == 2
+    assert result[0]["content"] == "Result 1"
+    assert result[1]["content"] == "Result 2"
