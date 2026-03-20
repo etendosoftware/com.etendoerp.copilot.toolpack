@@ -5,8 +5,6 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from langsmith import unit
-
 from tools.OcrTool import (
     GET_JSON_PROMPT,
     GET_JSON_WITH_REFERENCE_PROMPT,
@@ -34,7 +32,6 @@ IMAGE_JPEG = "image/jpeg"
 class TestOcrTool(unittest.TestCase):
     """Test suite for OcrTool"""
 
-    @unit
     def test_convert_to_pil_img(self):
         """Test bitmap to PIL image conversion"""
         # Mocking a bitmap object
@@ -50,7 +47,6 @@ class TestOcrTool(unittest.TestCase):
         pil_image = convert_to_pil_img(mock_bitmap)
         self.assertEqual(pil_image.size, (100, 100))
 
-    @unit
     def test_get_image_payload_item(self):
         """Test image payload item creation for vision API"""
         img_b64 = "sample_base64"
@@ -67,7 +63,6 @@ class TestOcrTool(unittest.TestCase):
             get_image_payload_item(img_b64, mime, provider="openai"), expected_output
         )
 
-    @unit
     def test_get_image_payload_item_gemini(self):
         """Test image payload item creation for Gemini model (no detail field)"""
         img_b64 = "sample_base64"
@@ -80,7 +75,6 @@ class TestOcrTool(unittest.TestCase):
             get_image_payload_item(img_b64, mime, provider="gemini"), expected_output
         )
 
-    @unit
     def test_checktype_valid_mimes(self):
         """Test checktype with valid MIME types"""
         valid_mimes = [
@@ -96,7 +90,6 @@ class TestOcrTool(unittest.TestCase):
             except Exception:
                 self.fail(f"checktype() raised Exception unexpectedly for mime: {mime}")
 
-    @unit
     def test_checktype_invalid_mime(self):
         """Test checktype with invalid MIME type"""
         invalid_mime = "image/tiff"
@@ -105,7 +98,6 @@ class TestOcrTool(unittest.TestCase):
         self.assertIn("invalid file format", str(context.exception))
 
     @patch("filetype.guess")
-    @unit
     def test_read_mime(self, mock_guess):
         """Test MIME type reading from file"""
         # Test successful MIME detection
@@ -116,7 +108,6 @@ class TestOcrTool(unittest.TestCase):
         mock_guess.return_value = None
         self.assertIsNone(read_mime("dummy_path"))
 
-    @unit
     def test_image_to_base64(self):
         """Test image to base64 conversion"""
         # Use a real test image
@@ -131,7 +122,6 @@ class TestOcrTool(unittest.TestCase):
             except Exception:
                 self.fail("image_to_base64 did not return valid base64")
 
-    @unit
     def test_pil_image_to_base64(self):
         """Test PIL image to base64 conversion without disk I/O"""
         from PIL import Image
@@ -149,7 +139,6 @@ class TestOcrTool(unittest.TestCase):
         except Exception:
             self.fail("pil_image_to_base64 did not return valid base64")
 
-    @unit
     def test_pil_image_to_base64_with_options(self):
         """Test PIL image to base64 with different format and quality"""
         from PIL import Image
@@ -166,7 +155,6 @@ class TestOcrTool(unittest.TestCase):
         self.assertGreater(len(result_high), len(result_low))
 
     @patch("tools.OcrTool.Path")
-    @unit
     def test_get_file_path_exists(self, mock_path):
         """Test file path resolution when file exists"""
         input_params = {"path": "/test/image.png"}
@@ -179,7 +167,6 @@ class TestOcrTool(unittest.TestCase):
         self.assertEqual(result, "/app/test/image.png")
 
     @patch("tools.OcrTool.Path")
-    @unit
     def test_get_file_path_not_found(self, mock_path):
         """Test file path resolution when file doesn't exist"""
         input_params = {"path": "/nonexistent/image.png"}
@@ -191,7 +178,6 @@ class TestOcrTool(unittest.TestCase):
         with self.assertRaises(FileNotFoundError):
             get_file_path(input_params)
 
-    @unit
     def test_build_messages_without_reference(self):
         """Test message building without reference image"""
         base64_images = ["base64_image1", "base64_image2"]
@@ -216,7 +202,6 @@ class TestOcrTool(unittest.TestCase):
             self.assertIsInstance(messages[i]["content"], list)
             self.assertEqual(messages[i]["content"][0]["type"], "image_url")
 
-    @unit
     def test_build_messages_with_extra_system_content(self):
         """Test message building with extra system content"""
         base64_images = ["base64_image1"]
@@ -232,7 +217,6 @@ class TestOcrTool(unittest.TestCase):
         self.assertIn("OCR", messages[0]["content"])
         self.assertIn(extra_system, messages[0]["content"])
 
-    @unit
     def test_build_messages_gemini_format(self):
         """Test message building with Gemini format (no detail field)"""
         base64_images = ["base64_image1"]
@@ -246,7 +230,6 @@ class TestOcrTool(unittest.TestCase):
         image_payload = image_message["content"][0]
         self.assertNotIn("detail", image_payload.get("image_url", {}))
 
-    @unit
     def test_build_messages_with_reference(self):
         """Test message building with reference image"""
         base64_images = ["base64_image1"]
@@ -280,7 +263,6 @@ class TestOcrTool(unittest.TestCase):
         self.assertEqual(messages[5]["role"], "user")
         self.assertIsInstance(messages[5]["content"], list)
 
-    @unit
     def test_cleanup_temp_files(self):
         """Test temporary file cleanup"""
         # Create temporary test files using tempfile module for safety
@@ -304,7 +286,6 @@ class TestOcrTool(unittest.TestCase):
 
     @patch("tools.OcrTool.image_to_base64")
     @patch("tools.OcrTool.os.path.dirname")
-    @unit
     def test_recopile_files_jpeg(self, mock_dirname, mock_img_to_b64):
         """Test recopile_files with JPEG image"""
         temp_dir = tempfile.gettempdir()
@@ -333,7 +314,6 @@ class TestOcrTool(unittest.TestCase):
     @patch("pypdfium2.PdfDocument")
     @patch("tools.OcrTool.pil_image_to_base64")
     @patch("tools.OcrTool.convert_to_pil_img")
-    @unit
     def test_recopile_files_pdf(self, mock_convert, mock_pil_to_b64, mock_pdf_doc):
         """Test recopile_files with PDF file"""
         from PIL import Image
@@ -373,7 +353,6 @@ class TestOcrTool(unittest.TestCase):
         self.assertEqual(len(filenames_to_delete), 0)
 
     @patch("tools.OcrTool.recopile_files")
-    @unit
     def test_prepare_images_for_ocr(self, mock_recopile):
         """Test prepare_images_for_ocr function"""
         mock_recopile.side_effect = (
@@ -391,7 +370,6 @@ class TestOcrTool(unittest.TestCase):
         mock_recopile.assert_called_once()
 
     @patch("tools.OcrTool.pil_image_to_base64")
-    @unit
     def test_recopile_files_non_jpeg_image(self, mock_pil_to_b64):
         """Test recopile_files with non-JPEG image (e.g., PNG) converts to JPEG in memory"""
         from PIL import Image
@@ -423,7 +401,6 @@ class TestOcrTool(unittest.TestCase):
             os.unlink(tmp_path)
 
     @patch("tools.OcrTool.copilot_debug")
-    @unit
     def test_ocr_tool_input_schema(self, mock_debug):
         """Test OcrTool schema validation"""
         # Valid input with required fields only
@@ -437,7 +414,6 @@ class TestOcrTool(unittest.TestCase):
         self.assertEqual(valid_input.scale, 3.0)
 
     @patch("tools.OcrTool.copilot_debug")
-    @unit
     def test_ocr_tool_input_schema_with_optional_fields(self, mock_debug):
         """Test OcrTool schema validation with all optional fields"""
         valid_input = OcrToolInput(
@@ -455,7 +431,6 @@ class TestOcrTool(unittest.TestCase):
         self.assertTrue(valid_input.disable_threshold_filter)
         self.assertEqual(valid_input.scale, 3.0)
 
-    @unit
     def test_ocr_tool_run_without_agent(self):
         """Test OcrTool.run without agent_id"""
         tool = OcrTool()
@@ -478,7 +453,6 @@ class TestOcrTool(unittest.TestCase):
     @patch("tools.OcrTool.read_mime")
     @patch("tools.OcrTool.get_file_path")
     @patch("tools.OcrTool.checktype")
-    @unit
     def test_ocr_tool_run_with_reference(
         self,
         mock_checktype,
@@ -528,7 +502,6 @@ class TestOcrTool(unittest.TestCase):
     @patch("tools.OcrTool.read_mime")
     @patch("tools.OcrTool.get_file_path")
     @patch("tools.OcrTool.checktype")
-    @unit
     def test_ocr_tool_run_without_reference(
         self,
         mock_checktype,
@@ -569,7 +542,6 @@ class TestOcrTool(unittest.TestCase):
         mock_find_ref.assert_called_once()
 
     @patch("tools.OcrTool.get_file_path")
-    @unit
     def test_ocr_tool_run_file_not_found(self, mock_get_file_path):
         """Test OcrTool.run with file not found"""
         tool = OcrTool()
@@ -588,7 +560,6 @@ class TestOcrTool(unittest.TestCase):
     @patch("tools.OcrTool.checktype")
     @patch("tools.OcrTool.read_mime")
     @patch("tools.OcrTool.get_file_path")
-    @unit
     def test_ocr_tool_run_invalid_mime(
         self, mock_get_file_path, mock_read_mime, mock_checktype
     ):
@@ -621,7 +592,6 @@ class TestOcrTool(unittest.TestCase):
         self.assertIn("JPEG", SUPPORTED_MIME_FORMATS)
         self.assertIn("PDF", SUPPORTED_MIME_FORMATS)
 
-    @unit
     def test_ocr_tool_metadata(self):
         """Test OcrTool metadata"""
         tool = OcrTool()
@@ -631,7 +601,6 @@ class TestOcrTool(unittest.TestCase):
         self.assertIn("structured data", tool.description.lower())
         self.assertEqual(tool.args_schema, OcrToolInput)
 
-    @unit
     def test_ocr_tool_get_prompt_with_reference(self):
         """Test get_prompt method returns reference prompt when reference is available"""
         tool = OcrTool()
@@ -648,7 +617,6 @@ class TestOcrTool(unittest.TestCase):
         prompt = tool.get_prompt(reference_image_base64="base64_data", reference_image_path="/path/to/ref.png")  # type: ignore[arg-type]
         self.assertEqual(prompt, GET_JSON_WITH_REFERENCE_PROMPT)
 
-    @unit
     def test_ocr_tool_get_prompt_without_reference(self):
         """Test get_prompt method returns standard prompt when no reference"""
         tool = OcrTool()
@@ -656,7 +624,6 @@ class TestOcrTool(unittest.TestCase):
         prompt = tool.get_prompt(reference_image_base64=None, reference_image_path=None)  # type: ignore[arg-type]
         self.assertEqual(prompt, GET_JSON_PROMPT)
 
-    @unit
     def test_ocr_tool_read_structured_output_with_schema(self):
         """Test read_structured_output adds schema to system prompt in compat mode"""
         from pydantic import BaseModel
@@ -675,7 +642,6 @@ class TestOcrTool(unittest.TestCase):
         self.assertIn("field1", result)
         self.assertIn("field2", result)
 
-    @unit
     def test_ocr_tool_read_structured_output_without_compat(self):
         """Test read_structured_output returns None when not in compat mode"""
         from pydantic import BaseModel
@@ -689,7 +655,6 @@ class TestOcrTool(unittest.TestCase):
         result = tool.read_structured_output(None, force_compat=False, structured_schema=TestSchema)  # type: ignore[arg-type]
         self.assertIsNone(result)
 
-    @unit
     def test_ocr_tool_read_structured_output_no_schema(self):
         """Test read_structured_output returns None when no schema provided"""
         tool = OcrTool()
@@ -698,7 +663,6 @@ class TestOcrTool(unittest.TestCase):
         self.assertIsNone(result)
 
     @patch("tools.OcrTool.get_llm")
-    @unit
     def test_get_vision_model_response_unstructured(self, mock_get_llm):
         """Test get_vision_model_response for unstructured output"""
         mock_llm = MagicMock()
@@ -714,7 +678,6 @@ class TestOcrTool(unittest.TestCase):
         mock_llm.invoke.assert_called_once_with(messages)
 
     @patch("tools.OcrTool.get_llm")
-    @unit
     def test_get_vision_model_response_structured(self, mock_get_llm):
         """Test get_vision_model_response with structured output"""
         from pydantic import BaseModel
@@ -736,7 +699,6 @@ class TestOcrTool(unittest.TestCase):
         mock_llm.with_structured_output.assert_called_once()
 
     @patch("tools.OcrTool.get_llm")
-    @unit
     def test_get_vision_model_response_force_compat(self, mock_get_llm):
         """Test get_vision_model_response with force_compat skips structured wrapper"""
         from pydantic import BaseModel
@@ -766,7 +728,6 @@ class TestOcrTool(unittest.TestCase):
     @patch("tools.OcrTool.read_mime")
     @patch("tools.OcrTool.get_file_path")
     @patch("tools.OcrTool.checktype")
-    @unit
     def test_ocr_tool_run_with_structured_output(
         self,
         mock_checktype,
@@ -813,7 +774,6 @@ class TestOcrTool(unittest.TestCase):
     @patch("tools.OcrTool.read_mime")
     @patch("tools.OcrTool.get_file_path")
     @patch("tools.OcrTool.checktype")
-    @unit
     def test_ocr_tool_run_with_disable_threshold(
         self,
         mock_checktype,
@@ -864,7 +824,6 @@ class TestOcrTool(unittest.TestCase):
 class TestGetLlmModel(unittest.TestCase):
     """Test suite for get_llm_model function"""
 
-    @unit
     @patch("tools.OcrTool.read_optional_env_var")
     def test_get_llm_model_with_env_var_openai(self, mock_env_var):
         """Test get_llm_model when COPILOT_OCRTOOL_MODEL env var is set with OpenAI model"""
@@ -876,7 +835,6 @@ class TestGetLlmModel(unittest.TestCase):
         self.assertEqual(provider, "openai")
         mock_env_var.assert_called_once_with("COPILOT_OCRTOOL_MODEL", None)
 
-    @unit
     @patch("tools.OcrTool.read_optional_env_var")
     def test_get_llm_model_with_env_var_gemini(self, mock_env_var):
         """Test get_llm_model when COPILOT_OCRTOOL_MODEL env var is set with Gemini model"""
@@ -888,7 +846,6 @@ class TestGetLlmModel(unittest.TestCase):
         self.assertEqual(provider, "gemini")
         mock_env_var.assert_called_once_with("COPILOT_OCRTOOL_MODEL", None)
 
-    @unit
     @patch("tools.OcrTool.get_extra_info")
     @patch("tools.OcrTool.read_optional_env_var")
     def test_get_llm_model_from_extra_info(self, mock_env_var, mock_extra_info):
@@ -910,7 +867,6 @@ class TestGetLlmModel(unittest.TestCase):
         self.assertEqual(model, "claude-3-5-sonnet")
         self.assertEqual(provider, "anthropic")
 
-    @unit
     @patch("tools.OcrTool.get_extra_info")
     @patch("tools.OcrTool.read_optional_env_var")
     def test_get_llm_model_from_extra_info_different_agent(
@@ -940,7 +896,6 @@ class TestGetLlmModel(unittest.TestCase):
         self.assertEqual(model, "gemini-1.5-flash")
         self.assertEqual(provider, "gemini")
 
-    @unit
     @patch("tools.OcrTool.get_extra_info")
     @patch("tools.OcrTool.read_optional_env_var")
     def test_get_llm_model_defaults_when_no_config(self, mock_env_var, mock_extra_info):
@@ -953,7 +908,6 @@ class TestGetLlmModel(unittest.TestCase):
         self.assertEqual(model, "gpt-5-mini")  # DEFAULT_MODEL
         self.assertEqual(provider, "openai")  # DEFAULT_PROVIDER
 
-    @unit
     @patch("tools.OcrTool.get_extra_info")
     @patch("tools.OcrTool.read_optional_env_var")
     def test_get_llm_model_defaults_when_agent_not_in_config(
@@ -977,7 +931,6 @@ class TestGetLlmModel(unittest.TestCase):
         self.assertEqual(model, "gpt-5-mini")
         self.assertEqual(provider, "openai")
 
-    @unit
     @patch("tools.OcrTool.get_extra_info")
     @patch("tools.OcrTool.read_optional_env_var")
     def test_get_llm_model_defaults_when_tool_not_in_config(
@@ -998,7 +951,6 @@ class TestGetLlmModel(unittest.TestCase):
         self.assertEqual(model, "gpt-5-mini")
         self.assertEqual(provider, "openai")
 
-    @unit
     @patch("tools.OcrTool.get_extra_info")
     @patch("tools.OcrTool.read_optional_env_var")
     @patch("tools.OcrTool.copilot_error")
@@ -1020,7 +972,6 @@ class TestGetLlmModel(unittest.TestCase):
             "Error reading ThreadContext extra_info", str(mock_error.call_args)
         )
 
-    @unit
     @patch("tools.OcrTool.get_extra_info")
     @patch("tools.OcrTool.read_optional_env_var")
     def test_get_llm_model_handles_malformed_extra_info(
@@ -1036,7 +987,6 @@ class TestGetLlmModel(unittest.TestCase):
         self.assertEqual(model, "gpt-5-mini")
         self.assertEqual(provider, "openai")
 
-    @unit
     @patch("tools.OcrTool.get_extra_info")
     @patch("tools.OcrTool.read_optional_env_var")
     def test_get_llm_model_env_var_overrides_extra_info(
@@ -1063,7 +1013,6 @@ class TestGetLlmModel(unittest.TestCase):
         # extra_info should not even be called
         mock_extra_info.assert_not_called()
 
-    @unit
     @patch("tools.OcrTool.read_optional_env_var")
     def test_get_llm_model_with_env_var_other_providers(self, mock_env_var):
         """Test get_llm_model correctly identifies non-gemini/openai providers as openai"""

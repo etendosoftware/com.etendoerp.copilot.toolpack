@@ -2,7 +2,6 @@ import os
 
 import pytest
 from pydantic import ValidationError
-from langsmith import unit
 
 from tools import SendEmailTool
 from tools.SendEmailTool import SendEmailToolInput
@@ -13,7 +12,6 @@ except ImportError:
     HAS_RESEND = False
 
 
-@unit
 def test_send_email_smtp(mocker):
     tool = SendEmailTool()
     input_params = {
@@ -43,7 +41,6 @@ def test_send_email_smtp(mocker):
     mock_smtp_instance.sendmail.assert_called_once()
 
 
-@unit
 @pytest.mark.skipif(not HAS_RESEND, reason="resend module not available")
 def test_send_email_resend(mocker):
     tool = SendEmailTool()
@@ -74,7 +71,6 @@ def test_send_email_resend(mocker):
     )
 
 
-@unit
 def test_mail_method_not_supported(mocker):
     tool = SendEmailTool()
     input_params = {
@@ -91,7 +87,6 @@ def test_mail_method_not_supported(mocker):
     assert result["message"] == "Mail method not supported"
 
 
-@unit
 def test_invalid_input_params():
     with pytest.raises(ValidationError):
         SendEmailToolInput(
@@ -99,7 +94,59 @@ def test_invalid_input_params():
         )
 
 
-@unit
 def test_invalid_input_params2():
     with pytest.raises(ValidationError):
         SendEmailToolInput(mailto="test@example.com", html="<h1>Test Email</h1>")
+
+
+def test_smtp_connection_error(mocker):
+    tool = SendEmailTool()
+    input_params = {
+        "subject": "Test Subject",
+        "mailto": "test@example.com",
+        "html": "<h1>Test Email</h1>",
+    }
+
+    mocker.patch.dict(
+        os.environ,
+        {
+            "MAIL_METHOD": "SMTP",
+            "MAIL_FROM": "from@example.com",
+            "SMTP_PASSWORD": "password",
+        },
+    )
+
+    mocker.patch("smtplib.SMTP", side_effect=ConnectionRefusedError("Connection refused"))
+
+    result = tool.run(input_params)
+
+    assert "Error:" in result["message"]
+    assert "Connection refused" in result["message"]
+
+
+def test_smtp_missing_from_address(mocker):
+    tool = SendEmailTool()
+    input_params = {
+        "subject": "Test Subject",
+        "mailto": "test@example.com",
+        "html": "<h1>Test Email</h1>",
+    }
+
+    # MAIL_FROM not set, defaults to None
+    mocker.patch.dict(os.environ, {"MAIL_METHOD": "SMTP"}, clear=False)
+    mock_smtp = mocker.patch("smtplib.SMTP")
+    mock_smtp_instance = mock_smtp.return_value
+    mock_smtp_instance.login.side_effect = TypeError("login requires a string")
+
+    result = tool.run(input_params)
+
+    assert "Error:" in result["message"]
+
+
+def test_valid_input_schema():
+    valid = SendEmailToolInput(
+        subject="Hello", mailto="user@example.com", html="<p>Body</p>"
+    )
+    assert valid.subject == "Hello"
+    assert valid.mailto == "user@example.com"
+    assert valid.html == "<p>Body</p>"

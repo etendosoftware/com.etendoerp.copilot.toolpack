@@ -463,7 +463,7 @@ def get_vision_model_response(
         provider = "gemini"
     else:
         provider = None
-    
+
     llm = get_llm(provider=provider, model=model_name, temperature=1)
 
     # If caller explicitly requests compatibility-mode, skip the structured
