@@ -2,7 +2,11 @@ import base64
 import os
 from typing import Type, Optional, Dict
 
-from copilot.core.utils.etendo_utils import call_webhook, get_etendo_host, get_etendo_token
+from copilot.core.utils.etendo_utils import (
+    call_webhook,
+    get_etendo_host,
+    get_etendo_token,
+)
 from copilot.core.tool_input import ToolInput, ToolField
 from copilot.core.tool_wrapper import ToolWrapper
 from copilot.baseutils.logging_envvar import copilot_debug

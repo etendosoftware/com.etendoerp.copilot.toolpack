@@ -3,8 +3,10 @@ from typing import Dict, Type
 
 from langsmith import traceable
 
+from copilot.baseutils.logging_envvar import read_optional_env_var
 from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import ToolWrapper
+
 
 class WriteFileToolInput(ToolInput):
     filepath: str = ToolField(
@@ -19,6 +21,7 @@ class WriteFileToolInput(ToolInput):
     lineno: int = ToolField(
         default=-1, description="""The line number where to write the content."""
     )
+
 
 class WriteFileTool(ToolWrapper):
     name: str = "WriteFileTool"
@@ -36,7 +39,7 @@ class WriteFileTool(ToolWrapper):
 
     @traceable
     def run(self, input_params: Dict, *args, **kwargs):
-        chmod_env_value = os.getenv("COPILOT_WRITE_RULE")
+        chmod_env_value = read_optional_env_var("copilot.write.rule", None)
         p_filepath = input_params.get("filepath")
         p_content = input_params.get("content")
         p_lineno = input_params.get("lineno", -1)

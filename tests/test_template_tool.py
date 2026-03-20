@@ -1,12 +1,10 @@
 import pytest
-from langsmith import unit
 
 from tools import TemplateTool
 
 TWO_INPUT_RESPONSE = "Input1: value1, Input2: value2"
 
 
-@unit
 def test_template_tool_with_json_input():
     tool = TemplateTool()
     input_data = {"input1": "value1", "input2": "value2"}
@@ -17,7 +15,6 @@ def test_template_tool_with_json_input():
     assert result["message"] == expected_message
 
 
-@unit
 def test_template_tool_with_string_input():
     tool = TemplateTool()
     input_data = '{"input1": "value1", "input2": "value2"}'
@@ -28,7 +25,6 @@ def test_template_tool_with_string_input():
     assert result["message"] == expected_message
 
 
-@unit
 def test_template_tool_with_missing_input():
     tool = TemplateTool()
     input_data = {"input1": "value1"}
@@ -39,7 +35,6 @@ def test_template_tool_with_missing_input():
     assert result["message"] == expected_message
 
 
-@unit
 def test_template_tool_with_extra_parameters():
     tool = TemplateTool()
     input_data = {"input1": "value1", "input2": "value2", "extra_param": "extra_value"}
@@ -50,7 +45,6 @@ def test_template_tool_with_extra_parameters():
     assert result["message"] == expected_message
 
 
-@unit
 def test_template_tool_with_invalid_json():
     tool = TemplateTool()
     input_data = "Invalid JSON string"
