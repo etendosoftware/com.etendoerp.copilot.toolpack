@@ -57,7 +57,6 @@ public class WebhooksTests extends WeldBaseTest {
   public static final String AGENTS = "agents";
   public static final String MESSAGE = "message";
   public static final String MODE = "Mode";
-  public static final String QUERY = "Query";
   public static final String TABLE = "Table";
   public static final String TOKEN = "token";
   public static final String TEST_RECORD_ID = "testRecordId";
