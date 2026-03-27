@@ -11,7 +11,10 @@ from tools.TaskCreatorTool import (
     process_zip,
     process_csv,
     process_xls,
+    process_csv_grouped,
+    process_xls_grouped,
     process_file,
+    read_groupby_param_values,
     get_or_create_task_type,
     get_or_create_status,
     send_taskapi_request,
@@ -171,10 +174,112 @@ def test_task_creator_tool_run_creates_tasks(monkeypatch):
 
 
 def test_task_creator_tool_run_propagates_error(monkeypatch):
-    def _raise(p):
+    def _raise(p, g=None):
         raise RuntimeError("boom")
 
     monkeypatch.setattr(tc, "process_file", _raise)
     tool = TaskCreatorTool()
+    out = tool.run({"question": "x", "file_path": "doesnotmatter"})
+    assert "error" in out
+    assert "Unexpected error creating tasks: boom" in out["error"]
+
+
+def test_task_creator_tool_run_generates_uuid_if_no_conversation_id(monkeypatch):
+    monkeypatch.setattr(tc, "process_file", lambda p, g=None: ["item"])
+    monkeypatch.setattr(
+        tc, "send_taskapi_request", lambda *a, **k: FakeResp(200, {"ok": True})
+    )
+    monkeypatch.setattr(tc, "get_etendo_host", lambda: "h")
+    monkeypatch.setattr(tc, "get_etendo_token", lambda: "t")
+
+    # Mock ThreadContext to return None for conversation_id
+    class DummyTC:
+        @staticmethod
+        def get_data(k):
+            return None
+
+    monkeypatch.setattr(tc, "ThreadContext", DummyTC)
+
+    tool = TaskCreatorTool()
+    out = tool.run({"question": "Do it", "file_path": "ignored"})
+    # The message should contain a UUID since conversation_id was None
+    assert "group id: " in out["message"]
+    # Check if it's a valid UUID string (approximately)
+    group_id = out["message"].split("group id: ")[1]
+    import uuid
+
+    try:
+        uuid.UUID(group_id)
+    except ValueError:
+        pytest.fail(f"Generated group_id {group_id} is not a valid UUID")
+
+
+def test_process_csv_grouped(tmp_path):
+    csv_file = tmp_path / "grouped.csv"
+    csv_file.write_text("cat,val\nA,1\nA,2\nB,3\n", encoding="utf-8")
+
+    # Group by 'cat'
+    groups = process_csv_grouped(str(csv_file), ["cat"])
+    assert len(groups) == 2
+    # One group for 'A', one for 'B'
+    # The result is a list of JSON strings
+    import json
+
+    data0 = json.loads(groups[0])
+    data1 = json.loads(groups[1])
+
+    # Check if 'A' group has 2 items and 'B' group has 1 item
+    if data0[0]["cat"] == "A":
+        assert len(data0) == 2
+        assert len(data1) == 1
+    else:
+        assert len(data0) == 1
+        assert len(data1) == 2
+
+
+def test_process_xls_grouped(tmp_path, monkeypatch):
+    import json
+
+    df = pd.DataFrame({"cat": ["A", "A", "B"], "val": [1, 2, 3]})
+    monkeypatch.setattr(pd, "read_excel", lambda *a, **k: df)
+
+    groups = process_xls_grouped("fake.xlsx", ["cat"])
+    assert len(groups) == 2
+    data0 = json.loads(groups[0])
+    # pandas groupby order might vary, but usually it follows appearance or sorted
+    assert len(data0) in [1, 2]
+
+
+def test_read_groupby_param_values():
+    # Test list
+    assert read_groupby_param_values(["col1", "col2"]) == ["col1", "col2"]
+    # Test string
+    assert read_groupby_param_values("col1, col2") == ["col1", "col2"]
+    # Test empty/None
+    assert read_groupby_param_values(None) is None
+    assert read_groupby_param_values([]) is None
+    # Test invalid
     with pytest.raises(tc.ToolException):
-        tool.run({"question": "x", "file_path": "doesnotmatter"})
+        read_groupby_param_values(123)
+
+
+def test_task_creator_tool_run_with_groupby(monkeypatch):
+    monkeypatch.setattr(tc, "process_file", lambda p, g: ["group1", "group2"])
+    monkeypatch.setattr(
+        tc, "send_taskapi_request", lambda *a, **k: FakeResp(200, {"ok": True})
+    )
+    monkeypatch.setattr(tc, "get_etendo_host", lambda: "h")
+    monkeypatch.setattr(tc, "get_etendo_token", lambda: "t")
+
+    tool = TaskCreatorTool()
+
+    # Mock ThreadContext
+    class DummyTC:
+        @staticmethod
+        def get_data(k):
+            return "CID"
+
+    monkeypatch.setattr(tc, "ThreadContext", DummyTC)
+
+    out = tool.run({"question": "Q", "file_path": "f.csv", "groupby": ["col1"]})
+    assert "CID" in out["message"]
