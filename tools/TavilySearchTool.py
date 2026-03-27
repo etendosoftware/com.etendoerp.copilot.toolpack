@@ -1,8 +1,8 @@
-import os
-from typing import Type, Dict
+from typing import Dict, Type
 
 from langchain_community.tools.tavily_search import TavilySearchResults
 
+from copilot.baseutils.logging_envvar import read_optional_env_var
 from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import ToolWrapper
 
@@ -30,7 +30,9 @@ class TavilySearchTool(ToolWrapper):
         super().__init__()
 
     def run(self, input_params: Dict, *args, **kwargs) -> dict:
-        query = input_params.get("searchquery")
-        os.environ["TAVILY_API_KEY"] = os.getenv("TAVILY_API_KEY", "")
-        tool = TavilySearchResults()
+        query = input_params.get("query")
+
+        tool = TavilySearchResults(
+            tavily_api_key=read_optional_env_var("tavily.api.key", None),
+        )
         return tool.invoke({"query": query})
