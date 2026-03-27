@@ -55,6 +55,10 @@ public class WebhooksTests extends WeldBaseTest {
   public static final String AD_TAB_ID = "ADTabId";
   public static final String AGENTS = "agents";
   public static final String MESSAGE = "message";
+  public static final String MODE = "Mode";
+  public static final String QUERY = "Query";
+  public static final String TABLE = "Table";
+  public static final String TOKEN = "token";
   public static final String TEST_RECORD_ID = "testRecordId";
   public static final String TEST_FILE_NAME = "test.txt";
   public static final String TEST_BASE64_CONTENT = "SGVsbG8gV29ybGQ="; // Base64 for "Hello World"
@@ -102,22 +106,22 @@ public class WebhooksTests extends WeldBaseTest {
     Map<String, String> respVars;
 
     // Test SHOW_TABLES mode
-    parameter.put("Mode", "SHOW_TABLES");
+    parameter.put(MODE, "SHOW_TABLES");
     respVars = new HashMap<>();
     ex.get(parameter, respVars);
     assertFalse(respVars.isEmpty());
 
     // Test SHOW_COLUMNS mode
-    parameter.put("Mode", "SHOW_COLUMNS");
-    parameter.put("Table", "C_BPartner");
+    parameter.put(MODE, "SHOW_COLUMNS");
+    parameter.put(TABLE, "C_BPartner");
     respVars = new HashMap<>();
     ex.get(parameter, respVars);
     assertFalse(respVars.isEmpty());
 
     // Test EXEC mode with a query that should fail
     try {
-      parameter.put("Mode", "EXEC");
-      parameter.put("Query", "SELECT * FROM ad_field");
+      parameter.put(MODE, "EXEC");
+      parameter.put(QUERY, "SELECT * FROM ad_field");
       respVars = new HashMap<>();
       ex.get(parameter, respVars);
     } catch (Exception e) {
@@ -126,8 +130,8 @@ public class WebhooksTests extends WeldBaseTest {
     }
 
     // Test EXEC mode with a valid query
-    parameter.put("Mode", "EXEC");
-    parameter.put("Query", "SELECT * FROM ad_field af");
+    parameter.put(MODE, "EXEC");
+    parameter.put(QUERY, "SELECT * FROM ad_field af");
     respVars = new HashMap<>();
     ex.get(parameter, respVars);
     assertFalse(respVars.isEmpty());
@@ -394,7 +398,7 @@ public class WebhooksTests extends WeldBaseTest {
   public void execSQLNoQuery() {
     ExecSQL ex = new ExecSQL();
     Map<String, String> parameter = new HashMap<>();
-    parameter.put("Mode", "EXEC");
+    parameter.put(MODE, "EXEC");
     // No Query parameter
     Map<String, String> respVars = new HashMap<>();
     ex.get(parameter, respVars);
@@ -409,7 +413,7 @@ public class WebhooksTests extends WeldBaseTest {
   public void execSQLShowColumnsNoTable() {
     ExecSQL ex = new ExecSQL();
     Map<String, String> parameter = new HashMap<>();
-    parameter.put("Mode", "SHOW_COLUMNS");
+    parameter.put(MODE, "SHOW_COLUMNS");
     // No Table parameter
     Map<String, String> respVars = new HashMap<>();
     ex.get(parameter, respVars);
@@ -424,8 +428,8 @@ public class WebhooksTests extends WeldBaseTest {
   public void execSQLNonSelectStatement() {
     ExecSQL ex = new ExecSQL();
     Map<String, String> parameter = new HashMap<>();
-    parameter.put("Mode", "EXEC");
-    parameter.put("Query", "INSERT INTO ad_field (ad_field_id) VALUES ('test')");
+    parameter.put(MODE, "EXEC");
+    parameter.put(QUERY, "INSERT INTO ad_field (ad_field_id) VALUES ('test')");
     Map<String, String> respVars = new HashMap<>();
     ex.get(parameter, respVars);
     assertTrue(respVars.containsKey(ERROR));
@@ -439,8 +443,8 @@ public class WebhooksTests extends WeldBaseTest {
   public void execSQLInaccessibleTable() {
     ExecSQL ex = new ExecSQL();
     Map<String, String> parameter = new HashMap<>();
-    parameter.put("Mode", "EXEC");
-    parameter.put("Query", "SELECT * FROM nonexistent_table nt");
+    parameter.put(MODE, "EXEC");
+    parameter.put(QUERY, "SELECT * FROM nonexistent_table nt");
     Map<String, String> respVars = new HashMap<>();
     ex.get(parameter, respVars);
     assertTrue(respVars.containsKey(ERROR));
@@ -456,7 +460,7 @@ public class WebhooksTests extends WeldBaseTest {
     Map<String, String> parameter = new HashMap<>();
     Map<String, String> respVars = new HashMap<>();
     rot.get(parameter, respVars);
-    assertTrue(respVars.containsKey("token"));
+    assertTrue(respVars.containsKey(TOKEN));
   }
 
   /**
@@ -471,7 +475,7 @@ public class WebhooksTests extends WeldBaseTest {
     // No items or entityName
     ss.get(parameter, respVars);
     assertTrue(respVars.containsKey(ERROR));
-    assertTrue(respVars.get(ERROR).contains("Missing required parameters"));
+    assertTrue(respVars.get(ERROR).contains(MISSING_PARAMS));
   }
 
   /**
