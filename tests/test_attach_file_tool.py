@@ -63,10 +63,15 @@ class TestAttachFileTool(unittest.TestCase):
             self.assertIn("No access token provided", str(e))
 
 
+    @patch("os.access", return_value=True)
     @patch("os.path.isfile", return_value=False)
-    def test_run_file_not_found(self, mock_isfile):
+    def test_run_file_not_found(self, mock_isfile, mock_access):
         result = AttachFileTool().run(self.valid_input)
         self.assertEqual(result, {"error": "File does not exist or is not accessible"})
+        # When the file doesn't exist, isfile is called for all 3 path variants
+        self.assertEqual(mock_isfile.call_count, 3)
+        # os.access is never reached due to short-circuit evaluation
+        mock_access.assert_not_called()
 
 
 class TestGetHeaders(unittest.TestCase):

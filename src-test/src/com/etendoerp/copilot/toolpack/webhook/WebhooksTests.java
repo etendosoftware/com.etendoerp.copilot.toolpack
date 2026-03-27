@@ -33,9 +33,11 @@ import org.openbravo.dal.core.OBContext;
 import org.openbravo.dal.service.OBDal;
 import org.openbravo.test.base.TestConstants;
 
+import com.etendoerp.copilot.toolpack.SqlToHqlInitializer;
 import com.etendoerp.copilot.toolpack.webhooks.AttachFileWebhook;
 import com.etendoerp.copilot.toolpack.webhooks.ExecSQL;
 import com.etendoerp.copilot.toolpack.webhooks.GetAvailableAgents;
+import com.etendoerp.copilot.toolpack.webhooks.ReadOAuthToken;
 import com.etendoerp.copilot.toolpack.webhooks.SimSearch;
 
 /**
@@ -359,6 +361,135 @@ public class WebhooksTests extends WeldBaseTest {
       // Expected for test environment without proper setup
       assertNotNull(e);
     }
+  }
+
+  /**
+   * Tests that storeBase64ToTempFile handles invalid base64 content gracefully.
+   * The method should return null when decoding fails.
+   */
+  @Test
+  public void storeBase64ToTempFileInvalidBase64() {
+    AttachFileWebhook afw = new AttachFileWebhook();
+    File result = afw.storeBase64ToTempFile("!!!invalid-base64!!!", TEST_FILE_NAME);
+    assertNull(result);
+  }
+
+  /**
+   * Tests that SqlToHqlInitializer registers the expected SQL functions.
+   */
+  @Test
+  public void sqlToHqlInitializerRegistersFunction() {
+    SqlToHqlInitializer initializer = new SqlToHqlInitializer();
+    Map<String, ?> functions = initializer.getSQLFunctions();
+    assertNotNull(functions);
+    assertFalse(functions.isEmpty());
+    assertTrue(functions.containsKey("etcotp_sim_search"));
+  }
+
+  /**
+   * Tests ExecSQL in EXEC mode with no query provided.
+   * Should return an error message.
+   */
+  @Test
+  public void execSQLNoQuery() {
+    ExecSQL ex = new ExecSQL();
+    Map<String, String> parameter = new HashMap<>();
+    parameter.put("Mode", "EXEC");
+    // No Query parameter
+    Map<String, String> respVars = new HashMap<>();
+    ex.get(parameter, respVars);
+    assertTrue(respVars.containsKey(ERROR));
+  }
+
+  /**
+   * Tests ExecSQL in SHOW_COLUMNS mode with no table provided.
+   * Should return an error message.
+   */
+  @Test
+  public void execSQLShowColumnsNoTable() {
+    ExecSQL ex = new ExecSQL();
+    Map<String, String> parameter = new HashMap<>();
+    parameter.put("Mode", "SHOW_COLUMNS");
+    // No Table parameter
+    Map<String, String> respVars = new HashMap<>();
+    ex.get(parameter, respVars);
+    assertTrue(respVars.containsKey(ERROR));
+  }
+
+  /**
+   * Tests ExecSQL with a non-SELECT statement (INSERT).
+   * Should throw an OBException.
+   */
+  @Test
+  public void execSQLNonSelectStatement() {
+    ExecSQL ex = new ExecSQL();
+    Map<String, String> parameter = new HashMap<>();
+    parameter.put("Mode", "EXEC");
+    parameter.put("Query", "INSERT INTO ad_field (ad_field_id) VALUES ('test')");
+    Map<String, String> respVars = new HashMap<>();
+    ex.get(parameter, respVars);
+    assertTrue(respVars.containsKey(ERROR));
+  }
+
+  /**
+   * Tests ExecSQL with a query that references a non-existent table.
+   * Should return an error about the table not being accessible.
+   */
+  @Test
+  public void execSQLInaccessibleTable() {
+    ExecSQL ex = new ExecSQL();
+    Map<String, String> parameter = new HashMap<>();
+    parameter.put("Mode", "EXEC");
+    parameter.put("Query", "SELECT * FROM nonexistent_table nt");
+    Map<String, String> respVars = new HashMap<>();
+    ex.get(parameter, respVars);
+    assertTrue(respVars.containsKey(ERROR));
+  }
+
+  /**
+   * Tests the ReadOAuthToken webhook.
+   * Should execute without error and return a token key (possibly null if no token exists).
+   */
+  @Test
+  public void readOAuthToken() {
+    ReadOAuthToken rot = new ReadOAuthToken();
+    Map<String, String> parameter = new HashMap<>();
+    Map<String, String> respVars = new HashMap<>();
+    rot.get(parameter, respVars);
+    assertTrue(respVars.containsKey("token"));
+  }
+
+  /**
+   * Tests SimSearch with missing required parameters.
+   * Should return an error message.
+   */
+  @Test
+  public void simSearchMissingParams() {
+    SimSearch ss = new SimSearch();
+    Map<String, String> parameter = new HashMap<>();
+    Map<String, String> respVars = new HashMap<>();
+    // No items or entityName
+    ss.get(parameter, respVars);
+    assertTrue(respVars.containsKey(ERROR));
+    assertTrue(respVars.get(ERROR).contains("Missing required parameters"));
+  }
+
+  /**
+   * Tests SimSearch with an invalid entity name.
+   * Should return an error or empty results.
+   */
+  @Test
+  public void simSearchInvalidEntity() throws Exception {
+    SimSearch ss = new SimSearch();
+    Map<String, String> parameter = new HashMap<>();
+    var items = new JSONArray();
+    items.put("test_search");
+    parameter.put("items", items.toString());
+    parameter.put("entityName", "NonExistentEntity");
+    Map<String, String> respVars = new HashMap<>();
+    ss.get(parameter, respVars);
+    // Should have a message with unprocessable entity status
+    assertTrue(respVars.containsKey(MESSAGE) || respVars.containsKey(ERROR));
   }
 
   /**
