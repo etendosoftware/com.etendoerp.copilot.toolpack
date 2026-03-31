@@ -23,9 +23,12 @@ from tools.schemas import list_available_schemas, load_schema
 
 DEFAULT_MODEL = "gpt-5-mini"
 DEFAULT_PROVIDER = "openai"
-# Default PDF rendering scale (3.0 = ~300 DPI, 4.0 = ~400 DPI)
-# Higher values = better quality but larger file size and slower processing
-DEFAULT_PDF_RENDER_SCALE = 3.0
+# Default PDF rendering scale (2.0 = ~200 DPI)
+DEFAULT_PDF_RENDER_SCALE = 2.0
+# Maximum image dimension (longest side) before sending to vision LLM
+MAX_IMAGE_DIMENSION = 2048
+DEFAULT_JPEG_QUALITY = 70
+DEFAULT_OCR_TEMPERATURE = 0.2
 
 GET_JSON_PROMPT: Final[
     str
@@ -147,10 +150,11 @@ def get_image_payload_item(img_b64, mime, provider):
             "image_url": {"url": f"data:{mime};base64,{img_b64}"},
         }
     else:
-        # OpenAI format - includes "detail" field
+        # OpenAI format - "auto" lets the model choose tiling vs single-tile
+        # based on image size, balancing speed and quality
         return {
             "type": "image_url",
-            "image_url": {"url": f"data:{mime};base64,{img_b64}", "detail": "high"},
+            "image_url": {"url": f"data:{mime};base64,{img_b64}", "detail": "auto"},
         }
 
 
@@ -227,7 +231,29 @@ def image_to_base64(image_path):
         return base64_encoded
 
 
-def pil_image_to_base64(pil_image, format="JPEG", quality=85):
+def resize_if_needed(pil_image, max_dim=MAX_IMAGE_DIMENSION):
+    """Resize image proportionally if it exceeds max_dim on its longest side.
+
+    Args:
+        pil_image: PIL Image object
+        max_dim: Maximum dimension for the longest side
+
+    Returns:
+        PIL Image: Resized image (or original if already within bounds)
+    """
+    w, h = pil_image.size
+    longest = max(w, h)
+    if longest > max_dim:
+        scale_factor = max_dim / longest
+        new_w = int(w * scale_factor)
+        new_h = int(h * scale_factor)
+        from PIL import Image
+        pil_image = pil_image.resize((new_w, new_h), Image.LANCZOS)
+        copilot_debug(f"Resized image from {w}x{h} to {new_w}x{new_h}")
+    return pil_image
+
+
+def pil_image_to_base64(pil_image, format="JPEG", quality=DEFAULT_JPEG_QUALITY):
     """Converts a PIL Image directly to base64 without saving to disk.
 
     This is much faster than saving to disk and reading back.
@@ -242,6 +268,7 @@ def pil_image_to_base64(pil_image, format="JPEG", quality=85):
     """
     import io
 
+    pil_image = resize_if_needed(pil_image)
     buffer = io.BytesIO()
     pil_image.save(buffer, format=format, quality=quality, optimize=True)
     buffer.seek(0)
@@ -287,7 +314,7 @@ def recopile_files(
 
             # OPTIMIZATION: Convert directly to base64 in memory without disk I/O
             # This is much faster than saving to disk and reading back
-            base64_str = pil_image_to_base64(pil_image, format="JPEG", quality=85)
+            base64_str = pil_image_to_base64(pil_image, format="JPEG", quality=DEFAULT_JPEG_QUALITY)
             base64_images.append(base64_str)
 
     elif mime not in [SUPPORTED_MIME_FORMATS["JPEG"], SUPPORTED_MIME_FORMATS["JPG"]]:
@@ -298,7 +325,7 @@ def recopile_files(
         img = img.convert("RGB")
 
         # OPTIMIZATION: Convert directly to base64 in memory without disk I/O
-        base64_str = pil_image_to_base64(img, format="JPEG", quality=85)
+        base64_str = pil_image_to_base64(img, format="JPEG", quality=DEFAULT_JPEG_QUALITY)
         base64_images.append(base64_str)
     else:
         base64_images.append(image_to_base64(ocr_image_url))
@@ -464,7 +491,7 @@ def get_vision_model_response(
     else:
         provider = None
 
-    llm = get_llm(provider=provider, model=model_name, temperature=1)
+    llm = get_llm(provider=provider, model=model_name, temperature=DEFAULT_OCR_TEMPERATURE)
 
     # If caller explicitly requests compatibility-mode, skip the structured
     # wrapper and perform an unstructured invocation. The caller is expected
@@ -604,7 +631,7 @@ class OcrTool(ToolWrapper):
                 # Decode base64 back to image just for search
                 img_data = base64.b64decode(base64_images[0])
                 img = Image.open(io.BytesIO(img_data))
-                img.save(temp_search_file, "JPEG", quality=85, optimize=True)
+                img.save(temp_search_file, "JPEG", quality=DEFAULT_JPEG_QUALITY, optimize=True)
                 first_image_for_search = temp_search_file
                 filenames_to_delete.append(temp_search_file)
             else:
