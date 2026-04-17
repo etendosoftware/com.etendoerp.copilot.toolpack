@@ -136,7 +136,7 @@ class TestIsGemini(unittest.TestCase):
 class TestModelId(unittest.TestCase):
     def test_prefixed_when_proxy(self):
         self.assertEqual(
-            _model_id("openai", "gpt-5-mini", "http://proxy"),
+            _model_id("openai", "gpt-5-mini", "https://proxy"),
             "openai/gpt-5-mini",
         )
 
@@ -199,7 +199,7 @@ class TestCallOpenAI(unittest.TestCase):
         client = MagicMock()
         response = MagicMock(output_text="result")
         client.responses.create.return_value = response
-        mock_get_client.return_value = (client, "http://proxy")
+        mock_get_client.return_value = (client, "https://proxy")
 
         out = _call_openai(
             "gpt-5-mini", "openai", "sys", "q",
@@ -253,7 +253,7 @@ class TestCallGemini(unittest.TestCase):
         client.chat.completions.create.return_value = MagicMock(
             choices=[MagicMock(message=msg)]
         )
-        mock_get_client.return_value = (client, "http://proxy")
+        mock_get_client.return_value = (client, "https://proxy")
 
         out = _call_gemini(
             "gemini-2.0", "gemini", "sys", "q",
