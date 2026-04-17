@@ -76,9 +76,13 @@ class TestResolveFilePath(unittest.TestCase):
         finally:
             os.unlink(tmp_path)
 
-    def test_raises_when_file_missing(self):
+    @patch("tools.SimpleOcrTool.Path")
+    def test_raises_when_file_missing(self, mock_path_cls):
+        obj = MagicMock()
+        obj.is_file.return_value = False
+        mock_path_cls.return_value = obj
         with self.assertRaises(FileNotFoundError):
-            _resolve_file_path("/no/such/file.pdf")
+            _resolve_file_path("/definitely-not-on-disk.pdf")
 
     def test_joins_prefix_safely_even_with_leading_slash(self):
         """Regression: '/app' + '/x.pdf' must become '/app/x.pdf', not '/appx.pdf'."""
@@ -315,10 +319,10 @@ class TestSimpleOcrTool(unittest.TestCase):
 
             self.assertEqual(out, "openai-result")
             mock_validate.assert_called_once_with(tmp_path, "application/pdf")
-            call_args = mock_openai.call_args.args
-            self.assertEqual(call_args[0], "gpt-5-mini")
-            self.assertEqual(call_args[4], b"hello")
-            self.assertIsNone(call_args[6])
+            mock_openai.assert_called_once_with(
+                "gpt-5-mini", "openai", SYSTEM_PROMPT, "q",
+                b"hello", "application/pdf", None,
+            )
         finally:
             os.unlink(tmp_path)
 
@@ -374,7 +378,10 @@ class TestSimpleOcrTool(unittest.TestCase):
 
             self.assertEqual(out, "structured")
             mock_load_schema.assert_called_once_with("Invoice")
-            self.assertIs(mock_openai.call_args.args[6], _FakeSchema)
+            mock_openai.assert_called_once_with(
+                "gpt-5-mini", "openai", SYSTEM_PROMPT, "q",
+                b"x", "application/pdf", _FakeSchema,
+            )
         finally:
             os.unlink(tmp_path)
 
