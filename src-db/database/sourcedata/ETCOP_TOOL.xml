@@ -757,10 +757,13 @@
           "type": "string"
         },
         "structured_output": {
+          "anyOf": [
+            {"type": "string"},
+            {"type": "null"}
+          ],
           "default": null,
           "description": "Schema name for structured output (e.g., 'Invoice'). Schemas are loaded from tools\/schemas\/. Leave None for unstructured JSON extraction.",
-          "title": "Structured Output",
-          "type": "string"
+          "title": "Structured Output"
         }
       }
     }

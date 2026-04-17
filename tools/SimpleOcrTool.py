@@ -5,11 +5,12 @@ Supports OpenAI (Responses API) and Gemini (Chat Completions via litellm).
 """
 
 import base64
+import os
 import time
 from pathlib import Path
-from typing import Type
+from typing import Optional, Type
 
-from copilot.baseutils.logging_envvar import copilot_debug, copilot_debug
+from copilot.baseutils.logging_envvar import copilot_debug
 from copilot.core.tool_input import ToolField, ToolInput
 from copilot.core.tool_wrapper import ToolWrapper
 from copilot.core.utils.etendo_utils import get_extra_info
@@ -49,7 +50,7 @@ class SimpleOcrToolInput(ToolInput):
             "from the document. Be precise about the data fields needed."
         )
     )
-    structured_output: str = ToolField(
+    structured_output: Optional[str] = ToolField(
         default=None,
         description=(
             "Schema name for structured output (e.g., 'Invoice'). "
@@ -62,7 +63,7 @@ class SimpleOcrToolInput(ToolInput):
 def _resolve_file_path(rel_path):
     """Resolve a relative path to an existing file on disk."""
     for prefix in ("/app", "..", ""):
-        candidate = prefix + rel_path if prefix else rel_path
+        candidate = os.path.join(prefix, rel_path.lstrip("/")) if prefix else rel_path
         if Path(candidate).is_file():
             return candidate
     raise FileNotFoundError(f"File not found: {rel_path}")
