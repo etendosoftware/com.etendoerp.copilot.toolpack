@@ -54,5 +54,5 @@ repositories {
 dependencies {
     implementation('com.etendoerp:copilot:3.1.0')
     implementation('com.github.jsqlparser:jsqlparser:5.1')
-    implementation('com.etendoerp.platform:etendo-core:[26.1.0,26.2.0)')
+    implementation('com.etendoerp.platform:etendo-core:[27.1.0,27.2.0)')
 }

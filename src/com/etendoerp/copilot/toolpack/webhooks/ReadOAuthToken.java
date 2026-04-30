@@ -3,7 +3,7 @@ package com.etendoerp.copilot.toolpack.webhooks;
 import java.util.Date;
 import java.util.Map;
 
-import org.hibernate.criterion.Restrictions;
+import org.openbravo.dal.service.Restrictions;
 import org.openbravo.dal.service.OBDal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
