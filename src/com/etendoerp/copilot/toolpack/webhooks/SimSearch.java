@@ -111,9 +111,8 @@ public class SimSearch extends BaseWebhookService {
 
     WSResult wsResult = new WSResult();
     JSONArray arrayResponse;
-    String whereOrderByClause2 = String.format(
-        " as p where  etcotp_sim_search(:tableName, p.id, :searchTerm) > %s order by etcotp_sim_search(:tableName, p.id, :searchTerm) desc ",
-        Integer.parseInt(minSimilarityPercent));
+    String whereOrderByClause2 = " as p where function('etcotp_sim_search', :tableName, p.id, :searchTerm) > :minSimilarityPercent "
+        + "order by function('etcotp_sim_search', :tableName, p.id, :searchTerm) desc ";
     Set<Entity> readableEntities = OBContext.getOBContext().getEntityAccessChecker().getReadableEntities();
     Entity entity = readableEntities.stream().filter(e -> e.getName().equals(entityName)).findFirst().orElse(
         null);
@@ -124,7 +123,7 @@ public class SimSearch extends BaseWebhookService {
     }
     Class<? extends BaseOBObject> entityClass = Class.forName(entity.getClassName()).asSubclass(BaseOBObject.class);
     arrayResponse = searchEntities(whereOrderByClause2, result.searchTerm, qtyResults,
-        entityClass, entity.getTableName()
+        entityClass, entity.getTableName(), new BigDecimal(minSimilarityPercent)
     );
     wsResult.setStatus(Status.OK);
     wsResult.setData(arrayResponse);
@@ -180,12 +179,14 @@ public class SimSearch extends BaseWebhookService {
    *     If an error occurs while processing the JSON data.
    */
   private static <T extends BaseOBObject> JSONArray searchEntities(String whereOrderByClause2,
-      String searchTerm, int qtyResults, Class<T> entityClass, String tableName) throws JSONException {
+      String searchTerm, int qtyResults, Class<T> entityClass, String tableName,
+      BigDecimal minSimilarityPercent) throws JSONException {
 
     OBQuery<T> searchQuery = OBDal.getInstance().createQuery(entityClass, whereOrderByClause2);
 
     searchQuery.setNamedParameter("tableName", StringUtils.lowerCase(tableName));
     searchQuery.setNamedParameter("searchTerm", searchTerm);
+    searchQuery.setNamedParameter("minSimilarityPercent", minSimilarityPercent);
     searchQuery.setMaxResult(qtyResults);
     var resultList = searchQuery.list();
     JSONArray arrayResponse = new JSONArray();
