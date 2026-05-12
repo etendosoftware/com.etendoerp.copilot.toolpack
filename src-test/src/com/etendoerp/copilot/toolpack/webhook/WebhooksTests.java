@@ -228,6 +228,92 @@ public class WebhooksTests extends WeldBaseTest {
   }
 
   /**
+   * Verifies handleSimSearch returns UNPROCESSABLE_ENTITY for an entity name that doesn't exist
+   * or isn't readable, without throwing.
+   */
+  @Test
+  public void simSearchUnknownEntity() throws Exception {
+    var result = SimSearch.handleSimSearch("anything", "NonExistentEntity_xyz", 1, "30");
+    assertNotNull(result);
+    assertEquals("UNPROCESSABLE_ENTITY", result.getStatus().name());
+  }
+
+  /**
+   * Missing required parameters should produce an error response, not a crash.
+   */
+  @Test
+  public void simSearchMissingParams() {
+    SimSearch ss = new SimSearch();
+    Map<String, String> respVars = new HashMap<>();
+    ss.get(new HashMap<>(), respVars);
+    assertTrue(respVars.containsKey(ERROR));
+    assertTrue(respVars.get(ERROR).contains(MISSING_PARAMS));
+  }
+
+  /**
+   * Indexed fast path against ADTable (single String identifier "Name"). Score formatting
+   * must contain a "%" suffix and id/name fields must be populated.
+   */
+  @Test
+  public void simSearchIndexedPathSingleColumnIdentifier() throws Exception {
+    var items = new JSONArray();
+    items.put("c_order");
+    Map<String, String> parameter = new HashMap<>();
+    parameter.put("items", items.toString());
+    parameter.put("entityName", "ADTable");
+    parameter.put("minSimPercent", "10");
+    Map<String, String> respVars = new HashMap<>();
+    new SimSearch().get(parameter, respVars);
+
+    JSONObject json = new JSONObject(respVars.get(MESSAGE));
+    JSONArray data = json.getJSONObject("item_0").getJSONArray("data");
+    assertTrue(data.length() > 0);
+    JSONObject first = data.getJSONObject(0);
+    assertTrue(first.has(ID));
+    assertTrue(first.has("name"));
+    assertTrue(first.getString("similarity_percent").endsWith("%"));
+  }
+
+  /**
+   * Multi-column string identifier (Product = Value + Name). Both columns should contribute to
+   * scoring through the indexed path without errors.
+   */
+  @Test
+  public void simSearchIndexedPathMultiColumnIdentifier() throws Exception {
+    var items = new JSONArray();
+    items.put("Product");
+    Map<String, String> parameter = new HashMap<>();
+    parameter.put("items", items.toString());
+    parameter.put("entityName", "Product");
+    parameter.put("minSimPercent", "1");
+    parameter.put("qtyResults", "5");
+    Map<String, String> respVars = new HashMap<>();
+    new SimSearch().get(parameter, respVars);
+
+    assertFalse(respVars.containsKey(ERROR));
+    JSONObject json = new JSONObject(respVars.get(MESSAGE));
+    assertTrue(json.has("item_0"));
+  }
+
+  /**
+   * minSimPercent default fallback: passing the literal string "null" must not crash and must
+   * fall back to the default threshold.
+   */
+  @Test
+  public void simSearchNullMinSimPercent() throws Exception {
+    var items = new JSONArray();
+    items.put("c_order");
+    Map<String, String> parameter = new HashMap<>();
+    parameter.put("items", items.toString());
+    parameter.put("entityName", "ADTable");
+    parameter.put("minSimPercent", "null");
+    Map<String, String> respVars = new HashMap<>();
+    new SimSearch().get(parameter, respVars);
+    assertFalse(respVars.containsKey(ERROR));
+    assertNotNull(respVars.get(MESSAGE));
+  }
+
+  /**
    * Tests the GetAvailableAgents webhook.
    * <p>
    * This test method verifies the functionality of the GetAvailableAgents webhook.
