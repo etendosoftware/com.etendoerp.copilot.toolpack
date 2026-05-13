@@ -36,6 +36,7 @@ import org.openbravo.test.base.TestConstants;
 import com.etendoerp.copilot.toolpack.webhooks.AttachFileWebhook;
 import com.etendoerp.copilot.toolpack.webhooks.ExecSQL;
 import com.etendoerp.copilot.toolpack.webhooks.GetAvailableAgents;
+import com.etendoerp.copilot.toolpack.webhooks.ReadOAuthToken;
 import com.etendoerp.copilot.toolpack.webhooks.SimSearch;
 
 /**
@@ -63,6 +64,7 @@ public class WebhooksTests extends WeldBaseTest {
   public static final String ENTITY_NAME = "entityName";
   public static final String ITEM_0 = "item_0";
   public static final String MIN_SIM_PERCENT = "minSimPercent";
+  public static final String MODE = "Mode";
   private AutoCloseable mocks;
 
   /**
@@ -137,6 +139,32 @@ public class WebhooksTests extends WeldBaseTest {
     ex.get(parameter, respVars);
     assertFalse(respVars.isEmpty());
     assertFalse(StringUtils.isEmpty(respVars.get("data")));
+  }
+
+  /**
+   * SHOW_COLUMNS without a Table parameter should return an error, not crash.
+   */
+  @Test
+  public void execSQLShowColumnsMissingTable() {
+    ExecSQL ex = new ExecSQL();
+    Map<String, String> parameter = new HashMap<>();
+    parameter.put(MODE, "SHOW_COLUMNS");
+    Map<String, String> respVars = new HashMap<>();
+    ex.get(parameter, respVars);
+    assertTrue(respVars.containsKey(ERROR));
+  }
+
+  /**
+   * EXEC mode without a Query parameter should return an error, not crash.
+   */
+  @Test
+  public void execSQLExecMissingQuery() {
+    ExecSQL ex = new ExecSQL();
+    Map<String, String> parameter = new HashMap<>();
+    parameter.put(MODE, "EXEC");
+    Map<String, String> respVars = new HashMap<>();
+    ex.get(parameter, respVars);
+    assertTrue(respVars.containsKey(ERROR));
   }
 
   /**
@@ -375,7 +403,7 @@ public class WebhooksTests extends WeldBaseTest {
     new SimSearch().get(parameter, respVars);
     assertFalse(respVars.containsKey(ERROR));
     JSONObject json = new JSONObject(respVars.get(MESSAGE));
-    assertFalse(json.has("item_0"));
+    assertFalse(json.has(ITEM_0));
     assertFalse(json.has("item_1"));
     assertTrue(json.has("item_2"));
   }
@@ -392,6 +420,20 @@ public class WebhooksTests extends WeldBaseTest {
     Map<String, String> respVars = new HashMap<>();
     ss.get(parameter, respVars);
     assertTrue(respVars.containsKey(ERROR));
+  }
+
+  /**
+   * Exercises ReadOAuthToken end-to-end. The "token" key must always be present in the response;
+   * its value may be null when no matching ETRXTokenInfo row exists in the test database, which
+   * is fine — we're verifying the webhook runs without throwing and writes the expected key.
+   */
+  @Test
+  public void readOAuthTokenWebhook() {
+    ReadOAuthToken rot = new ReadOAuthToken();
+    Map<String, String> parameter = new HashMap<>();
+    Map<String, String> respVars = new HashMap<>();
+    rot.get(parameter, respVars);
+    assertTrue(respVars.containsKey("token"));
   }
 
   /**
