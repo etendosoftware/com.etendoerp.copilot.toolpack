@@ -56,7 +56,7 @@ repositories {
 * Ex: implementation "com.sun.mail:javax.mail:1.6.2"
 */
 dependencies {
-    implementation('com.etendoerp:copilot:3.1.0')
+    implementation('com.etendoerp:copilot:3.1.1-SNAPSHOT')
     implementation('com.github.jsqlparser:jsqlparser:5.1')
     implementation('com.etendoerp.platform:etendo-core:[27.1.0,27.2.0)')
 }
