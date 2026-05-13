@@ -242,7 +242,7 @@ public class SimSearch extends BaseWebhookService {
     String sql = buildIndexedSql(tableName, pkColumn, idColumns, entity.isClientEnabled(),
         entity.isOrganizationEnabled(), useOperators);
     NativeQuery<Object[]> query = bindIndexedParameters(session, sql, tableName, searchTerm,
-        entity.isClientEnabled(), entity.isOrganizationEnabled(), minSimPercent, qtyResults);
+        entity, minSimPercent, qtyResults);
     return mapIndexedRows(query.list());
   }
 
@@ -290,14 +290,14 @@ public class SimSearch extends BaseWebhookService {
 
   @SuppressWarnings("unchecked")
   private static NativeQuery<Object[]> bindIndexedParameters(Session session, String sql, String tableName,
-      String searchTerm, boolean hasClient, boolean hasOrg, int minSimPercent, int qtyResults) {
+      String searchTerm, Entity entity, int minSimPercent, int qtyResults) {
     NativeQuery<Object[]> query = session.createNativeQuery(sql);
     query.setParameter("tn", tableName);
     query.setParameter("term", searchTerm);
-    if (hasClient) {
+    if (entity.isClientEnabled()) {
       query.setParameterList("clients", Arrays.asList(OBContext.getOBContext().getReadableClients()));
     }
-    if (hasOrg) {
+    if (entity.isOrganizationEnabled()) {
       query.setParameterList("orgs", Arrays.asList(OBContext.getOBContext().getReadableOrganizations()));
     }
     query.setParameter("minPct", minSimPercent);
@@ -312,9 +312,14 @@ public class SimSearch extends BaseWebhookService {
       json.put("id", row[0]);
       Object nameVal = row[1];
       json.put("name", nameVal == null ? "" : nameVal.toString());
-      BigDecimal score = (row[2] instanceof BigDecimal)
-          ? (BigDecimal) row[2]
-          : new BigDecimal(row[2].toString());
+      BigDecimal score;
+      if (row[2] == null) {
+        score = BigDecimal.ZERO;
+      } else if (row[2] instanceof BigDecimal) {
+        score = (BigDecimal) row[2];
+      } else {
+        score = new BigDecimal(row[2].toString());
+      }
       json.put("similarity_percent", score.setScale(4, RoundingMode.HALF_UP).toString() + "%");
       arrayResponse.put(json);
     }
@@ -363,6 +368,9 @@ public class SimSearch extends BaseWebhookService {
     query.setParameter("rid", id);
     query.setParameter("term", searchTerm);
     BigDecimal percent = query.uniqueResult();
+    if (percent == null) {
+      return BigDecimal.ZERO.setScale(4, RoundingMode.HALF_UP);
+    }
     return percent.setScale(4, RoundingMode.HALF_UP);
   }
 

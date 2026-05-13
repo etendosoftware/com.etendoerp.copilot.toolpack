@@ -57,6 +57,12 @@ public class WebhooksTests extends WeldBaseTest {
   public static final String TEST_RECORD_ID = "testRecordId";
   public static final String TEST_FILE_NAME = "test.txt";
   public static final String TEST_BASE64_CONTENT = "SGVsbG8gV29ybGQ="; // Base64 for "Hello World"
+  public static final String C_ORDER = "c_order";
+  public static final String ITEMS = "items";
+  public static final String AD_TABLE = "ADTable";
+  public static final String ENTITY_NAME = "entityName";
+  public static final String ITEM_0 = "item_0";
+  public static final String MIN_SIM_PERCENT = "minSimPercent";
   private AutoCloseable mocks;
 
   /**
@@ -208,16 +214,16 @@ public class WebhooksTests extends WeldBaseTest {
 
     // Test search with a search term and entity name
     var items = new JSONArray();
-    items.put("c_order");
-    parameter.put("items", items.toString());
-    parameter.put("entityName", "ADTable");
+    items.put(C_ORDER);
+    parameter.put(ITEMS, items.toString());
+    parameter.put(ENTITY_NAME, AD_TABLE);
     respVars = new HashMap<>();
     ss.get(parameter, respVars);
     assertFalse(respVars.isEmpty());
     assertFalse(StringUtils.isEmpty(respVars.get(MESSAGE)));
     JSONObject json = new JSONObject(respVars.get(MESSAGE));
-    assertTrue(json.has("item_0"));
-    JSONObject item0 = json.getJSONObject("item_0");
+    assertTrue(json.has(ITEM_0));
+    JSONObject item0 = json.getJSONObject(ITEM_0);
     assertTrue(item0.has("data"));
     assertTrue(item0.getJSONArray("data").length() > 0);
   }
@@ -252,16 +258,16 @@ public class WebhooksTests extends WeldBaseTest {
   @Test
   public void simSearchIndexedPathSingleColumnIdentifier() throws Exception {
     var items = new JSONArray();
-    items.put("c_order");
+    items.put(C_ORDER);
     Map<String, String> parameter = new HashMap<>();
-    parameter.put("items", items.toString());
-    parameter.put("entityName", "ADTable");
-    parameter.put("minSimPercent", "10");
+    parameter.put(ITEMS, items.toString());
+    parameter.put(ENTITY_NAME, AD_TABLE);
+    parameter.put(MIN_SIM_PERCENT, "10");
     Map<String, String> respVars = new HashMap<>();
     new SimSearch().get(parameter, respVars);
 
     JSONObject json = new JSONObject(respVars.get(MESSAGE));
-    JSONArray data = json.getJSONObject("item_0").getJSONArray("data");
+    JSONArray data = json.getJSONObject(ITEM_0).getJSONArray("data");
     assertTrue(data.length() > 0);
     JSONObject first = data.getJSONObject(0);
     assertTrue(first.has(ID));
@@ -278,16 +284,16 @@ public class WebhooksTests extends WeldBaseTest {
     var items = new JSONArray();
     items.put("Product");
     Map<String, String> parameter = new HashMap<>();
-    parameter.put("items", items.toString());
-    parameter.put("entityName", "Product");
-    parameter.put("minSimPercent", "1");
+    parameter.put(ITEMS, items.toString());
+    parameter.put(ENTITY_NAME, "Product");
+    parameter.put(MIN_SIM_PERCENT, "1");
     parameter.put("qtyResults", "5");
     Map<String, String> respVars = new HashMap<>();
     new SimSearch().get(parameter, respVars);
 
     assertFalse(respVars.containsKey(ERROR));
     JSONObject json = new JSONObject(respVars.get(MESSAGE));
-    assertTrue(json.has("item_0"));
+    assertTrue(json.has(ITEM_0));
   }
 
   /**
@@ -297,15 +303,95 @@ public class WebhooksTests extends WeldBaseTest {
   @Test
   public void simSearchNullMinSimPercent() throws Exception {
     var items = new JSONArray();
-    items.put("c_order");
+    items.put(C_ORDER);
     Map<String, String> parameter = new HashMap<>();
-    parameter.put("items", items.toString());
-    parameter.put("entityName", "ADTable");
-    parameter.put("minSimPercent", "null");
+    parameter.put(ITEMS, items.toString());
+    parameter.put(ENTITY_NAME, AD_TABLE);
+    parameter.put(MIN_SIM_PERCENT, "null");
     Map<String, String> respVars = new HashMap<>();
     new SimSearch().get(parameter, respVars);
     assertFalse(respVars.containsKey(ERROR));
     assertNotNull(respVars.get(MESSAGE));
+  }
+
+  /**
+   * Missing only entityName should still error out, not crash.
+   */
+  @Test
+  public void simSearchMissingEntityName() {
+    SimSearch ss = new SimSearch();
+    Map<String, String> parameter = new HashMap<>();
+    var items = new JSONArray();
+    items.put(C_ORDER);
+    parameter.put(ITEMS, items.toString());
+    Map<String, String> respVars = new HashMap<>();
+    ss.get(parameter, respVars);
+    assertTrue(respVars.containsKey(ERROR));
+  }
+
+  /**
+   * Missing only items should still error out, not crash.
+   */
+  @Test
+  public void simSearchMissingItems() {
+    SimSearch ss = new SimSearch();
+    Map<String, String> parameter = new HashMap<>();
+    parameter.put(ENTITY_NAME, AD_TABLE);
+    Map<String, String> respVars = new HashMap<>();
+    ss.get(parameter, respVars);
+    assertTrue(respVars.containsKey(ERROR));
+  }
+
+  /**
+   * qtyResults passed as the literal string "null" must fall back to the default without crashing.
+   */
+  @Test
+  public void simSearchNullQtyResults() throws Exception {
+    var items = new JSONArray();
+    items.put(C_ORDER);
+    Map<String, String> parameter = new HashMap<>();
+    parameter.put(ITEMS, items.toString());
+    parameter.put(ENTITY_NAME, AD_TABLE);
+    parameter.put("qtyResults", "null");
+    Map<String, String> respVars = new HashMap<>();
+    new SimSearch().get(parameter, respVars);
+    assertFalse(respVars.containsKey(ERROR));
+    assertNotNull(respVars.get(MESSAGE));
+  }
+
+  /**
+   * Blank search terms inside the items array should be skipped without producing an error.
+   */
+  @Test
+  public void simSearchBlankSearchTermSkipped() throws Exception {
+    var items = new JSONArray();
+    items.put("");
+    items.put("   ");
+    items.put(C_ORDER);
+    Map<String, String> parameter = new HashMap<>();
+    parameter.put(ITEMS, items.toString());
+    parameter.put(ENTITY_NAME, AD_TABLE);
+    Map<String, String> respVars = new HashMap<>();
+    new SimSearch().get(parameter, respVars);
+    assertFalse(respVars.containsKey(ERROR));
+    JSONObject json = new JSONObject(respVars.get(MESSAGE));
+    assertFalse(json.has("item_0"));
+    assertFalse(json.has("item_1"));
+    assertTrue(json.has("item_2"));
+  }
+
+  /**
+   * Invalid JSON in items should produce an error response, not propagate the exception.
+   */
+  @Test
+  public void simSearchInvalidItemsJson() {
+    SimSearch ss = new SimSearch();
+    Map<String, String> parameter = new HashMap<>();
+    parameter.put(ITEMS, "not-a-json-array");
+    parameter.put(ENTITY_NAME, AD_TABLE);
+    Map<String, String> respVars = new HashMap<>();
+    ss.get(parameter, respVars);
+    assertTrue(respVars.containsKey(ERROR));
   }
 
   /**
