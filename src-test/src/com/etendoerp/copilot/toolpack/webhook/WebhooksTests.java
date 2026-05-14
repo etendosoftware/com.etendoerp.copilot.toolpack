@@ -388,6 +388,28 @@ public class WebhooksTests extends WeldBaseTest {
   }
 
   /**
+   * Exercises the indexed path twice in the same JVM so allColumnsHaveTrgmIndex hits both
+   * its cache-miss and cache-hit branches.
+   */
+  @Test
+  public void simSearchIndexedPathCacheHit() throws Exception {
+    var items = new JSONArray();
+    items.put(C_ORDER);
+    Map<String, String> parameter = new HashMap<>();
+    parameter.put(ITEMS, items.toString());
+    parameter.put(ENTITY_NAME, AD_TABLE);
+    parameter.put(MIN_SIM_PERCENT, "5");
+
+    Map<String, String> respVars1 = new HashMap<>();
+    new SimSearch().get(parameter, respVars1);
+    Map<String, String> respVars2 = new HashMap<>();
+    new SimSearch().get(parameter, respVars2);
+
+    assertFalse(respVars1.containsKey(ERROR));
+    assertFalse(respVars2.containsKey(ERROR));
+  }
+
+  /**
    * Tests the GetAvailableAgents webhook.
    * <p>
    * This test method verifies the functionality of the GetAvailableAgents webhook.

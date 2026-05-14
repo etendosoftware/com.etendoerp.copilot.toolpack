@@ -199,7 +199,7 @@ public class SimSearch extends BaseWebhookService {
    * String component at all, in which case the caller falls back to the etcotp_sim_search
    * HQL path.
    */
-  private static List<String> identifierColumns(Entity entity) {
+  static List<String> identifierColumns(Entity entity) {
     List<Property> idProps = entity.getIdentifierProperties();
     if (idProps == null || idProps.isEmpty()) {
       return Collections.emptyList();
@@ -257,7 +257,7 @@ public class SimSearch extends BaseWebhookService {
     });
   }
 
-  private static String buildIndexedSql(String tableName, String pkColumn, List<String> idColumns,
+  static String buildIndexedSql(String tableName, String pkColumn, List<String> idColumns,
       boolean hasClient, boolean hasOrg, boolean useOperators) {
     List<String> scoreParts = new ArrayList<>(idColumns.size() * 2);
     List<String> opPreds = new ArrayList<>(idColumns.size() * 2);
@@ -305,7 +305,7 @@ public class SimSearch extends BaseWebhookService {
     return query;
   }
 
-  private static JSONArray mapIndexedRows(List<Object[]> rows) throws JSONException {
+  static JSONArray mapIndexedRows(List<Object[]> rows) throws JSONException {
     JSONArray arrayResponse = new JSONArray();
     for (Object[] row : rows) {
       JSONObject json = new JSONObject();
