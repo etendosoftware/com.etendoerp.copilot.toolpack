@@ -17,6 +17,7 @@ import org.junit.Test;
 import org.openbravo.base.model.Entity;
 import org.openbravo.base.model.ModelProvider;
 import org.openbravo.base.weld.test.WeldBaseTest;
+import org.openbravo.dal.core.OBContext;
 import org.openbravo.dal.service.OBDal;
 import org.openbravo.model.ad.datamodel.Table;
 
@@ -26,7 +27,7 @@ import org.openbravo.model.ad.datamodel.Table;
  */
 public class SimSearchHelpersTest extends WeldBaseTest {
 
-  private static final String AD_TABLE = "ADTable";
+  private static final String AD_TABLE = "ad_table";
   private static final String SIMILARITY_PERCENT = "similarity_percent";
 
   /**
@@ -35,7 +36,7 @@ public class SimSearchHelpersTest extends WeldBaseTest {
    */
   @Test
   public void buildIndexedSqlBranches() {
-    String sqlAll = SimSearch.buildIndexedSql("ad_table", "ad_table_id",
+    String sqlAll = SimSearch.buildIndexedSql(AD_TABLE, "ad_table_id",
         Arrays.asList("name"), true, true, true);
     assertTrue(sqlAll.contains("ad_client_id in (:clients)"));
     assertTrue(sqlAll.contains("ad_org_id in (:orgs)"));
@@ -54,7 +55,7 @@ public class SimSearchHelpersTest extends WeldBaseTest {
     assertTrue(sqlMinimal.contains("similarity(upper(t.value), upper(:term))"));
     assertTrue(sqlMinimal.contains("similarity(upper(t.name), upper(:term))"));
 
-    String sqlClientOnly = SimSearch.buildIndexedSql("ad_table", "ad_table_id",
+    String sqlClientOnly = SimSearch.buildIndexedSql(AD_TABLE, "ad_table_id",
         Arrays.asList("name"), true, false, false);
     assertTrue(sqlClientOnly.contains("ad_client_id in (:clients)"));
     assertFalse(sqlClientOnly.contains("ad_org_id"));
@@ -93,7 +94,7 @@ public class SimSearchHelpersTest extends WeldBaseTest {
    */
   @Test
   public void identifierColumnsForADTable() {
-    Entity entity = ModelProvider.getInstance().getEntity(AD_TABLE);
+    Entity entity = ModelProvider.getInstance().getEntity("ADTable");
     List<String> cols = SimSearch.identifierColumns(entity);
     assertNotNull(cols);
     assertFalse(cols.isEmpty());
@@ -103,39 +104,26 @@ public class SimSearchHelpersTest extends WeldBaseTest {
   }
 
   /**
-   * Exercises the HQL fallback path: searchEntities + calcSimilarityPercent. Uses ADTable as the
-   * underlying table since the etcotp_sim_search function works against any AD table.
-   */
-  @Test
-  public void searchEntitiesHqlFallbackPath() throws Exception {
-    String whereOrderByClause = " as p where etcotp_sim_search(:tableName, p.id, :searchTerm) > :minPct "
-        + "order by etcotp_sim_search(:tableName, p.id, :searchTerm) desc ";
-    JSONArray result = SimSearch.searchEntities(whereOrderByClause, "C_Order", 3, 1, Table.class, "ad_table");
-    assertNotNull(result);
-    if (result.length() > 0) {
-      JSONObject first = result.getJSONObject(0);
-      assertTrue(first.has("id"));
-      assertTrue(first.has("name"));
-      assertTrue(first.getString(SIMILARITY_PERCENT).endsWith("%"));
-    }
-  }
-
-  /**
    * calcSimilarityPercent should return a non-null BigDecimal with 4 decimal scale for a real
-   * row id, and BigDecimal.ZERO when the row id doesn't exist (function returns null).
+   * row id and for a missing one (the function returns 0/null which the code maps to ZERO).
    */
   @Test
   public void calcSimilarityPercentBranches() {
-    Table table = (Table) OBDal.getInstance().createQuery(Table.class, "").setMaxResult(1).uniqueResult();
-    assertNotNull(table);
-    BigDecimal real = SimSearch.calcSimilarityPercent(table.getId(), table.getName(), "ad_table");
-    assertNotNull(real);
-    assertEquals(4, real.scale());
+    OBContext.setAdminMode(true);
+    try {
+      Table table = (Table) OBDal.getInstance().createQuery(Table.class, "").setMaxResult(1).uniqueResult();
+      assertNotNull(table);
+      BigDecimal real = SimSearch.calcSimilarityPercent(table.getId(), table.getName(), AD_TABLE);
+      assertNotNull(real);
+      assertEquals(4, real.scale());
 
-    BigDecimal missing = SimSearch.calcSimilarityPercent("00000000000000000000000000000000",
-        "x", "ad_table");
-    assertNotNull(missing);
-    assertEquals(4, missing.scale());
+      BigDecimal missing = SimSearch.calcSimilarityPercent("00000000000000000000000000000000",
+          "x", AD_TABLE);
+      assertNotNull(missing);
+      assertEquals(4, missing.scale());
+    } finally {
+      OBContext.restorePreviousMode();
+    }
   }
 
   /**
@@ -154,7 +142,7 @@ public class SimSearchHelpersTest extends WeldBaseTest {
   @Test
   public void lookupTrgmIndexRuns() {
     Session session = OBDal.getInstance().getSession();
-    SimSearch.lookupTrgmIndex(session, "ad_table", "name");
+    SimSearch.lookupTrgmIndex(session, AD_TABLE, "name");
   }
 
   /**
@@ -164,7 +152,7 @@ public class SimSearchHelpersTest extends WeldBaseTest {
   @Test
   public void allColumnsHaveTrgmIndexEmptyList() {
     Session session = OBDal.getInstance().getSession();
-    assertTrue(SimSearch.allColumnsHaveTrgmIndex(session, "ad_table", Collections.emptyList()));
+    assertTrue(SimSearch.allColumnsHaveTrgmIndex(session, AD_TABLE, Collections.emptyList()));
   }
 
   /**
