@@ -170,7 +170,7 @@ public class SimSearch extends BaseWebhookService {
    * @throws JSONException
    *     If an error occurs while processing the JSON data.
    */
-  private static <T extends BaseOBObject> JSONArray searchEntities(String whereOrderByClause2,
+  static <T extends BaseOBObject> JSONArray searchEntities(String whereOrderByClause2,
       String searchTerm, int qtyResults, int minPct, Class<T> entityClass, String tableName) throws JSONException {
 
     OBQuery<T> searchQuery = OBDal.getInstance().createQuery(entityClass, whereOrderByClause2);
@@ -227,7 +227,7 @@ public class SimSearch extends BaseWebhookService {
    * per-row ad_column_identifier_std subquery used by etcotp_sim_search, which is the main
    * cost; the index just turns linear scaling into sublinear when present.
    */
-  private static JSONArray searchEntitiesIndexed(Entity entity, List<String> idColumns, String searchTerm,
+  static JSONArray searchEntitiesIndexed(Entity entity, List<String> idColumns, String searchTerm,
       int qtyResults, int minSimPercent) throws JSONException {
     Session session = OBDal.getInstance().getSession();
     String tableName = StringUtils.lowerCase(entity.getTableName());
@@ -246,7 +246,7 @@ public class SimSearch extends BaseWebhookService {
     return mapIndexedRows(query.list());
   }
 
-  private static void applyTrgmThresholds(Session session, int minSimPercent) {
+  static void applyTrgmThresholds(Session session, int minSimPercent) {
     double opThreshold = Math.max(minSimPercent / 100.0, 0.30);
     String opThresholdStr = String.format(Locale.US, "%.4f", opThreshold);
     session.doWork(conn -> {
@@ -331,7 +331,7 @@ public class SimSearch extends BaseWebhookService {
    * column name. Index presence is cached in-process; restart the JVM (or invalidate the cache)
    * after creating or dropping indexes for the new state to be picked up.
    */
-  private static boolean allColumnsHaveTrgmIndex(Session session, String tableName, List<String> columns) {
+  static boolean allColumnsHaveTrgmIndex(Session session, String tableName, List<String> columns) {
     for (String col : columns) {
       String key = tableName + "." + col;
       Boolean cached = TRGM_INDEX_CACHE.get(key);
@@ -346,7 +346,7 @@ public class SimSearch extends BaseWebhookService {
     return true;
   }
 
-  private static boolean lookupTrgmIndex(Session session, String tableName, String column) {
+  static boolean lookupTrgmIndex(Session session, String tableName, String column) {
     String sql = "select 1 from pg_indexes "
         + "where schemaname = current_schema() "
         + "  and lower(tablename) = :tn "
@@ -360,7 +360,7 @@ public class SimSearch extends BaseWebhookService {
     return !q.getResultList().isEmpty();
   }
 
-  private static BigDecimal calcSimilarityPercent(String id, String searchTerm, String tableName) {
+  static BigDecimal calcSimilarityPercent(String id, String searchTerm, String tableName) {
     @SuppressWarnings("unchecked")
     NativeQuery<BigDecimal> query = OBDal.getInstance().getSession()
         .createNativeQuery("select etcotp_sim_search(:tn, :rid, :term)");
