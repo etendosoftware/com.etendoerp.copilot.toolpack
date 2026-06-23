@@ -8,7 +8,7 @@ import base64
 import pandas as pd
 from langsmith import traceable
 
-from copilot.core.utils.models import get_proxy_url
+from copilot.core.utils.models import get_api_key, get_proxy_url
 
 
 class ExcelOCRToolInput(ToolInput):
@@ -58,8 +58,18 @@ class ExcelOCRTool(ToolWrapper):
             ]
 
             model = read_optional_env_var("COPILOT_OCRTOOL_MODEL", "gpt-4.1")
+            proxy_url = get_proxy_url()
+            api_key = get_api_key("openai")
+            # In proxy mode the OpenAI-compatible client refuses to build without a
+            # key; fall back to a placeholder so the proxy resolves the real one.
+            if proxy_url and not api_key:
+                api_key = "dummy"
             llm = init_chat_model(
-                model=model, temperature=0, streaming=False, base_url=get_proxy_url()
+                model=model,
+                temperature=0,
+                streaming=False,
+                base_url=proxy_url,
+                api_key=api_key,
             )
             response = llm.invoke(messages)
             return response.content
