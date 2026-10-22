@@ -45,6 +45,9 @@ public class SimSearchHelpersTest extends WeldBaseTest {
 
   private static final String AD_TABLE = "ad_table";
   private static final String SIMILARITY_PERCENT = "similarity_percent";
+  private static final String TEXT_SIMILARITY_PERCENT = "text_similarity_percent";
+  private static final String EXACT_MATCH = "exact_match";
+  private static final String FULL_PERCENT = "100.0000%";
 
   /**
    * Covers all flag combinations of buildIndexedSql: single/multi column, client/org enabled
@@ -112,18 +115,18 @@ public class SimSearchHelpersTest extends WeldBaseTest {
     JSONArray result = SimSearch.mapIndexedRows(rows);
 
     JSONObject exact = result.getJSONObject(0);
-    assertEquals("100.0000%", exact.getString(SIMILARITY_PERCENT));
-    assertEquals("100.0000%", exact.getString("text_similarity_percent"));
-    assertTrue(exact.getBoolean("exact_match"));
+    assertEquals(FULL_PERCENT, exact.getString(SIMILARITY_PERCENT));
+    assertEquals(FULL_PERCENT, exact.getString(TEXT_SIMILARITY_PERCENT));
+    assertTrue(exact.getBoolean(EXACT_MATCH));
 
     JSONObject contained = result.getJSONObject(1);
-    assertEquals("100.0000%", contained.getString(SIMILARITY_PERCENT));
-    assertEquals("50.0000%", contained.getString("text_similarity_percent"));
-    assertFalse(contained.getBoolean("exact_match"));
+    assertEquals(FULL_PERCENT, contained.getString(SIMILARITY_PERCENT));
+    assertEquals("50.0000%", contained.getString(TEXT_SIMILARITY_PERCENT));
+    assertFalse(contained.getBoolean(EXACT_MATCH));
 
     JSONObject legacy = result.getJSONObject(2);
-    assertFalse(legacy.has("text_similarity_percent"));
-    assertFalse(legacy.has("exact_match"));
+    assertFalse(legacy.has(TEXT_SIMILARITY_PERCENT));
+    assertFalse(legacy.has(EXACT_MATCH));
   }
 
   /**
