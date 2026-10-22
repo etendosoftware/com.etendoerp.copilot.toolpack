@@ -78,6 +78,55 @@ public class SimSearchHelpersTest extends WeldBaseTest {
   }
 
   /**
+   * The score keeps GREATEST(similarity, word_similarity) to decide inclusion, so every name that
+   * contains the term ties at 100. The query must therefore also report the whole-string
+   * similarity and the exact-equality flag, and break ties by them (then by key) before the LIMIT
+   * cuts the page, so an exact match is never pushed out by a name that merely contains the term.
+   */
+  @Test
+  public void buildIndexedSqlReportsTextSimilarityAndBreaksTies() {
+    String sql = SimSearch.buildIndexedSql("c_uom", "c_uom_id", Arrays.asList("name"), true, false, false);
+    assertTrue(sql.contains("as text_score"));
+    assertTrue(sql.contains("upper(t.name) = upper(:term)"));
+    assertTrue(sql.contains(" as exact_match"));
+    assertTrue(sql.contains("order by score desc, text_score desc, t.c_uom_id asc limit :qty"));
+    // inclusion is still decided by the score, not by the whole-string similarity
+    assertTrue(sql.contains("word_similarity(upper(:term), upper(t.name))"));
+
+    String multi = SimSearch.buildIndexedSql("m_product", "m_product_id",
+        Arrays.asList("value", "name"), false, false, false);
+    assertTrue(multi.contains("upper(t.value) = upper(:term) or upper(t.name) = upper(:term)"));
+  }
+
+  /**
+   * mapIndexedRows adds text_similarity_percent and exact_match only when the row carries the two
+   * extra columns, so a caller that still builds three-column rows gets the original shape.
+   */
+  @Test
+  public void mapIndexedRowsAddsTextSimilarityAndExactMatch() throws Exception {
+    List<Object[]> rows = Arrays.asList(
+        new Object[] { "id1", "Meter", new BigDecimal("100"), new BigDecimal("100"), Boolean.TRUE },
+        new Object[] { "id2", "Cubic Meter", new BigDecimal("100"), "50.0", "f" },
+        new Object[] { "id3", "Legacy", new BigDecimal("42.5") });
+
+    JSONArray result = SimSearch.mapIndexedRows(rows);
+
+    JSONObject exact = result.getJSONObject(0);
+    assertEquals("100.0000%", exact.getString(SIMILARITY_PERCENT));
+    assertEquals("100.0000%", exact.getString("text_similarity_percent"));
+    assertTrue(exact.getBoolean("exact_match"));
+
+    JSONObject contained = result.getJSONObject(1);
+    assertEquals("100.0000%", contained.getString(SIMILARITY_PERCENT));
+    assertEquals("50.0000%", contained.getString("text_similarity_percent"));
+    assertFalse(contained.getBoolean("exact_match"));
+
+    JSONObject legacy = result.getJSONObject(2);
+    assertFalse(legacy.has("text_similarity_percent"));
+    assertFalse(legacy.has("exact_match"));
+  }
+
+  /**
    * Covers mapIndexedRows branches: BigDecimal score, null score (defaults to zero),
    * non-BigDecimal score (parsed from toString), and null identifier (mapped to empty string).
    */
