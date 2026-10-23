@@ -260,7 +260,7 @@ public class SimSearch extends BaseWebhookService {
     });
   }
 
-  private static String buildIndexedSql(String tableName, String pkColumn, List<String> idColumns,
+  static String buildIndexedSql(String tableName, String pkColumn, List<String> idColumns,
       boolean hasClient, boolean hasOrg, boolean useOperators) {
     List<String> scoreParts = new ArrayList<>(idColumns.size() * 2);
     List<String> opPreds = new ArrayList<>(idColumns.size() * 2);
@@ -327,7 +327,7 @@ public class SimSearch extends BaseWebhookService {
     return query;
   }
 
-  private static JSONArray mapIndexedRows(List<Object[]> rows) throws JSONException {
+  static JSONArray mapIndexedRows(List<Object[]> rows) throws JSONException {
     JSONArray arrayResponse = new JSONArray();
     for (Object[] row : rows) {
       JSONObject json = new JSONObject();
