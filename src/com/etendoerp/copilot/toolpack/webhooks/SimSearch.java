@@ -187,6 +187,9 @@ public class SimSearch extends BaseWebhookService {
       searchResultJson.put("name", resultOBJ.getIdentifier());
       BigDecimal percent = calcSimilarityPercent((String) resultOBJ.getId(), searchTerm, tableName);
       searchResultJson.put("similarity_percent", percent.toString() + "%");
+      searchResultJson.put("text_similarity_percent",
+          calcTextSimilarityPercent((String) resultOBJ.getId(), searchTerm, tableName).toString() + "%");
+      searchResultJson.put("exact_match", StringUtils.equalsIgnoreCase(resultOBJ.getIdentifier(), searchTerm));
       arrayResponse.put(searchResultJson);
     }
     return arrayResponse;
@@ -257,7 +260,7 @@ public class SimSearch extends BaseWebhookService {
     });
   }
 
-  private static String buildIndexedSql(String tableName, String pkColumn, List<String> idColumns,
+  static String buildIndexedSql(String tableName, String pkColumn, List<String> idColumns,
       boolean hasClient, boolean hasOrg, boolean useOperators) {
     List<String> scoreParts = new ArrayList<>(idColumns.size() * 2);
     List<String> opPreds = new ArrayList<>(idColumns.size() * 2);
@@ -269,10 +272,26 @@ public class SimSearch extends BaseWebhookService {
     }
     String scoreExpr = "greatest(" + String.join(", ", scoreParts) + ") * 100";
 
+    // Whole-string similarity and exact equality, reported next to the score. The score keeps
+    // GREATEST(similarity, word_similarity) because it decides which rows are INCLUDED (a partial
+    // name such as "ACME" must still find "ACME INCORPORATED", ETP-3963). That same number cannot
+    // tell an exact match from a name that merely contains the term, so two extra columns do:
+    // callers that must pick ONE record read them instead of the score.
+    List<String> textSimParts = new ArrayList<>(idColumns.size());
+    List<String> exactParts = new ArrayList<>(idColumns.size());
+    for (String col : idColumns) {
+      textSimParts.add("similarity(upper(t." + col + "), upper(:term))");
+      exactParts.add("upper(t." + col + ") = upper(:term)");
+    }
+    String textSimExpr = "greatest(" + String.join(", ", textSimParts) + ") * 100";
+    String exactExpr = "(" + String.join(" or ", exactParts) + ")";
+
     StringBuilder sql = new StringBuilder()
         .append("select t.").append(pkColumn).append(", ")
         .append("ad_column_identifier_std(:tn, t.").append(pkColumn).append(") as identifier, ")
-        .append("cast(").append(scoreExpr).append(" as numeric) as score ")
+        .append("cast(").append(scoreExpr).append(" as numeric) as score, ")
+        .append("cast(").append(textSimExpr).append(" as numeric) as text_score, ")
+        .append(exactExpr).append(" as exact_match ")
         .append("from ").append(tableName).append(" t where ");
     if (hasClient) {
       sql.append("t.ad_client_id in (:clients) and ");
@@ -283,8 +302,11 @@ public class SimSearch extends BaseWebhookService {
     if (useOperators) {
       sql.append("(").append(String.join(" or ", opPreds)).append(") and ");
     }
+    // Ties on score are common (every name that contains the term scores 100), and the LIMIT cuts
+    // after the sort, so an exact match could fall outside the page. Break ties by whole-string
+    // similarity, then by key so the order is deterministic.
     sql.append(scoreExpr).append(" > :minPct ")
-        .append("order by score desc limit :qty");
+        .append("order by score desc, text_score desc, t.").append(pkColumn).append(" asc limit :qty");
     return sql.toString();
   }
 
@@ -305,7 +327,7 @@ public class SimSearch extends BaseWebhookService {
     return query;
   }
 
-  private static JSONArray mapIndexedRows(List<Object[]> rows) throws JSONException {
+  static JSONArray mapIndexedRows(List<Object[]> rows) throws JSONException {
     JSONArray arrayResponse = new JSONArray();
     for (Object[] row : rows) {
       JSONObject json = new JSONObject();
@@ -321,9 +343,34 @@ public class SimSearch extends BaseWebhookService {
         score = new BigDecimal(row[2].toString());
       }
       json.put("similarity_percent", score.setScale(4, RoundingMode.HALF_UP).toString() + "%");
+      // Additive fields (the indexed query selects them after the score). A caller that builds the
+      // rows itself with only three columns still gets the original shape.
+      if (row.length > 4) {
+        json.put("text_similarity_percent", toPercent(row[3]));
+        json.put("exact_match", toBoolean(row[4]));
+      }
       arrayResponse.put(json);
     }
     return arrayResponse;
+  }
+
+  private static String toPercent(Object value) {
+    BigDecimal percent;
+    if (value == null) {
+      percent = BigDecimal.ZERO;
+    } else if (value instanceof BigDecimal) {
+      percent = (BigDecimal) value;
+    } else {
+      percent = new BigDecimal(value.toString());
+    }
+    return percent.setScale(4, RoundingMode.HALF_UP).toString() + "%";
+  }
+
+  private static boolean toBoolean(Object value) {
+    if (value instanceof Boolean) {
+      return (Boolean) value;
+    }
+    return value != null && ("t".equalsIgnoreCase(value.toString()) || Boolean.parseBoolean(value.toString()));
   }
 
   /**
@@ -372,6 +419,25 @@ public class SimSearch extends BaseWebhookService {
       return BigDecimal.ZERO.setScale(4, RoundingMode.HALF_UP);
     }
     return percent.setScale(4, RoundingMode.HALF_UP);
+  }
+
+  /**
+   * Whole-string similarity only, without the word_similarity half of the score: 100 means the
+   * identifier IS the term, not that it contains it. Used by the path that has no indexed query
+   * to carry the value.
+   */
+  static BigDecimal calcTextSimilarityPercent(String id, String searchTerm, String tableName) {
+    @SuppressWarnings("unchecked")
+    NativeQuery<Number> query = OBDal.getInstance().getSession()
+        .createNativeQuery("select similarity(ad_column_identifier_std(:tn, :rid), :term) * 100");
+    query.setParameter("tn", StringUtils.lowerCase(tableName));
+    query.setParameter("rid", id);
+    query.setParameter("term", searchTerm);
+    Number percent = query.uniqueResult();
+    if (percent == null) {
+      return BigDecimal.ZERO.setScale(4, RoundingMode.HALF_UP);
+    }
+    return new BigDecimal(percent.toString()).setScale(4, RoundingMode.HALF_UP);
   }
 
 }
