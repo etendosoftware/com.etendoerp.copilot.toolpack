@@ -59,6 +59,23 @@ public class SimSearch extends BaseWebhookService {
   private static final String MESSAGE = "message";
   public static final int MIN_SIM_PERCENT = 30;
 
+  /**
+   * Score of an identifier that equals the term (case and surrounding/inner whitespace ignored).
+   * Only equality reaches it: trigram similarity ignores punctuation and symbols, so two names
+   * that differ only by a tail such as "(+4%)" both score a whole-string similarity of 100.
+   */
+  static final int EXACT_SCORE = 100;
+  /**
+   * Ceiling for every non-exact name. It sits {@code EXACT_SCORE - 15} so an exact match leads any
+   * other candidate by at least the 15 points the import dialog needs to resolve on its own.
+   */
+  static final int NON_EXACT_MAX_SCORE = 85;
+  /**
+   * Share of word_similarity counted when the name merely CONTAINS the term, so that "ACME" still
+   * finds "ACME INCORPORATED" (ETP-3963) without tying with an exact "ACME".
+   */
+  static final String CONTAINS_WEIGHT = "0.8";
+
   /** Cached per (lowercased table . column) — whether a trigram index exists on the column. */
   private static final ConcurrentMap<String, Boolean> TRGM_INDEX_CACHE = new ConcurrentHashMap<>();
 
@@ -205,7 +222,8 @@ public class SimSearch extends BaseWebhookService {
       searchResultJson.put("similarity_percent", percent.toString() + "%");
       searchResultJson.put("text_similarity_percent",
           calcTextSimilarityPercent((String) resultOBJ.getId(), searchTerm, tableName).toString() + "%");
-      searchResultJson.put("exact_match", StringUtils.equalsIgnoreCase(resultOBJ.getIdentifier(), searchTerm));
+      searchResultJson.put("exact_match", StringUtils.equalsIgnoreCase(
+          StringUtils.normalizeSpace(resultOBJ.getIdentifier()), StringUtils.normalizeSpace(searchTerm)));
       arrayResponse.put(searchResultJson);
     }
     return arrayResponse;
@@ -242,7 +260,7 @@ public class SimSearch extends BaseWebhookService {
    * a pg_trgm GIN/GiST index, the query uses the % and &lt;% operators with pg_trgm session
    * thresholds so the planner picks a bitmap index plan. Otherwise the operator predicates
    * and SET LOCAL are dropped and PG runs a seq scan with only the precise
-   * GREATEST(similarity, word_similarity) &gt; :minPct post-filter. Either path avoids the
+   * score &gt; :minPct post-filter. Either path avoids the
    * per-row ad_column_identifier_std subquery used by etcotp_sim_search, which is the main
    * cost; the index just turns linear scaling into sublinear when present.
    */
@@ -276,31 +294,37 @@ public class SimSearch extends BaseWebhookService {
     });
   }
 
+  /**
+   * Builds the indexed similarity query. The score (shown as similarity_percent, used for the
+   * inclusion filter and the ranking) is:
+   * <ul>
+   *   <li>{@value #EXACT_SCORE} when an identifier column equals the term (case/whitespace
+   *   insensitive);</li>
+   *   <li>otherwise {@code least(NON_EXACT_MAX_SCORE, greatest(similarity,
+   *   CONTAINS_WEIGHT * word_similarity) * 100)}.</li>
+   * </ul>
+   * The non-exact part never exceeds the former {@code greatest(similarity, word_similarity)}, so
+   * the pg_trgm operator pre-filter (% and &lt;%) still returns every row that can pass
+   * {@code score > :minPct}. Ties are broken by whole-string similarity, then by key.
+   */
   static String buildIndexedSql(String tableName, String pkColumn, List<String> idColumns,
       boolean hasClient, boolean hasOrg, boolean useOperators) {
     List<String> scoreParts = new ArrayList<>(idColumns.size() * 2);
+    List<String> textSimParts = new ArrayList<>(idColumns.size());
+    List<String> exactParts = new ArrayList<>(idColumns.size());
     List<String> opPreds = new ArrayList<>(idColumns.size() * 2);
     for (String col : idColumns) {
       scoreParts.add("similarity(upper(t." + col + "), upper(:term))");
-      scoreParts.add("word_similarity(upper(:term), upper(t." + col + "))");
+      scoreParts.add(CONTAINS_WEIGHT + " * word_similarity(upper(:term), upper(t." + col + "))");
+      textSimParts.add("similarity(upper(t." + col + "), upper(:term))");
+      exactParts.add("upper(regexp_replace(btrim(t." + col + "), '\\s+', ' ', 'g')) = upper(:termNorm)");
       opPreds.add("upper(t." + col + ") % upper(:term)");
       opPreds.add("upper(:term) <% upper(t." + col + ")");
     }
-    String scoreExpr = "greatest(" + String.join(", ", scoreParts) + ") * 100";
-
-    // Whole-string similarity and exact equality, reported next to the score. The score keeps
-    // GREATEST(similarity, word_similarity) because it decides which rows are INCLUDED (a partial
-    // name such as "ACME" must still find "ACME INCORPORATED", ETP-3963). That same number cannot
-    // tell an exact match from a name that merely contains the term, so two extra columns do:
-    // callers that must pick ONE record read them instead of the score.
-    List<String> textSimParts = new ArrayList<>(idColumns.size());
-    List<String> exactParts = new ArrayList<>(idColumns.size());
-    for (String col : idColumns) {
-      textSimParts.add("similarity(upper(t." + col + "), upper(:term))");
-      exactParts.add("upper(t." + col + ") = upper(:term)");
-    }
-    String textSimExpr = "greatest(" + String.join(", ", textSimParts) + ") * 100";
     String exactExpr = "(" + String.join(" or ", exactParts) + ")";
+    String scoreExpr = "case when " + exactExpr + " then " + EXACT_SCORE
+        + " else least(" + NON_EXACT_MAX_SCORE + ", greatest(" + String.join(", ", scoreParts) + ") * 100) end";
+    String textSimExpr = "greatest(" + String.join(", ", textSimParts) + ") * 100";
 
     StringBuilder sql = new StringBuilder()
         .append("select t.").append(pkColumn).append(", ")
@@ -318,9 +342,8 @@ public class SimSearch extends BaseWebhookService {
     if (useOperators) {
       sql.append("(").append(String.join(" or ", opPreds)).append(") and ");
     }
-    // Ties on score are common (every name that contains the term scores 100), and the LIMIT cuts
-    // after the sort, so an exact match could fall outside the page. Break ties by whole-string
-    // similarity, then by key so the order is deterministic.
+    // The LIMIT cuts after the sort: non-exact names can still tie at NON_EXACT_MAX_SCORE, so break
+    // ties by whole-string similarity, then by key, to keep the page deterministic.
     sql.append(scoreExpr).append(" > :minPct ")
         .append("order by score desc, text_score desc, t.").append(pkColumn).append(" asc limit :qty");
     return sql.toString();
@@ -332,6 +355,7 @@ public class SimSearch extends BaseWebhookService {
     NativeQuery<Object[]> query = session.createNativeQuery(sql);
     query.setParameter("tn", tableName);
     query.setParameter("term", searchTerm);
+    query.setParameter("termNorm", StringUtils.normalizeSpace(searchTerm));
     if (entity.isClientEnabled()) {
       query.setParameterList("clients", Arrays.asList(OBContext.getOBContext().getReadableClients()));
     }

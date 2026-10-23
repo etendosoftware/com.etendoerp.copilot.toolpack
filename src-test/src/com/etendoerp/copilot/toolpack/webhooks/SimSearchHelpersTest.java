@@ -81,24 +81,31 @@ public class SimSearchHelpersTest extends WeldBaseTest {
   }
 
   /**
-   * The score keeps GREATEST(similarity, word_similarity) to decide inclusion, so every name that
-   * contains the term ties at 100. The query must therefore also report the whole-string
-   * similarity and the exact-equality flag, and break ties by them (then by key) before the LIMIT
-   * cuts the page, so an exact match is never pushed out by a name that merely contains the term.
+   * Only equality scores 100; any other name is capped at 85 and weighs word_similarity at 0.8, so
+   * an exact match always leads the rest by 15+ points. The query also reports the whole-string
+   * similarity and the exact flag, and breaks remaining ties by them (then by key) before the
+   * LIMIT cuts the page.
    */
   @Test
-  public void buildIndexedSqlReportsTextSimilarityAndBreaksTies() {
+  public void buildIndexedSqlScoresExactAboveEverythingElse() {
     String sql = SimSearch.buildIndexedSql("c_uom", "c_uom_id", Arrays.asList("name"), true, false, false);
     assertTrue(sql.contains("as text_score"));
-    assertTrue(sql.contains("upper(t.name) = upper(:term)"));
     assertTrue(sql.contains(" as exact_match"));
+    assertTrue(sql.contains("case when (upper(regexp_replace(btrim(t.name), '\\s+', ' ', 'g')) = upper(:termNorm)) "
+        + "then " + SimSearch.EXACT_SCORE + " else least(" + SimSearch.NON_EXACT_MAX_SCORE
+        + ", greatest(similarity(upper(t.name), upper(:term)), " + SimSearch.CONTAINS_WEIGHT
+        + " * word_similarity(upper(:term), upper(t.name))) * 100) end"));
     assertTrue(sql.contains("order by score desc, text_score desc, t.c_uom_id asc limit :qty"));
-    // inclusion is still decided by the score, not by the whole-string similarity
-    assertTrue(sql.contains("word_similarity(upper(:term), upper(t.name))"));
 
     String multi = SimSearch.buildIndexedSql("m_product", "m_product_id",
         Arrays.asList("value", "name"), false, false, false);
-    assertTrue(multi.contains("upper(t.value) = upper(:term) or upper(t.name) = upper(:term)"));
+    assertTrue(multi.contains("= upper(:termNorm) or upper(regexp_replace(btrim(t.name)"));
+  }
+
+  /** The gap between an exact match and any other name is what lets a client resolve on its own. */
+  @Test
+  public void exactScoreLeadsEveryOtherNameByAtLeastFifteenPoints() {
+    assertTrue(SimSearch.EXACT_SCORE - SimSearch.NON_EXACT_MAX_SCORE >= 15);
   }
 
   /**
