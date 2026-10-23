@@ -59,6 +59,23 @@ public class SimSearch extends BaseWebhookService {
   private static final String MESSAGE = "message";
   public static final int MIN_SIM_PERCENT = 30;
 
+  /**
+   * Score of an identifier that equals the term (case and surrounding/inner whitespace ignored).
+   * Only equality reaches it: trigram similarity ignores punctuation and symbols, so two names
+   * that differ only by a tail such as "(+4%)" both score a whole-string similarity of 100.
+   */
+  static final int EXACT_SCORE = 100;
+  /**
+   * Ceiling for every non-exact name. It sits {@code EXACT_SCORE - 15} so an exact match leads any
+   * other candidate by at least the 15 points the import dialog needs to resolve on its own.
+   */
+  static final int NON_EXACT_MAX_SCORE = 85;
+  /**
+   * Share of word_similarity counted when the name merely CONTAINS the term, so that "ACME" still
+   * finds "ACME INCORPORATED" (ETP-3963) without tying with an exact "ACME".
+   */
+  static final String CONTAINS_WEIGHT = "0.8";
+
   /** Cached per (lowercased table . column) — whether a trigram index exists on the column. */
   private static final ConcurrentMap<String, Boolean> TRGM_INDEX_CACHE = new ConcurrentHashMap<>();
 
@@ -203,6 +220,10 @@ public class SimSearch extends BaseWebhookService {
       searchResultJson.put("name", resultOBJ.getIdentifier());
       BigDecimal percent = calcSimilarityPercent((String) resultOBJ.getId(), searchTerm, tableName);
       searchResultJson.put("similarity_percent", percent.toString() + "%");
+      searchResultJson.put("text_similarity_percent",
+          calcTextSimilarityPercent((String) resultOBJ.getId(), searchTerm, tableName).toString() + "%");
+      searchResultJson.put("exact_match", StringUtils.equalsIgnoreCase(
+          StringUtils.normalizeSpace(resultOBJ.getIdentifier()), StringUtils.normalizeSpace(searchTerm)));
       arrayResponse.put(searchResultJson);
     }
     return arrayResponse;
@@ -239,7 +260,7 @@ public class SimSearch extends BaseWebhookService {
    * a pg_trgm GIN/GiST index, the query uses the % and &lt;% operators with pg_trgm session
    * thresholds so the planner picks a bitmap index plan. Otherwise the operator predicates
    * and SET LOCAL are dropped and PG runs a seq scan with only the precise
-   * GREATEST(similarity, word_similarity) &gt; :minPct post-filter. Either path avoids the
+   * score &gt; :minPct post-filter. Either path avoids the
    * per-row ad_column_identifier_std subquery used by etcotp_sim_search, which is the main
    * cost; the index just turns linear scaling into sublinear when present.
    */
@@ -273,22 +294,44 @@ public class SimSearch extends BaseWebhookService {
     });
   }
 
+  /**
+   * Builds the indexed similarity query. The score (shown as similarity_percent, used for the
+   * inclusion filter and the ranking) is:
+   * <ul>
+   *   <li>{@value #EXACT_SCORE} when an identifier column equals the term (case/whitespace
+   *   insensitive);</li>
+   *   <li>otherwise {@code least(NON_EXACT_MAX_SCORE, greatest(similarity,
+   *   CONTAINS_WEIGHT * word_similarity) * 100)}.</li>
+   * </ul>
+   * The non-exact part never exceeds the former {@code greatest(similarity, word_similarity)}, so
+   * the pg_trgm operator pre-filter (% and &lt;%) still returns every row that can pass
+   * {@code score > :minPct}. Ties are broken by whole-string similarity, then by key.
+   */
   static String buildIndexedSql(String tableName, String pkColumn, List<String> idColumns,
       boolean hasClient, boolean hasOrg, boolean useOperators) {
     List<String> scoreParts = new ArrayList<>(idColumns.size() * 2);
+    List<String> textSimParts = new ArrayList<>(idColumns.size());
+    List<String> exactParts = new ArrayList<>(idColumns.size());
     List<String> opPreds = new ArrayList<>(idColumns.size() * 2);
     for (String col : idColumns) {
       scoreParts.add("similarity(upper(t." + col + "), upper(:term))");
-      scoreParts.add("word_similarity(upper(:term), upper(t." + col + "))");
+      scoreParts.add(CONTAINS_WEIGHT + " * word_similarity(upper(:term), upper(t." + col + "))");
+      textSimParts.add("similarity(upper(t." + col + "), upper(:term))");
+      exactParts.add("upper(regexp_replace(btrim(t." + col + "), '\\s+', ' ', 'g')) = upper(:termNorm)");
       opPreds.add("upper(t." + col + ") % upper(:term)");
       opPreds.add("upper(:term) <% upper(t." + col + ")");
     }
-    String scoreExpr = "greatest(" + String.join(", ", scoreParts) + ") * 100";
+    String exactExpr = "(" + String.join(" or ", exactParts) + ")";
+    String scoreExpr = "case when " + exactExpr + " then " + EXACT_SCORE
+        + " else least(" + NON_EXACT_MAX_SCORE + ", greatest(" + String.join(", ", scoreParts) + ") * 100) end";
+    String textSimExpr = "greatest(" + String.join(", ", textSimParts) + ") * 100";
 
     StringBuilder sql = new StringBuilder()
         .append("select t.").append(pkColumn).append(", ")
         .append("ad_column_identifier_std(:tn, t.").append(pkColumn).append(") as identifier, ")
-        .append("cast(").append(scoreExpr).append(" as numeric) as score ")
+        .append("cast(").append(scoreExpr).append(" as numeric) as score, ")
+        .append("cast(").append(textSimExpr).append(" as numeric) as text_score, ")
+        .append(exactExpr).append(" as exact_match ")
         .append("from ").append(tableName).append(" t where ");
     if (hasClient) {
       sql.append("t.ad_client_id in (:clients) and ");
@@ -299,8 +342,10 @@ public class SimSearch extends BaseWebhookService {
     if (useOperators) {
       sql.append("(").append(String.join(" or ", opPreds)).append(") and ");
     }
+    // The LIMIT cuts after the sort: non-exact names can still tie at NON_EXACT_MAX_SCORE, so break
+    // ties by whole-string similarity, then by key, to keep the page deterministic.
     sql.append(scoreExpr).append(" > :minPct ")
-        .append("order by score desc limit :qty");
+        .append("order by score desc, text_score desc, t.").append(pkColumn).append(" asc limit :qty");
     return sql.toString();
   }
 
@@ -310,6 +355,7 @@ public class SimSearch extends BaseWebhookService {
     NativeQuery<Object[]> query = session.createNativeQuery(sql);
     query.setParameter("tn", tableName);
     query.setParameter("term", searchTerm);
+    query.setParameter("termNorm", StringUtils.normalizeSpace(searchTerm));
     if (entity.isClientEnabled()) {
       query.setParameterList("clients", Arrays.asList(OBContext.getOBContext().getReadableClients()));
     }
@@ -337,9 +383,34 @@ public class SimSearch extends BaseWebhookService {
         score = new BigDecimal(row[2].toString());
       }
       json.put("similarity_percent", score.setScale(4, RoundingMode.HALF_UP).toString() + "%");
+      // Additive fields (the indexed query selects them after the score). A caller that builds the
+      // rows itself with only three columns still gets the original shape.
+      if (row.length > 4) {
+        json.put("text_similarity_percent", toPercent(row[3]));
+        json.put("exact_match", toBoolean(row[4]));
+      }
       arrayResponse.put(json);
     }
     return arrayResponse;
+  }
+
+  private static String toPercent(Object value) {
+    BigDecimal percent;
+    if (value == null) {
+      percent = BigDecimal.ZERO;
+    } else if (value instanceof BigDecimal) {
+      percent = (BigDecimal) value;
+    } else {
+      percent = new BigDecimal(value.toString());
+    }
+    return percent.setScale(4, RoundingMode.HALF_UP).toString() + "%";
+  }
+
+  private static boolean toBoolean(Object value) {
+    if (value instanceof Boolean) {
+      return (Boolean) value;
+    }
+    return value != null && ("t".equalsIgnoreCase(value.toString()) || Boolean.parseBoolean(value.toString()));
   }
 
   /**
@@ -388,6 +459,25 @@ public class SimSearch extends BaseWebhookService {
       return BigDecimal.ZERO.setScale(4, RoundingMode.HALF_UP);
     }
     return percent.setScale(4, RoundingMode.HALF_UP);
+  }
+
+  /**
+   * Whole-string similarity only, without the word_similarity half of the score: 100 means the
+   * identifier IS the term, not that it contains it. Used by the path that has no indexed query
+   * to carry the value.
+   */
+  static BigDecimal calcTextSimilarityPercent(String id, String searchTerm, String tableName) {
+    @SuppressWarnings("unchecked")
+    NativeQuery<Number> query = OBDal.getInstance().getSession()
+        .createNativeQuery("select similarity(ad_column_identifier_std(:tn, :rid), :term) * 100");
+    query.setParameter("tn", StringUtils.lowerCase(tableName));
+    query.setParameter("rid", id);
+    query.setParameter("term", searchTerm);
+    Number percent = query.uniqueResult();
+    if (percent == null) {
+      return BigDecimal.ZERO.setScale(4, RoundingMode.HALF_UP);
+    }
+    return new BigDecimal(percent.toString()).setScale(4, RoundingMode.HALF_UP);
   }
 
 }
