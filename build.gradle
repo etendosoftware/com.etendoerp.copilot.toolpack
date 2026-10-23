@@ -55,4 +55,15 @@ dependencies {
     implementation('com.etendoerp:copilot:3.3.0')
     implementation('com.github.jsqlparser:jsqlparser:5.1')
     implementation('com.etendoerp.platform:etendo-core:[26.1.0,26.3.0)')
+    implementation('org.apache.pdfbox:pdfbox:3.0.5') { exclude group: 'org.apache.logging.log4j' }
+    implementation('org.apache.poi:poi-ooxml:5.4.1') { exclude group: 'org.apache.logging.log4j' }
+    implementation('org.apache.commons:commons-compress:1.27.1') { exclude group: 'org.apache.logging.log4j' }
+    implementation('com.github.junrar:junrar:7.5.5') { exclude group: 'org.apache.logging.log4j' }
+    implementation('com.google.zxing:core:3.5.3') { exclude group: 'org.apache.logging.log4j' }
+    implementation('com.google.zxing:javase:3.5.3') { exclude group: 'org.apache.logging.log4j' }
+    implementation('org.apache.commons:commons-csv:1.14.0') { exclude group: 'org.apache.logging.log4j' }
+    implementation('org.sejda.imageio:webp-imageio:0.1.6') { exclude group: 'org.apache.logging.log4j' }
+    implementation('com.github.docker-java:docker-java-core:3.4.1') { exclude group: 'org.apache.logging.log4j' }
+    implementation('com.github.docker-java:docker-java:3.4.1') { exclude group: 'org.apache.logging.log4j' }
+    implementation('com.github.docker-java:docker-java-transport-httpclient5:3.4.1') { exclude group: 'org.apache.logging.log4j' }
 }
