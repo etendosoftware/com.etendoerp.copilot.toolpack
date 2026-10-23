@@ -45,6 +45,9 @@ public class SimSearchHelpersTest extends WeldBaseTest {
 
   private static final String AD_TABLE = "ad_table";
   private static final String SIMILARITY_PERCENT = "similarity_percent";
+  private static final String TEXT_SIMILARITY_PERCENT = "text_similarity_percent";
+  private static final String EXACT_MATCH = "exact_match";
+  private static final String FULL_PERCENT = "100.0000%";
 
   /**
    * Covers all flag combinations of buildIndexedSql: single/multi column, client/org enabled
@@ -75,6 +78,55 @@ public class SimSearchHelpersTest extends WeldBaseTest {
         Arrays.asList("name"), true, false, false);
     assertTrue(sqlClientOnly.contains("ad_client_id in (:clients)"));
     assertFalse(sqlClientOnly.contains("ad_org_id"));
+  }
+
+  /**
+   * The score keeps GREATEST(similarity, word_similarity) to decide inclusion, so every name that
+   * contains the term ties at 100. The query must therefore also report the whole-string
+   * similarity and the exact-equality flag, and break ties by them (then by key) before the LIMIT
+   * cuts the page, so an exact match is never pushed out by a name that merely contains the term.
+   */
+  @Test
+  public void buildIndexedSqlReportsTextSimilarityAndBreaksTies() {
+    String sql = SimSearch.buildIndexedSql("c_uom", "c_uom_id", Arrays.asList("name"), true, false, false);
+    assertTrue(sql.contains("as text_score"));
+    assertTrue(sql.contains("upper(t.name) = upper(:term)"));
+    assertTrue(sql.contains(" as exact_match"));
+    assertTrue(sql.contains("order by score desc, text_score desc, t.c_uom_id asc limit :qty"));
+    // inclusion is still decided by the score, not by the whole-string similarity
+    assertTrue(sql.contains("word_similarity(upper(:term), upper(t.name))"));
+
+    String multi = SimSearch.buildIndexedSql("m_product", "m_product_id",
+        Arrays.asList("value", "name"), false, false, false);
+    assertTrue(multi.contains("upper(t.value) = upper(:term) or upper(t.name) = upper(:term)"));
+  }
+
+  /**
+   * mapIndexedRows adds text_similarity_percent and exact_match only when the row carries the two
+   * extra columns, so a caller that still builds three-column rows gets the original shape.
+   */
+  @Test
+  public void mapIndexedRowsAddsTextSimilarityAndExactMatch() throws Exception {
+    List<Object[]> rows = Arrays.asList(
+        new Object[] { "id1", "Meter", new BigDecimal("100"), new BigDecimal("100"), Boolean.TRUE },
+        new Object[] { "id2", "Cubic Meter", new BigDecimal("100"), "50.0", "f" },
+        new Object[] { "id3", "Legacy", new BigDecimal("42.5") });
+
+    JSONArray result = SimSearch.mapIndexedRows(rows);
+
+    JSONObject exact = result.getJSONObject(0);
+    assertEquals(FULL_PERCENT, exact.getString(SIMILARITY_PERCENT));
+    assertEquals(FULL_PERCENT, exact.getString(TEXT_SIMILARITY_PERCENT));
+    assertTrue(exact.getBoolean(EXACT_MATCH));
+
+    JSONObject contained = result.getJSONObject(1);
+    assertEquals(FULL_PERCENT, contained.getString(SIMILARITY_PERCENT));
+    assertEquals("50.0000%", contained.getString(TEXT_SIMILARITY_PERCENT));
+    assertFalse(contained.getBoolean(EXACT_MATCH));
+
+    JSONObject legacy = result.getJSONObject(2);
+    assertFalse(legacy.has(TEXT_SIMILARITY_PERCENT));
+    assertFalse(legacy.has(EXACT_MATCH));
   }
 
   /**
