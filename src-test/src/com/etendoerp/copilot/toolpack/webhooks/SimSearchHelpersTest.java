@@ -71,6 +71,9 @@ public class SimSearchHelpersTest {
   /**
    * A five-column row exposes text_similarity_percent (4 decimals, % suffix) and a boolean
    * exact_match; a legacy three-column row keeps the original shape without either field.
+   *
+   * @throws Exception
+   *     if the mapped JSON cannot be read
    */
   @Test
   public void mapIndexedRowsAddsTextSimilarityAndExactMatch() throws Exception {
