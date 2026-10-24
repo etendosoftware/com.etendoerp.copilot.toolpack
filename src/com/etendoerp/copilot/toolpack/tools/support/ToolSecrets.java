@@ -14,10 +14,22 @@ public final class ToolSecrets {
 
   private ToolSecrets() {}
 
-  /** Reads the legacy Etendo property first, then the same-named environment variable. */
+  /** Reads a managed tool API-key record before consulting legacy properties/environment. */
   public static String get(String name) {
+    String provider = providerType(name);
+    if (provider != null) {
+      try {
+        String managedValue = com.etendoerp.copilot.config.ProviderCredentials.create()
+            .resolveToolApiKey(provider);
+        if (managedValue != null && !managedValue.isBlank()) {
+          return managedValue;
+        }
+      } catch (RuntimeException e) {
+        log.debug("Managed tool credential lookup was unavailable for provider {}.", provider);
+      }
+    }
     if (WARNED.add(name)) {
-      log.warn("Tool secret '{}' is read from legacy configuration; migrate it to managed credentials when available.", name);
+      log.warn("Tool secret '{}' is read from legacy configuration; migrate it to an AI API Key record.", name);
     }
     try {
       String value = OBPropertiesProvider.getInstance().getOpenbravoProperties().getProperty(name);
@@ -30,4 +42,11 @@ public final class ToolSecrets {
     if (value == null || value.isBlank()) value = System.getenv(name);
     return value == null || value.isBlank() ? null : value;
   }
+
+  private static String providerType(String name) {
+    String normalized = name.toLowerCase(java.util.Locale.ROOT);
+    if (normalized.contains("tavily")) return "tavily";
+    if (normalized.contains("resend")) return "resend";
+    return null;
 }
+  }
