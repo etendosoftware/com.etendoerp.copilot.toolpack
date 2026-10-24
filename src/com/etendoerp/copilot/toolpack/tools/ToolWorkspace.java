@@ -5,7 +5,11 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +27,8 @@ public final class ToolWorkspace {
   private static final String LEGACY_ROOTS = "copilot.tools.fs.roots";
   private static final String READ_ROOTS = "copilot.tools.fs.read.roots";
   private static final String WRITE_ROOTS = "copilot.tools.fs.write.roots";
-  private static final String WORKSPACE_PROPERTY = "COPILOT_WORKSPACE";
+  private static final String WORKSPACE_PROPERTY = "copilot.tools.workspace.dir";
+  private static final String LEGACY_WORKSPACE_PROPERTY = "COPILOT_WORKSPACE";
   private static final String WORKDIR_PROPERTY = "COPILOT_WORKING_DIR";
   private static final long DEFAULT_MAX_CONVERSATION_BYTES = 100L * 1024 * 1024;
   private static final int DEFAULT_MAX_CONVERSATION_FILES = 1000;
@@ -34,27 +39,85 @@ public final class ToolWorkspace {
 
   public static Path workDir(ToolExecutionContext ctx) {
     String configured = property(WORKSPACE_PROPERTY);
+    if (configured == null || configured.isBlank()) configured = property(LEGACY_WORKSPACE_PROPERTY);
     if (configured == null || configured.isBlank()) configured = property(WORKDIR_PROPERTY);
-    Path root = configured == null || configured.isBlank()
-        ? Paths.get(System.getProperty("java.io.tmpdir"), "etendo-copilot") : Paths.get(configured);
+    Path root;
+    if (configured == null || configured.isBlank()) {
+      String client = safeSegment(identityPart(ctx == null ? null : ctx.clientId(), "mcp"));
+      String user = safeSegment(identityPart(ctx == null ? null : ctx.userId(), "mcp"));
+      root = Paths.get(System.getProperty("java.io.tmpdir"), "etendo-copilot-workspaces", client, user);
+      if (isHardDenied(root)) root = Paths.get("/tmp", "etendo-copilot-workspaces", client, user);
+      if (isHardDenied(root)) root = Paths.get(System.getProperty("user.home"),
+          "etendo-copilot-workspaces", client, user);
+    } else {
+      root = Paths.get(configured);
+    }
     if (!root.isAbsolute()) throw new IllegalArgumentException("Conversation workspace must be an absolute path");
     Path canonicalRoot = root.toAbsolutePath().normalize();
     if (isHardDenied(canonicalRoot)) throw new IllegalArgumentException("Conversation workspace is in a protected filesystem area");
     try {
       Path existingRoot = existingAncestor(canonicalRoot).toRealPath();
       if (isHardDenied(existingRoot)) throw new IllegalArgumentException("Conversation workspace is in a protected filesystem area");
-      String conversation = conversation(ctx);
-      Path dir = canonicalRoot.resolve(safeSegment(conversation)).normalize();
+      Path dir = canonicalRoot.resolve(safeSegment(conversation(ctx))).normalize();
       if (!dir.startsWith(canonicalRoot)) throw new IllegalArgumentException("Invalid conversation workspace");
+      Files.createDirectories(canonicalRoot);
+      setOwnerOnly(canonicalRoot);
       Files.createDirectories(dir);
+      setOwnerOnly(dir);
       Path real = dir.toRealPath();
       if (!real.startsWith(canonicalRoot.toRealPath()) || isHardDenied(real)) {
         throw new IllegalArgumentException("Conversation workspace is outside the allowed filesystem area");
       }
+      Files.setLastModifiedTime(real, FileTime.from(Instant.now()));
+      Path cleanupRoot = managedRoot(ctx, configured);
+      int cleanupDepth = managedDepth(configured);
+      WorkspaceJanitor.maybeClean(cleanupRoot, cleanupDepth, workspaceTtl(),
+          candidate -> WorkspaceJanitor.isActive(candidate, cleanupRoot, cleanupDepth));
       return real;
     } catch (IOException e) {
       throw new IllegalStateException("Unable to create or validate tool workspace", e);
     }
+  }
+
+  static void cleanExpiredWorkspaces() {
+    String configured = property(WORKSPACE_PROPERTY);
+    if (configured == null || configured.isBlank()) configured = property(LEGACY_WORKSPACE_PROPERTY);
+    if (configured == null || configured.isBlank()) configured = property(WORKDIR_PROPERTY);
+    Path root = managedRoot(null, configured);
+    int depth = managedDepth(configured);
+    if (root != null && !isHardDenied(root)) {
+      WorkspaceJanitor.maybeClean(root, depth, workspaceTtl(),
+          candidate -> WorkspaceJanitor.isActive(candidate, root, depth));
+    }
+  }
+
+  private static int managedDepth(String configured) {
+    return configured == null || configured.isBlank() ? 3 : 1;
+  }
+
+  private static Path managedRoot(ToolExecutionContext ctx, String configured) {
+    if (configured != null && !configured.isBlank()) return Paths.get(configured).toAbsolutePath().normalize();
+    String client = safeSegment(identityPart(ctx == null ? null : ctx.clientId(), "mcp"));
+    Path candidate = Paths.get(System.getProperty("java.io.tmpdir"), "etendo-copilot-workspaces");
+    if (isHardDenied(candidate)) candidate = Paths.get("/tmp", "etendo-copilot-workspaces");
+    if (isHardDenied(candidate)) candidate = Paths.get(System.getProperty("user.home"), "etendo-copilot-workspaces");
+    return candidate.resolve(client).toAbsolutePath().normalize().getParent();
+  }
+
+  private static Duration workspaceTtl() {
+    long configuredHours = positiveLong(WorkspaceJanitor.TTL_HOURS_PROPERTY, WorkspaceJanitor.DEFAULT_TTL_HOURS);
+    return Duration.ofHours(Math.min(configuredHours, Duration.ofDays(3650).toHours()));
+  }
+
+  private static void setOwnerOnly(Path directory) throws IOException {
+    try {
+      Files.setPosixFilePermissions(directory, PosixFilePermissions.fromString("rwx------"));
+    } catch (UnsupportedOperationException ignored) {
+      // The platform has no POSIX permission model.
+    }
+  }
+  private static String identityPart(String value, String fallback) {
+    return value == null || value.isBlank() ? fallback : value;
   }
 
   /** Existing path resolution is read-only by default. */
@@ -271,6 +334,11 @@ public final class ToolWorkspace {
     return workDir(ctx).toString() + "\u0000" + conversation(ctx);
   }
 
+  static void forgetUsage(Path workspace) {
+    String prefix = workspace.toString() + "\u0000";
+    USAGE.keySet().removeIf(key -> key.startsWith(prefix));
+  }
+
   private static void ensureUsageLoaded(ToolExecutionContext ctx, Usage usage) throws IOException {
     if (usage.initialized) return;
     try (var paths = Files.walk(workDir(ctx))) {
@@ -308,7 +376,7 @@ public final class ToolWorkspace {
 
   private static String conversation(ToolExecutionContext ctx) {
     String conversation = ctx == null ? null : ctx.conversationId();
-    return conversation == null || conversation.isBlank() ? "default" : safeSegment(conversation);
+    return conversation == null || conversation.isBlank() ? "mcp" : safeSegment(conversation);
   }
 
   private static String safeSegment(String value) {

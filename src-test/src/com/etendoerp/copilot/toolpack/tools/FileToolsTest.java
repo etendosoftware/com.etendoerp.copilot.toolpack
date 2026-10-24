@@ -12,6 +12,9 @@ import org.junit.jupiter.api.Test;
 
 class FileToolsTest {
   private static final String WORKSPACE = "COPILOT_WORKSPACE";
+  private static final String WORKSPACE_DIR = "copilot.tools.workspace.dir";
+  private static final String WORKSPACE_TTL = "copilot.tools.workspace.ttl.hours";
+  private static final String LEGACY_WORKDIR = "COPILOT_WORKING_DIR";
   private static final String ROOTS = "copilot.tools.fs.roots";
   private static final String READ_ROOTS = "copilot.tools.fs.read.roots";
   private static final String WRITE_ROOTS = "copilot.tools.fs.write.roots";
@@ -21,6 +24,9 @@ class FileToolsTest {
   private static final String MAX_ARCHIVE_ENTRIES = "copilot.tools.fs.archive.max.entries";
   private static final String MAX_ARCHIVE_BYTES = "copilot.tools.fs.archive.max.bytes";
   private static final String MAX_ARCHIVE_RATIO = "copilot.tools.fs.archive.max.ratio";
+  private final String oldWorkspaceTtl = System.getProperty(WORKSPACE_TTL);
+  private final String oldLegacyWorkdir = System.getProperty(LEGACY_WORKDIR);
+  private final String oldWorkspaceDir = System.getProperty(WORKSPACE_DIR);
   private final String oldWorkspace = System.getProperty(WORKSPACE);
   private final String oldRoots = System.getProperty(ROOTS);
   private final String oldReadRoots = System.getProperty(READ_ROOTS);
@@ -34,8 +40,10 @@ class FileToolsTest {
   private final String oldUserDir = System.getProperty("user.dir");
 
   @AfterEach void restoreWorkspace() {
+    restoreProperty(WORKSPACE_TTL, oldWorkspaceTtl);
+    restoreProperty(WORKSPACE_DIR, oldWorkspaceDir);
     restoreProperty(WORKSPACE, oldWorkspace);
-    restoreProperty(ROOTS, oldRoots);
+    restoreProperty(LEGACY_WORKDIR, oldLegacyWorkdir);
     restoreProperty(READ_ROOTS, oldReadRoots);
     restoreProperty(WRITE_ROOTS, oldWriteRoots);
     restoreProperty(MAX_FILE_BYTES, oldMaxFileBytes);
@@ -54,7 +62,7 @@ class FileToolsTest {
   private Path workspace() throws Exception {
     Path root = Files.createTempDirectory("file-tools-test");
     System.setProperty(WORKSPACE, root.toString());
-    Path conversation = root.resolve("default");
+    Path conversation = root.resolve("mcp");
     Files.createDirectories(conversation);
     return conversation.toRealPath();
   }
@@ -68,6 +76,20 @@ class FileToolsTest {
         () -> FileToolSupport.writeString(null, dir.resolve("two.txt").toString(), "4"));
     assertThrows(IllegalArgumentException.class,
         () -> FileToolSupport.writeString(null, dir.resolve("one.txt").toString(), "123456"));
+  }
+  @Test void defaultWorkspaceExistsForMcpWithoutConversationAndIsPrivate() throws Exception {
+    System.clearProperty(WORKSPACE);
+    System.clearProperty(WORKSPACE_DIR);
+    System.clearProperty(LEGACY_WORKDIR);
+    Path workspace = ToolWorkspace.workDir(null);
+    assertTrue(Files.isDirectory(workspace));
+    assertEquals("mcp", workspace.getFileName().toString());
+    try {
+      assertEquals("rwx------",
+          java.nio.file.attribute.PosixFilePermissions.toString(Files.getPosixFilePermissions(workspace)));
+    } catch (UnsupportedOperationException ignored) {
+      // The filesystem does not expose POSIX permissions.
+    }
   }
   @Test void workspaceScopesConversationAndRejectsTraversal() throws Exception {
     Path root = workspace();
