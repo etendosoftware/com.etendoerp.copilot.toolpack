@@ -50,7 +50,13 @@ public class MemoryTool implements ServerTool {
           result.put("error", "The 'query' parameter is required for 'search' mode.");
           break;
         }
-        var matches = memoryService.search(agent, user, query, args.optInt("k", 3));
+        java.util.List<KnowledgeBaseStore.Match> matches;
+        try {
+          matches = memoryService.search(agent, user, query, args.optInt("k", 3));
+        } catch (com.etendoerp.copilot.kb.KnowledgeBaseIncompatibleException incompatible) {
+          result.put("error", incompatible.getMessage());
+          break;
+        }
         StringBuilder formatted = new StringBuilder();
         for (KnowledgeBaseStore.Match match : matches) {
           if (formatted.length() > 0) formatted.append('\n');
