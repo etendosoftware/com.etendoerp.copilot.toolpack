@@ -51,6 +51,7 @@ public class SimSearchHelpersTest extends WeldBaseTest {
   private static final String FULL_PERCENT = "100.0000%";
   private static final String MATCH_TYPE = "match_type";
   private static final String C_ORDER = "C_Order";
+  private static final String METER = "Meter";
 
   /**
    * Covers all flag combinations of buildIndexedSql: single/multi column, client/org enabled
@@ -125,11 +126,11 @@ public class SimSearchHelpersTest extends WeldBaseTest {
   /** The Java twin used by the non-indexed path classifies like the SQL one. */
   @Test
   public void matchTypeClassifiesExactNormalizedAndFuzzy() {
-    assertEquals(SimSearch.MATCH_EXACT, SimSearch.matchType("Meter", "\t meter "));
+    assertEquals(SimSearch.MATCH_EXACT, SimSearch.matchType(METER, "\t meter "));
     assertEquals(SimSearch.MATCH_EXACT, SimSearch.matchType("IVA  Normal", "iva normal"));
     assertEquals(SimSearch.MATCH_NORMALIZED, SimSearch.matchType("Arnés Ç", "ARNES c"));
-    assertEquals(SimSearch.MATCH_FUZZY, SimSearch.matchType("Meter", "Meters"));
-    assertEquals(SimSearch.MATCH_FUZZY, SimSearch.matchType("Cubic Meter", "Meter"));
+    assertEquals(SimSearch.MATCH_FUZZY, SimSearch.matchType(METER, "Meters"));
+    assertEquals(SimSearch.MATCH_FUZZY, SimSearch.matchType("Cubic Meter", METER));
     // ñ is a different letter, not an accented n
     assertEquals(SimSearch.MATCH_FUZZY, SimSearch.matchType("Año", "Ano"));
   }
@@ -151,7 +152,7 @@ public class SimSearchHelpersTest extends WeldBaseTest {
   @Test
   public void mapIndexedRowsAddsTextSimilarityExactMatchAndMatchType() throws Exception {
     List<Object[]> rows = Arrays.asList(
-        new Object[] { "id1", "Meter", new BigDecimal("100"), new BigDecimal("100"), Boolean.TRUE, 2 },
+        new Object[] { "id1", METER, new BigDecimal("100"), new BigDecimal("100"), Boolean.TRUE, 2 },
         new Object[] { "id2", "Cubic Meter", new BigDecimal("100"), "50.0", "f", 0 },
         new Object[] { "id3", "Arnes", new BigDecimal("80"), "80.0", "f", "1" },
         new Object[] { "id4", "Legacy", new BigDecimal("42.5") });

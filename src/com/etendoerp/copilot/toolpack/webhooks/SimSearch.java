@@ -58,6 +58,7 @@ public class SimSearch extends BaseWebhookService {
 
   private static final Logger LOG = LoggerFactory.getLogger(SimSearch.class);
   private static final String MESSAGE = "message";
+  private static final String KEY_MATCH_TYPE = "match_type";
   public static final int MIN_SIM_PERCENT = 30;
 
   /** The identifier equals the term, ignoring case and surrounding/inner whitespace. */
@@ -223,11 +224,11 @@ public class SimSearch extends BaseWebhookService {
           calcTextSimilarityPercent((String) resultOBJ.getId(), searchTerm, tableName).toString() + "%");
       String matchType = matchType(resultOBJ.getIdentifier(), searchTerm);
       searchResultJson.put("exact_match", MATCH_EXACT.equals(matchType));
-      searchResultJson.put("match_type", matchType);
+      searchResultJson.put(KEY_MATCH_TYPE, matchType);
       rows.add(searchResultJson);
     }
     // Same order as the indexed query within the page: exact, then normalized, then by score.
-    rows.sort(Comparator.comparingInt((JSONObject row) -> matchRank(row.optString("match_type"))).reversed());
+    rows.sort(Comparator.comparingInt((JSONObject row) -> matchRank(row.optString(KEY_MATCH_TYPE))).reversed());
     JSONArray arrayResponse = new JSONArray();
     rows.forEach(arrayResponse::put);
     return arrayResponse;
@@ -423,7 +424,7 @@ public class SimSearch extends BaseWebhookService {
         json.put("exact_match", toBoolean(row[4]));
       }
       if (row.length > 5) {
-        json.put("match_type", toMatchType(row[5]));
+        json.put(KEY_MATCH_TYPE, toMatchType(row[5]));
       }
       arrayResponse.put(json);
     }
