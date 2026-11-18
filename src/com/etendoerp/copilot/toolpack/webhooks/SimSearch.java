@@ -22,6 +22,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -57,7 +58,23 @@ public class SimSearch extends BaseWebhookService {
 
   private static final Logger LOG = LoggerFactory.getLogger(SimSearch.class);
   private static final String MESSAGE = "message";
+  private static final String KEY_MATCH_TYPE = "match_type";
   public static final int MIN_SIM_PERCENT = 30;
+
+  /** The identifier equals the term, ignoring case and surrounding/inner whitespace. */
+  static final String MATCH_EXACT = "exact";
+  /** The identifier equals the term once accents are also ignored ("Arnés X" = "arnes x"). */
+  static final String MATCH_NORMALIZED = "normalized";
+  /** Any other candidate: only the trigram score relates it to the term. */
+  static final String MATCH_FUZZY = "fuzzy";
+
+  /**
+   * Accented letters folded for {@link #MATCH_NORMALIZED}, paired by position with
+   * {@link #UNACCENTED}. Used verbatim by SQL translate() and by StringUtils.replaceChars so both
+   * paths fold the same way. "ñ" is left out on purpose: "año" and "ano" are different words.
+   */
+  static final String ACCENTED = "áéíóúàèìòùäëïöüâêîôûçÁÉÍÓÚÀÈÌÒÙÄËÏÖÜÂÊÎÔÛÇ";
+  static final String UNACCENTED = "aeiouaeiouaeiouaeioucAEIOUAEIOUAEIOUAEIOUC";
 
   /** Cached per (lowercased table . column) — whether a trigram index exists on the column. */
   private static final ConcurrentMap<String, Boolean> TRGM_INDEX_CACHE = new ConcurrentHashMap<>();
@@ -196,7 +213,7 @@ public class SimSearch extends BaseWebhookService {
     searchQuery.setNamedParameter("minPct", minPct);
     searchQuery.setMaxResult(qtyResults);
     var resultList = searchQuery.list();
-    JSONArray arrayResponse = new JSONArray();
+    List<JSONObject> rows = new ArrayList<>(resultList.size());
     for (BaseOBObject resultOBJ : resultList) {
       JSONObject searchResultJson = new JSONObject();
       searchResultJson.put("id", resultOBJ.getId());
@@ -205,10 +222,37 @@ public class SimSearch extends BaseWebhookService {
       searchResultJson.put("similarity_percent", percent.toString() + "%");
       searchResultJson.put("text_similarity_percent",
           calcTextSimilarityPercent((String) resultOBJ.getId(), searchTerm, tableName).toString() + "%");
-      searchResultJson.put("exact_match", StringUtils.equalsIgnoreCase(resultOBJ.getIdentifier(), searchTerm));
-      arrayResponse.put(searchResultJson);
+      String matchType = matchType(resultOBJ.getIdentifier(), searchTerm);
+      searchResultJson.put("exact_match", MATCH_EXACT.equals(matchType));
+      searchResultJson.put(KEY_MATCH_TYPE, matchType);
+      rows.add(searchResultJson);
     }
+    // Same order as the indexed query within the page: exact, then normalized, then by score.
+    rows.sort(Comparator.comparingInt((JSONObject row) -> matchRank(row.optString(KEY_MATCH_TYPE))).reversed());
+    JSONArray arrayResponse = new JSONArray();
+    rows.forEach(arrayResponse::put);
     return arrayResponse;
+  }
+
+  /** Java twin of the indexed query's match_rank, for the path that has no SQL to carry it. */
+  static String matchType(String identifier, String term) {
+    String name = StringUtils.normalizeSpace(identifier);
+    String wanted = StringUtils.normalizeSpace(term);
+    if (StringUtils.equalsIgnoreCase(name, wanted)) {
+      return MATCH_EXACT;
+    }
+    if (StringUtils.equalsIgnoreCase(StringUtils.replaceChars(name, ACCENTED, UNACCENTED),
+        StringUtils.replaceChars(wanted, ACCENTED, UNACCENTED))) {
+      return MATCH_NORMALIZED;
+    }
+    return MATCH_FUZZY;
+  }
+
+  private static int matchRank(String matchType) {
+    if (MATCH_EXACT.equals(matchType)) {
+      return 2;
+    }
+    return MATCH_NORMALIZED.equals(matchType) ? 1 : 0;
   }
 
   /**
@@ -242,7 +286,7 @@ public class SimSearch extends BaseWebhookService {
    * a pg_trgm GIN/GiST index, the query uses the % and &lt;% operators with pg_trgm session
    * thresholds so the planner picks a bitmap index plan. Otherwise the operator predicates
    * and SET LOCAL are dropped and PG runs a seq scan with only the precise
-   * GREATEST(similarity, word_similarity) &gt; :minPct post-filter. Either path avoids the
+   * score &gt; :minPct post-filter. Either path avoids the
    * per-row ad_column_identifier_std subquery used by etcotp_sim_search, which is the main
    * cost; the index just turns linear scaling into sublinear when present.
    */
@@ -276,38 +320,51 @@ public class SimSearch extends BaseWebhookService {
     });
   }
 
+  /**
+   * Builds the indexed similarity query.
+   * <ul>
+   *   <li>score (similarity_percent, the inclusion filter): {@code greatest(similarity,
+   *   word_similarity) * 100}, unchanged, so a name that contains the term still scores high
+   *   (ETP-3963) and callers' thresholds keep their meaning;</li>
+   *   <li>match_rank (match_type): 2 when an identifier column equals the term ignoring case and
+   *   whitespace, 1 when it equals it once accents are also ignored, 0 otherwise. Only equality
+   *   tells "Meter" from "Cubic Meter": both have a score of 100, and trigram similarity also
+   *   ignores punctuation ("IVA 18% (+4%)" vs "IVA 18%").</li>
+   * </ul>
+   * Rows sort by match_rank, then score, then whole-string similarity, then key, before the LIMIT
+   * cuts the page, so an exact name is never pushed out of it by names that contain it.
+   */
   static String buildIndexedSql(String tableName, String pkColumn, List<String> idColumns,
       boolean hasClient, boolean hasOrg, boolean useOperators) {
     List<String> scoreParts = new ArrayList<>(idColumns.size() * 2);
+    List<String> textSimParts = new ArrayList<>(idColumns.size());
+    List<String> exactParts = new ArrayList<>(idColumns.size());
+    List<String> normalizedParts = new ArrayList<>(idColumns.size());
     List<String> opPreds = new ArrayList<>(idColumns.size() * 2);
     for (String col : idColumns) {
+      String collapsed = "btrim(regexp_replace(t." + col + ", '\\s+', ' ', 'g'))";
       scoreParts.add("similarity(upper(t." + col + "), upper(:term))");
       scoreParts.add("word_similarity(upper(:term), upper(t." + col + "))");
+      textSimParts.add("similarity(upper(t." + col + "), upper(:term))");
+      exactParts.add("upper(" + collapsed + ") = upper(:termNorm)");
+      normalizedParts.add("upper(translate(" + collapsed + ", '" + ACCENTED + "', '" + UNACCENTED
+          + "')) = upper(:termFold)");
       opPreds.add("upper(t." + col + ") % upper(:term)");
       opPreds.add("upper(:term) <% upper(t." + col + ")");
     }
     String scoreExpr = "greatest(" + String.join(", ", scoreParts) + ") * 100";
-
-    // Whole-string similarity and exact equality, reported next to the score. The score keeps
-    // GREATEST(similarity, word_similarity) because it decides which rows are INCLUDED (a partial
-    // name such as "ACME" must still find "ACME INCORPORATED", ETP-3963). That same number cannot
-    // tell an exact match from a name that merely contains the term, so two extra columns do:
-    // callers that must pick ONE record read them instead of the score.
-    List<String> textSimParts = new ArrayList<>(idColumns.size());
-    List<String> exactParts = new ArrayList<>(idColumns.size());
-    for (String col : idColumns) {
-      textSimParts.add("similarity(upper(t." + col + "), upper(:term))");
-      exactParts.add("upper(t." + col + ") = upper(:term)");
-    }
     String textSimExpr = "greatest(" + String.join(", ", textSimParts) + ") * 100";
     String exactExpr = "(" + String.join(" or ", exactParts) + ")";
+    String rankExpr = "case when " + exactExpr + " then 2 when (" + String.join(" or ", normalizedParts)
+        + ") then 1 else 0 end";
 
     StringBuilder sql = new StringBuilder()
         .append("select t.").append(pkColumn).append(", ")
         .append("ad_column_identifier_std(:tn, t.").append(pkColumn).append(") as identifier, ")
         .append("cast(").append(scoreExpr).append(" as numeric) as score, ")
         .append("cast(").append(textSimExpr).append(" as numeric) as text_score, ")
-        .append(exactExpr).append(" as exact_match ")
+        .append(exactExpr).append(" as exact_match, ")
+        .append(rankExpr).append(" as match_rank ")
         .append("from ").append(tableName).append(" t where ");
     if (hasClient) {
       sql.append("t.ad_client_id in (:clients) and ");
@@ -318,11 +375,9 @@ public class SimSearch extends BaseWebhookService {
     if (useOperators) {
       sql.append("(").append(String.join(" or ", opPreds)).append(") and ");
     }
-    // Ties on score are common (every name that contains the term scores 100), and the LIMIT cuts
-    // after the sort, so an exact match could fall outside the page. Break ties by whole-string
-    // similarity, then by key so the order is deterministic.
     sql.append(scoreExpr).append(" > :minPct ")
-        .append("order by score desc, text_score desc, t.").append(pkColumn).append(" asc limit :qty");
+        .append("order by match_rank desc, score desc, text_score desc, t.").append(pkColumn)
+        .append(" asc limit :qty");
     return sql.toString();
   }
 
@@ -332,6 +387,9 @@ public class SimSearch extends BaseWebhookService {
     NativeQuery<Object[]> query = session.createNativeQuery(sql);
     query.setParameter("tn", tableName);
     query.setParameter("term", searchTerm);
+    query.setParameter("termNorm", StringUtils.normalizeSpace(searchTerm));
+    query.setParameter("termFold",
+        StringUtils.replaceChars(StringUtils.normalizeSpace(searchTerm), ACCENTED, UNACCENTED));
     if (entity.isClientEnabled()) {
       query.setParameterList("clients", Arrays.asList(OBContext.getOBContext().getReadableClients()));
     }
@@ -365,6 +423,9 @@ public class SimSearch extends BaseWebhookService {
         json.put("text_similarity_percent", toPercent(row[3]));
         json.put("exact_match", toBoolean(row[4]));
       }
+      if (row.length > 5) {
+        json.put(KEY_MATCH_TYPE, toMatchType(row[5]));
+      }
       arrayResponse.put(json);
     }
     return arrayResponse;
@@ -387,6 +448,14 @@ public class SimSearch extends BaseWebhookService {
       return (Boolean) value;
     }
     return value != null && ("t".equalsIgnoreCase(value.toString()) || Boolean.parseBoolean(value.toString()));
+  }
+
+  private static String toMatchType(Object rank) {
+    int value = rank == null ? 0 : Integer.parseInt(rank.toString());
+    if (value == 2) {
+      return MATCH_EXACT;
+    }
+    return value == 1 ? MATCH_NORMALIZED : MATCH_FUZZY;
   }
 
   /**
